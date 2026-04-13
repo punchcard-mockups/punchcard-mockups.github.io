@@ -2107,6 +2107,20 @@
     overflow: hidden;
   }
 
+  .version-tag {
+    position: absolute;
+    top: max(6px, env(safe-area-inset-top, 0px));
+    left: max(8px, env(safe-area-inset-left, 0px));
+    font-size: 9px;
+    font-family: ui-monospace, Menlo, monospace;
+    color: var(--text-muted);
+    opacity: 0.45;
+    letter-spacing: 0.3px;
+    pointer-events: none;
+    user-select: none;
+    z-index: 50;
+  }
+
   .topbar {
     padding: 14px 18px 0;
     height: auto;
@@ -2185,6 +2199,7 @@
 <body>
 
 <div class="app-root">
+  <div class="version-tag" id="versionTag">v.2026-04-13.1358</div>
   <div class="topbar" id="topbarRoot"></div>
   <div class="scroll" id="scrollRoot"></div>
   <div id="fabRoot"></div>

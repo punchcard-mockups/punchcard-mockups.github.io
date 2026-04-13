@@ -135,18 +135,41 @@
   }
   .topbar .icon-btn:hover { background: var(--surface-dark); color: var(--text-primary); }
   .topbar .icon-btn:active { transform: scale(.92); }
-  .topbar .lang-pill {
-    font-size: 11px;
-    font-weight: 700;
-    padding: 4px 10px;
-    border-radius: 999px;
+  .lang-toggle {
+    position: relative;
+    display: inline-flex;
     background: var(--surface-dark);
-    color: var(--text-secondary);
+    border-radius: 999px;
+    padding: 3px;
     cursor: pointer;
     user-select: none;
+    border: 1px solid var(--outline-soft);
     transition: background 150ms ease;
   }
-  .topbar .lang-pill:hover { background: var(--surface-card-hi); color: var(--text-primary); }
+  .lang-toggle:hover { background: var(--surface-card-hi); }
+  .lang-toggle .slider {
+    position: absolute;
+    top: 3px; bottom: 3px;
+    width: calc(50% - 3px);
+    background: var(--accent-blue);
+    border-radius: 999px;
+    transition: transform 220ms cubic-bezier(.2,.8,.2,1);
+    box-shadow: 0 2px 6px rgba(59,130,246,.3);
+  }
+  .lang-toggle.es .slider { transform: translateX(100%); }
+  .lang-toggle .opt {
+    position: relative;
+    z-index: 1;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 3px 10px;
+    color: var(--text-secondary);
+    transition: color 180ms ease;
+    min-width: 26px;
+    text-align: center;
+  }
+  .lang-toggle .opt.active { color: #fff; }
 
   /* Greeting */
   .greeting { padding: 2px 6px 10px; }
@@ -1662,6 +1685,21 @@
   }
 
   // =============================================================
+  // LANG TOGGLE
+  // =============================================================
+  function langToggle() {
+    const isEs = state.lang === "es";
+    return el("div", {
+      class: `lang-toggle ${isEs ? "es" : ""}`,
+      onclick: () => { state.lang = isEs ? "en" : "es"; render(); }
+    },
+      el("div", {class:"slider"}),
+      el("div", {class: `opt ${!isEs ? "active" : ""}`}, "EN"),
+      el("div", {class: `opt ${isEs ? "active" : ""}`}, "ES"),
+    );
+  }
+
+  // =============================================================
   // TOPBAR + FAB
   // =============================================================
   function renderTopbar() {
@@ -1688,10 +1726,7 @@
 
     root.appendChild(el("div", { class:"spacer" }));
 
-    root.appendChild(el("span", {
-      class:"lang-pill",
-      onclick: () => { state.lang = state.lang === "en" ? "es" : "en"; render(); }
-    }, state.lang.toUpperCase()));
+    root.appendChild(langToggle());
 
     if (state.screen === "employee_home") {
       root.appendChild(el("div", {
@@ -1767,10 +1802,7 @@
     });
 
     const langRow = el("div", {style:"display:flex; justify-content:flex-end; width:100%;"},
-      el("span", {
-        class:"lang-pill", style:"display:inline-block;",
-        onclick: () => { state.lang = state.lang === "en" ? "es" : "en"; render(); }
-      }, state.lang.toUpperCase())
+      langToggle()
     );
 
     root.appendChild(el("div", {class:"login-wrap screen-enter"},

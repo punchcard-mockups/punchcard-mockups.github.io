@@ -3,10 +3,9 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>PunchCard — Calendar summary mockups</title>
+<title>PunchCard — interactive mockup</title>
 <style>
   :root {
-    /* Pulled from Theme.kt */
     --navy: #0D1B2A;
     --deep-blue: #1B2838;
     --slate: #2C3E50;
@@ -18,6 +17,7 @@
     --accent-green: #10B981;
     --accent-green-light: #34D399;
     --accent-red: #EF4444;
+    --accent-red-light: #F87171;
     --accent-amber: #F59E0B;
     --text-primary: #F1F5F9;
     --text-secondary: #94A3B8;
@@ -47,82 +47,28 @@
   }
 
   header.page {
-    padding: 28px 32px 8px;
+    padding: 24px 32px 12px;
     display: flex;
     align-items: baseline;
     gap: 16px;
     flex-wrap: wrap;
   }
-  header.page h1 {
-    font-size: 22px;
-    font-weight: 700;
-    letter-spacing: -0.3px;
-    margin: 0;
-  }
-  header.page p {
-    margin: 0;
-    color: var(--text-secondary);
-    font-size: 13px;
-  }
-
-  .role-toggle {
-    margin-left: auto;
-    display: inline-flex;
-    background: var(--surface-dark);
-    border-radius: 12px;
-    padding: 4px;
-    gap: 2px;
-  }
-  .role-toggle button {
-    border: 0;
-    background: transparent;
-    color: var(--text-secondary);
-    font-size: 12px;
-    font-weight: 600;
-    padding: 6px 14px;
-    border-radius: 9px;
-    cursor: pointer;
-    letter-spacing: 0.3px;
-  }
-  .role-toggle button.active {
-    background: var(--surface-card-hi);
-    color: var(--text-primary);
-  }
-
-  .options-bar {
-    padding: 12px 32px 8px;
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-  .opt-pill {
-    background: var(--surface-dark);
-    border: 1px solid transparent;
-    color: var(--text-secondary);
-    font-size: 12px;
-    font-weight: 600;
-    padding: 6px 12px;
-    border-radius: 999px;
-    cursor: pointer;
-  }
-  .opt-pill.active {
-    border-color: var(--accent-blue);
-    color: var(--accent-blue-bright);
-    background: rgba(59,130,246,.08);
-  }
+  header.page h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; margin: 0; }
+  header.page p { margin: 0; color: var(--text-secondary); font-size: 13px; }
 
   .stage {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
     gap: 28px;
-    padding: 20px 32px 60px;
+    padding: 12px 32px 60px;
+    align-items: start;
   }
 
   /* Phone shell */
   .phone {
     justify-self: center;
     width: 380px;
-    min-height: 780px;
+    height: 780px;
     border-radius: 44px;
     background: var(--navy);
     padding: 14px;
@@ -139,15 +85,6 @@
     border-radius: 14px;
     z-index: 5;
   }
-  .phone-caption {
-    text-align: center;
-    color: var(--text-secondary);
-    font-size: 12px;
-    margin-top: 10px;
-    font-weight: 600;
-  }
-  .phone-caption b { color: var(--text-primary); }
-
   .screen {
     border-radius: 32px;
     background: var(--navy);
@@ -155,24 +92,49 @@
     position: relative;
     height: 100%;
     padding: 56px 18px 24px;
+    display: flex;
+    flex-direction: column;
   }
+  .scroll {
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0 6px;
+    margin: 0 -6px;
+  }
+  .scroll::-webkit-scrollbar { width: 6px; }
+  .scroll::-webkit-scrollbar-thumb { background: var(--surface-dark); border-radius: 3px; }
 
-  /* Top bar */
+  /* Topbar */
   .topbar {
     display: flex;
-    justify-content: flex-end;
     align-items: center;
     gap: 4px;
     height: 38px;
     margin-bottom: 6px;
   }
+  .topbar .spacer { flex: 1; }
+  .topbar .back {
+    width: 38px; height: 38px;
+    border-radius: 12px;
+    display: grid; place-items: center;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background 150ms ease, transform 100ms ease;
+  }
+  .topbar .back:hover { background: var(--surface-dark); color: var(--text-primary); }
+  .topbar .back:active { transform: scale(.92); }
+  .topbar .title { font-size: 15px; font-weight: 600; color: var(--text-primary); }
   .topbar .icon-btn {
     width: 38px; height: 38px;
     border-radius: 12px;
     display: grid; place-items: center;
     color: var(--text-secondary);
     cursor: pointer;
+    transition: background 150ms ease, transform 100ms ease;
   }
+  .topbar .icon-btn:hover { background: var(--surface-dark); color: var(--text-primary); }
+  .topbar .icon-btn:active { transform: scale(.92); }
   .topbar .lang-pill {
     font-size: 11px;
     font-weight: 700;
@@ -180,36 +142,32 @@
     border-radius: 999px;
     background: var(--surface-dark);
     color: var(--text-secondary);
+    cursor: pointer;
+    user-select: none;
+    transition: background 150ms ease;
   }
+  .topbar .lang-pill:hover { background: var(--surface-card-hi); color: var(--text-primary); }
 
   /* Greeting */
-  .greeting {
-    padding: 2px 6px 10px;
-  }
-  .greeting .hello {
-    font-size: 15px;
-    color: var(--text-secondary);
-  }
+  .greeting { padding: 2px 6px 10px; }
+  .greeting .hello { font-size: 15px; color: var(--text-secondary); }
   .greeting .name {
-    font-size: 26px;
-    font-weight: 700;
-    letter-spacing: -0.4px;
+    font-size: 26px; font-weight: 700; letter-spacing: -0.4px;
   }
   .greeting .role {
     margin-top: 4px;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.4px;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.4px;
     color: var(--accent-blue-bright);
     text-transform: uppercase;
   }
+  .greeting .role.readonly { color: var(--accent-amber); }
 
   /* Month nav */
   .month-nav {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 2px 10px;
+    padding: 10px 2px;
   }
   .month-nav .chev {
     width: 40px; height: 40px;
@@ -217,61 +175,31 @@
     display: grid; place-items: center;
     color: var(--text-secondary);
     cursor: pointer;
+    transition: background 150ms ease, transform 100ms ease;
   }
   .month-nav .chev:hover { background: var(--surface-dark); color: var(--text-primary); }
-  .month-nav .label {
-    font-size: 17px;
-    font-weight: 600;
-  }
-
-  /* Header with embedded stats (Option B) */
-  .month-nav.with-stats .label-block {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-  }
-  .month-nav.with-stats .label-block .sub {
-    font-size: 11px;
-    color: var(--text-secondary);
-    font-weight: 500;
-    letter-spacing: 0.3px;
-  }
-  .month-nav.with-stats .label-block .sub b {
-    color: var(--text-primary);
-    font-weight: 700;
-  }
-  .month-nav.with-stats .label-block .sub .dot {
-    color: var(--text-muted);
-    margin: 0 6px;
-  }
+  .month-nav .chev:active { transform: scale(.92); }
+  .month-nav .label { font-size: 17px; font-weight: 600; }
 
   /* Calendar */
-  .cal {
-    padding: 4px 2px 0;
-  }
+  .cal { padding: 4px 2px 0; }
   .cal .dows {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    margin-bottom: 4px;
+    display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 4px;
   }
   .cal .dows span {
     text-align: center;
-    font-size: 10px;
-    font-weight: 700;
+    font-size: 10px; font-weight: 700;
     color: var(--text-secondary);
     letter-spacing: 0.6px;
   }
-  .cal .grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 0;
-  }
+  .cal .grid { display: grid; grid-template-columns: repeat(7, 1fr); }
   .cal .cell {
     aspect-ratio: 1/1;
     padding: 2px;
     cursor: pointer;
+    transition: transform 90ms ease;
   }
+  .cal .cell:active { transform: scale(.96); }
   .cal .inner {
     width: 100%; height: 100%;
     border-radius: 12px;
@@ -281,52 +209,17 @@
     justify-content: center;
     gap: 2px;
     transition: background 120ms ease;
-    position: relative;
   }
-  .cal .inner .num {
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--text-primary);
-  }
+  .cal .inner .num { font-size: 14px; font-weight: 500; color: var(--text-primary); }
   .cal .cell.empty .num { opacity: 0.3; font-weight: 400; }
   .cal .cell.has-shifts .num { font-weight: 600; }
   .cal .cell.today .inner { background: rgba(59,130,246,.12); }
   .cal .cell.today .num { font-weight: 700; }
-  .cal .cell.selected .inner {
-    background: var(--accent-blue);
-  }
-  .cal .cell.selected .num {
-    color: #fff;
-    font-weight: 700;
-  }
-  .cal .bar {
-    width: 62%;
-    height: 4px;
-    border-radius: 2px;
-    overflow: hidden;
-    display: flex;
-  }
-  .cal .bar span {
-    display: block; height: 100%;
-  }
-
-  /* Cell style variants */
-  .cal .hours-badge {
-    font-size: 10px;
-    font-weight: 700;
-    color: var(--accent-blue-bright);
-    letter-spacing: 0.2px;
-    line-height: 1;
-  }
-  .cal .cell.selected .hours-badge { color: rgba(255,255,255,.9); }
-
+  .cal .cell.selected .inner { background: var(--accent-blue); }
+  .cal .cell.selected .num { color: #fff; font-weight: 700; }
   .cal .pair {
-    font-size: 9px;
-    font-weight: 700;
-    line-height: 1;
-    display: flex;
-    align-items: center;
-    gap: 3px;
+    font-size: 9px; font-weight: 700; line-height: 1;
+    display: flex; align-items: center; gap: 3px;
     color: var(--accent-blue-bright);
   }
   .cal .pair .mid { color: var(--text-muted); font-weight: 500; }
@@ -334,56 +227,12 @@
   .cal .cell.selected .pair,
   .cal .cell.selected .pair .mid,
   .cal .cell.selected .pair .emp { color: rgba(255,255,255,.9); }
-
-  .cal .dots {
-    display: flex;
-    gap: 2px;
-    justify-content: center;
-  }
-  .cal .dots span {
-    width: 5px; height: 5px;
-    border-radius: 50%;
-  }
-
-  .cal .initials {
-    display: flex;
-    gap: 2px;
-    justify-content: center;
-  }
-  .cal .initials span {
-    font-size: 8px;
-    font-weight: 700;
-    width: 11px; height: 11px;
-    border-radius: 3px;
-    display: grid;
-    place-items: center;
-    color: #fff;
-    letter-spacing: 0;
-  }
-
-  .cal .big-hours {
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--accent-blue-bright);
-    line-height: 1;
-    letter-spacing: -0.3px;
-  }
-  .cal .big-hours-day {
-    font-size: 9px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    letter-spacing: 0.3px;
-    line-height: 1;
-  }
-  .cal .cell.selected .big-hours { color: #fff; }
-  .cal .cell.selected .big-hours-day { color: rgba(255,255,255,.75); }
-
   .cal .heat-1 .inner { background: rgba(59,130,246,.04); }
   .cal .heat-2 .inner { background: rgba(59,130,246,.08); }
   .cal .heat-3 .inner { background: rgba(59,130,246,.12); }
   .cal .heat-4 .inner { background: rgba(59,130,246,.16); }
 
-  /* Day expansion */
+  /* Day detail — table header */
   .day-detail {
     margin: 6px 0 0;
     padding: 12px;
@@ -391,118 +240,9 @@
     background: rgba(44,62,80,0.6);
   }
   .day-detail .date-label {
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.3px;
-    margin-bottom: 8px;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.3px; margin-bottom: 8px;
   }
-  .day-detail .no-shifts {
-    font-size: 12px;
-    color: var(--text-muted);
-  }
-  .timeline-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin: 4px 0;
-  }
-  .timeline-row .dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    flex: 0 0 auto;
-  }
-  .timeline-row .track {
-    flex: 1;
-    height: 14px;
-    background: rgba(148,163,184,.15);
-    border-radius: 4px;
-    position: relative;
-  }
-  .timeline-row .track .edge {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 7px;
-    color: var(--text-muted);
-    font-weight: 600;
-    padding: 0 4px;
-  }
-  .timeline-row .track .edge.l { left: 0; }
-  .timeline-row .track .edge.r { right: 0; }
-  .timeline-row .track .seg {
-    position: absolute;
-    top: 0; bottom: 0;
-    border-radius: 4px;
-  }
-  .timeline-row .hrs {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.4px;
-    min-width: 26px;
-    text-align: right;
-  }
-  .timeline-comment {
-    padding-left: 14px;
-    font-size: 11px;
-    color: var(--text-secondary);
-    display: flex;
-    gap: 4px;
-  }
-  .timeline-comment .q { opacity: 0.5; }
-
-  /* --- Day detail: simple rows --- */
-  .dd-rows { display: flex; flex-direction: column; gap: 2px; }
-  .dd-row {
-    display: grid;
-    grid-template-columns: 10px minmax(0,1fr) auto auto;
-    align-items: center;
-    gap: 10px;
-    padding: 6px 2px;
-    border-bottom: 1px solid var(--outline-soft);
-  }
-  .dd-row:last-child { border-bottom: 0; }
-  .dd-row .sw { width: 8px; height: 8px; border-radius: 2px; }
-  .dd-row .nm { font-size: 13px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .dd-row .tm {
-    font-size: 12px; color: var(--text-secondary); font-variant-numeric: tabular-nums;
-  }
-  .dd-row .hrs {
-    font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums;
-    min-width: 34px; text-align: right;
-  }
-  .dd-rows .cmt {
-    grid-column: 2 / -1;
-    font-size: 11px;
-    color: var(--text-secondary);
-    padding-left: 0;
-    margin-top: 2px;
-    font-style: italic;
-    opacity: .75;
-  }
-
-  /* --- Day detail: colored cards --- */
-  .dd-cards { display: flex; flex-direction: column; gap: 8px; }
-  .dd-card {
-    background: var(--surface-card);
-    border-radius: 12px;
-    padding: 10px 12px;
-    border-left: 3px solid var(--text-muted);
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-  .dd-card .top {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 10px;
-  }
-  .dd-card .nm { font-size: 13px; font-weight: 700; }
-  .dd-card .hrs { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
-  .dd-card .tm { font-size: 12px; color: var(--text-secondary); font-variant-numeric: tabular-nums; letter-spacing: .3px; }
-  .dd-card .cmt { font-size: 11px; color: var(--text-secondary); font-style: italic; opacity: .8; margin-top: 2px; }
-
-  /* --- Day detail: table header --- */
+  .day-detail .no-shifts { font-size: 12px; color: var(--text-muted); }
   .dd-table { display: flex; flex-direction: column; }
   .dd-table .head {
     display: grid;
@@ -527,313 +267,232 @@
   }
   .dd-table .trow:last-of-type { border-bottom: 0; }
   .dd-table .nm {
-    font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px;
+    font-size: 13px; font-weight: 600;
+    display: flex; align-items: center; gap: 8px;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   .dd-table .nm .sw { width: 4px; height: 16px; border-radius: 2px; flex: 0 0 auto; }
-  .dd-table .tm { font-size: 12px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+  .dd-table .tm {
+    font-size: 12px; color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
   .dd-table .hrs {
-    font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums;
+    font-size: 13px; font-weight: 700;
+    font-variant-numeric: tabular-nums;
     text-align: right; min-width: 34px;
   }
   .dd-table .cmt {
     grid-column: 1 / -1;
-    font-size: 11px; color: var(--text-secondary); font-style: italic;
-    margin-top: 2px; opacity: .8;
+    font-size: 11px; color: var(--text-secondary);
+    font-style: italic; margin-top: 2px; opacity: .8;
   }
 
-  /* --- Day detail: avatar + pill --- */
-  .dd-pill { display: flex; flex-direction: column; gap: 8px; }
-  .dd-pill-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .dd-pill-row .av {
-    width: 28px; height: 28px;
-    border-radius: 50%;
-    display: grid; place-items: center;
-    font-size: 12px; font-weight: 700; color: #fff;
-    flex: 0 0 auto;
-  }
-  .dd-pill-row .body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-  .dd-pill-row .top {
-    display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
-  }
-  .dd-pill-row .nm { font-size: 13px; font-weight: 600; }
-  .dd-pill-row .hrs { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
-  .dd-pill-row .range {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 3px 8px;
-    background: var(--surface-card);
-    border-radius: 999px;
-    font-size: 11px;
-    color: var(--text-secondary);
-    font-variant-numeric: tabular-nums;
-    width: fit-content;
-  }
-  .dd-pill-row .range .arrow { color: var(--text-muted); }
-  .dd-pill-row .cmt {
-    font-size: 11px; color: var(--text-secondary); font-style: italic; opacity: .8;
-  }
-
-  /* Stats card (Option A / Option C) */
+  /* Info card */
   .info-card {
     background: var(--surface-card);
     border-radius: 16px;
     padding: 16px;
     margin-top: 12px;
   }
+  .info-card.clickable { cursor: pointer; transition: background 150ms ease; }
+  .info-card.clickable:hover { background: var(--surface-card-hi); }
   .info-card .row {
-    display: flex;
-    justify-content: space-evenly;
-    gap: 8px;
+    display: flex; justify-content: space-evenly; gap: 8px;
   }
   .info-card .stat {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
   }
   .info-card .stat .value {
-    font-size: 24px;
-    font-weight: 700;
-    letter-spacing: -0.3px;
+    font-size: 24px; font-weight: 700; letter-spacing: -0.3px;
   }
   .info-card .stat .label {
-    font-size: 10px;
-    letter-spacing: 0.5px;
+    font-size: 10px; letter-spacing: 0.5px;
     text-transform: uppercase;
-    color: var(--text-secondary);
-    font-weight: 600;
+    color: var(--text-secondary); font-weight: 600;
   }
   .info-card .stat.blue .value { color: var(--accent-blue-bright); }
   .info-card .stat.green .value { color: var(--accent-green-light); }
   .info-card .stat.amber .value { color: var(--accent-amber); }
   .info-card .stat.plain .value { color: var(--text-primary); }
 
-  /* Admin stats card with legend (Option A+) */
-  .info-card.legend {
-    padding: 14px 16px;
-  }
-  .info-card.legend .legend-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 6px 0;
-    border-top: 1px solid var(--outline-soft);
-    margin-top: 8px;
-    padding-top: 10px;
-  }
   .info-card.legend .legend-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px 14px;
-    margin-top: 8px;
+    display: flex; flex-direction: column; gap: 8px;
+    margin-top: 10px;
     border-top: 1px solid var(--outline-soft);
     padding-top: 10px;
   }
-  .info-card.legend .legend-list .emp {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    color: var(--text-secondary);
+  .emp-breakdown .brow {
+    display: flex; align-items: center; gap: 10px; padding: 4px 0;
   }
-  .info-card.legend .legend-list .emp .swatch {
-    width: 10px; height: 10px; border-radius: 3px;
+  .emp-breakdown .brow .swatch {
+    width: 10px; height: 10px; border-radius: 3px; flex: 0 0 auto;
   }
-  .info-card.legend .legend-list .emp b {
-    color: var(--text-primary);
-    font-weight: 600;
+  .emp-breakdown .brow .name { flex: 1; font-size: 12px; }
+  .emp-breakdown .brow .meter {
+    flex: 2; height: 6px;
+    background: var(--outline-soft); border-radius: 3px; overflow: hidden;
   }
-
-  /* Ticker version (Option D) */
-  .ticker {
-    margin-top: 10px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 14px;
-    background: var(--surface-dark);
-    border-radius: 12px;
-    font-size: 12px;
-  }
-  .ticker .chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    color: var(--text-secondary);
-  }
-  .ticker .chip b {
-    color: var(--text-primary);
-    font-weight: 700;
-    font-size: 13px;
-  }
-  .ticker .sep {
-    width: 1px; height: 14px;
-    background: var(--outline-soft);
-  }
-
-  /* Context swap (Option C) */
-  .context-slot {
-    margin-top: 12px;
-    position: relative;
-  }
-  .context-slot .stacked-bar {
-    display: flex;
-    height: 6px;
-    width: 100%;
-    border-radius: 3px;
-    overflow: hidden;
-    margin-top: 10px;
-    background: var(--outline-soft);
-  }
-  .context-slot .stacked-bar span { display: block; height: 100%; }
-
-  /* Employee summary list (Option A-admin extended) */
-  .emp-breakdown {
-    margin-top: 10px;
-  }
-  .emp-breakdown .row {
-    display: flex; align-items: center; gap: 10px;
-    padding: 4px 0;
-  }
-  .emp-breakdown .row .swatch {
-    width: 10px; height: 10px; border-radius: 3px;
-  }
-  .emp-breakdown .row .name {
-    flex: 1; font-size: 12px;
-  }
-  .emp-breakdown .row .meter {
-    flex: 2;
-    height: 6px;
-    background: var(--outline-soft);
-    border-radius: 3px;
-    overflow: hidden;
-  }
-  .emp-breakdown .row .meter span {
-    display: block; height: 100%;
-    border-radius: 3px;
-  }
-  .emp-breakdown .row .hrs {
+  .emp-breakdown .brow .meter span { display: block; height: 100%; border-radius: 3px; }
+  .emp-breakdown .brow .hrs {
     font-size: 11px; font-weight: 700;
-    min-width: 34px;
-    text-align: right;
+    min-width: 34px; text-align: right;
+    font-variant-numeric: tabular-nums;
   }
 
-  /* Section header (reused) */
+  /* Section header */
   .section-header {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
+    display: flex; align-items: baseline; justify-content: space-between;
     margin: 16px 4px 8px;
   }
-  .section-header h3 {
-    margin: 0;
-    font-size: 16px;
-    font-weight: 600;
-  }
-  .section-header small {
-    font-size: 11px;
-    color: var(--text-secondary);
-  }
+  .section-header h3 { margin: 0; font-size: 16px; font-weight: 600; }
+  .section-header small { font-size: 11px; color: var(--text-secondary); }
 
-  /* scroll area inside phone */
-  .scroll {
-    height: calc(100% - 6px);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    padding: 0 6px;
-    margin: 0 -6px;
+  /* Employee row card */
+  .emp-row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 16px;
+    background: var(--surface-card);
+    border-radius: 16px;
+    margin-top: 10px;
+    cursor: pointer;
+    transition: background 150ms ease;
   }
-  .scroll::-webkit-scrollbar { width: 6px; }
-  .scroll::-webkit-scrollbar-track { background: transparent; }
-  .scroll::-webkit-scrollbar-thumb { background: var(--surface-dark); border-radius: 3px; }
-
-  /* Small icons as SVG */
-  .ic { width: 20px; height: 20px; stroke-width: 2; }
-
-  .footnote {
-    margin: 0 auto;
-    max-width: 960px;
-    padding: 0 32px 40px;
-    color: var(--text-secondary);
-    font-size: 13px;
-    line-height: 1.6;
+  .emp-row:hover { background: var(--surface-card-hi); }
+  .emp-row .av {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    font-weight: 700; font-size: 14px;
   }
-  .footnote h2 {
-    color: var(--text-primary);
-    font-size: 16px;
-    margin: 18px 0 8px;
-  }
-  .footnote code {
-    background: var(--surface-dark);
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 12px;
-  }
-
-  .hidden { display: none !important; }
-
-  /* Toast */
-  .toast-wrap {
-    position: absolute;
-    left: 14px; right: 14px;
-    bottom: 28px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    pointer-events: none;
-    z-index: 30;
-  }
-  .toast {
-    background: var(--surface-card-hi);
-    border: 1px solid var(--outline-soft);
-    color: var(--text-primary);
-    padding: 10px 14px;
-    border-radius: 12px;
-    font-size: 12px;
-    box-shadow: 0 10px 30px rgba(0,0,0,.4);
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    animation: toast-in 220ms ease both;
-    pointer-events: auto;
-  }
-  .toast.leave { animation: toast-out 220ms ease both; }
-  .toast .pill {
-    background: var(--accent-blue);
-    color: #fff;
-    font-weight: 700;
-    font-size: 10px;
-    letter-spacing: 0.4px;
-    text-transform: uppercase;
+  .emp-row .body { flex: 1; }
+  .emp-row .name { font-size: 14px; font-weight: 600; }
+  .emp-row .meta { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+  .emp-row .badge {
+    font-size: 9px; font-weight: 700;
     padding: 3px 7px;
     border-radius: 999px;
+    background: rgba(245,158,11,.2);
+    color: var(--accent-amber);
+    letter-spacing: 0.4px;
+    margin-left: 6px;
   }
-  .toast.success .pill { background: var(--accent-green); }
-  .toast.warn .pill { background: var(--accent-amber); color: #000; }
-  @keyframes toast-in {
-    from { opacity: 0; transform: translateY(10px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes toast-out {
-    from { opacity: 1; transform: translateY(0); }
-    to   { opacity: 0; transform: translateY(8px); }
-  }
+  .emp-row .chev { color: var(--text-secondary); }
 
-  /* Month slide animation */
-  .month-anim-next { animation: slide-left 260ms ease both; }
-  .month-anim-prev { animation: slide-right 260ms ease both; }
-  @keyframes slide-left {
-    from { opacity: 0; transform: translateX(18px); }
-    to   { opacity: 1; transform: translateX(0); }
+  /* FAB */
+  .fab {
+    position: absolute;
+    right: 28px; bottom: 28px;
+    width: 56px; height: 56px;
+    border-radius: 18px;
+    background: var(--accent-blue);
+    color: #fff;
+    border: 0;
+    display: grid; place-items: center;
+    cursor: pointer;
+    box-shadow: 0 10px 24px rgba(59,130,246,.3);
+    transition: transform 120ms ease, filter 150ms ease;
+    z-index: 5;
   }
-  @keyframes slide-right {
-    from { opacity: 0; transform: translateX(-18px); }
-    to   { opacity: 1; transform: translateX(0); }
+  .fab:hover { filter: brightness(1.1); }
+  .fab:active { transform: scale(.96); }
+  .fab svg { width: 26px; height: 26px; }
+
+  /* Login */
+  .login-wrap {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    height: 100%;
+    padding: 20px 12px;
+    gap: 20px;
   }
+  .login-wrap .brand {
+    font-size: 28px; font-weight: 800;
+    letter-spacing: -0.6px;
+    color: var(--text-primary);
+    margin-top: auto;
+  }
+  .login-wrap .brand .accent { color: var(--accent-blue-bright); }
+  .login-wrap .tag {
+    color: var(--text-secondary);
+    font-size: 13px;
+    margin-top: -10px;
+    margin-bottom: 10px;
+  }
+  .login-form {
+    width: 100%;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .login-form input {
+    background: var(--surface-card);
+    border: 1px solid var(--outline-soft);
+    border-radius: 12px;
+    padding: 12px 14px;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 150ms ease;
+  }
+  .login-form input:focus { border-color: var(--accent-blue); }
+  .login-form .go {
+    background: linear-gradient(180deg, var(--accent-blue), #1d4ed8);
+    color: #fff;
+    border: 0;
+    border-radius: 12px;
+    padding: 13px;
+    font-size: 14px; font-weight: 700; letter-spacing: 0.3px;
+    cursor: pointer;
+    margin-top: 6px;
+    transition: transform 100ms ease, filter 150ms ease;
+  }
+  .login-form .go:hover { filter: brightness(1.1); }
+  .login-form .go:active { transform: scale(.98); }
+  .login-form .err {
+    font-size: 12px; color: var(--accent-red-light);
+    background: rgba(239,68,68,.08);
+    border-radius: 10px;
+    padding: 8px 10px;
+  }
+  .demo-accounts {
+    width: 100%;
+    padding: 12px;
+    background: var(--surface-dark);
+    border-radius: 12px;
+    margin-top: auto;
+  }
+  .demo-accounts .demo-title {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .demo-chip {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: var(--surface-card);
+    color: var(--text-primary);
+    border: 1px solid var(--outline-soft);
+    border-radius: 10px;
+    padding: 8px 12px;
+    margin-top: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 150ms ease;
+  }
+  .demo-chip:hover { background: var(--surface-card-hi); }
+  .demo-chip b { color: var(--accent-blue-bright); }
+  .demo-chip .tag {
+    float: right;
+    font-size: 10px; font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 999px;
+    letter-spacing: 0.3px;
+  }
+  .demo-chip .tag.admin { background: rgba(59,130,246,.2); color: var(--accent-blue-bright); }
+  .demo-chip .tag.emp { background: rgba(16,185,129,.2); color: var(--accent-green-light); }
+  .demo-chip .tag.readonly { background: rgba(245,158,11,.2); color: var(--accent-amber); }
 
   /* Clock-in flow */
   .big-cta {
@@ -842,32 +501,25 @@
     height: 116px;
     border-radius: 24px;
     color: #fff;
-    font-size: 18px;
-    font-weight: 700;
+    font-size: 18px; font-weight: 700;
     cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    align-items: center;
-    justify-content: center;
+    display: flex; flex-direction: column;
+    gap: 4px; align-items: center; justify-content: center;
     letter-spacing: 0.3px;
     transition: transform 100ms ease, filter 150ms ease;
   }
   .big-cta:active { transform: scale(.985); }
-  .big-cta.clock-in {
-    background: linear-gradient(180deg, var(--accent-green), #059669);
-  }
-  .big-cta.clock-out {
-    background: linear-gradient(180deg, var(--accent-red), #dc2626);
-  }
-  .big-cta.submit {
-    background: linear-gradient(180deg, var(--accent-blue), #1d4ed8);
+  .big-cta.clock-in { background: linear-gradient(180deg, var(--accent-green), #059669); }
+  .big-cta.clock-out { background: linear-gradient(180deg, var(--accent-red), #dc2626); }
+  .big-cta.submit { background: linear-gradient(180deg, var(--accent-blue), #1d4ed8); }
+  .big-cta.disabled {
+    filter: grayscale(0.4) brightness(.7);
+    cursor: not-allowed;
   }
   .big-cta svg { width: 32px; height: 32px; }
+
   .clock-card {
-    display: flex;
-    align-items: center;
-    gap: 14px;
+    display: flex; align-items: center; gap: 14px;
     padding: 18px 20px;
     background: var(--surface-card);
     border-radius: 18px;
@@ -892,8 +544,14 @@
     70% { transform: scale(1.5); opacity: 0; }
     100% { transform: scale(.85); opacity: 0; }
   }
-  .clock-card .label { font-size: 11px; color: var(--text-secondary); letter-spacing: 0.4px; text-transform: uppercase; font-weight: 700;}
-  .clock-card .time { font-size: 22px; font-weight: 700; color: var(--accent-green-light); }
+  .clock-card .label {
+    font-size: 11px; color: var(--text-secondary);
+    letter-spacing: 0.4px; text-transform: uppercase; font-weight: 700;
+  }
+  .clock-card .time {
+    font-size: 22px; font-weight: 700; color: var(--accent-green-light);
+  }
+
   .shift-summary {
     background: var(--surface-card);
     border-radius: 18px;
@@ -904,97 +562,650 @@
   }
   .shift-summary .col { display: flex; flex-direction: column; gap: 2px; }
   .shift-summary .col.r { align-items: flex-end; }
-  .shift-summary .l-label { font-size: 10px; color: var(--text-secondary); letter-spacing: 0.4px; text-transform: uppercase; font-weight: 700; }
+  .shift-summary .l-label {
+    font-size: 10px; color: var(--text-secondary);
+    letter-spacing: 0.4px; text-transform: uppercase; font-weight: 700;
+  }
   .shift-summary .time { font-size: 22px; font-weight: 700; }
   .shift-summary .total {
-    text-align: center;
-    margin-top: 12px;
+    text-align: center; margin-top: 12px;
     border-top: 1px solid var(--outline-soft);
     padding-top: 14px;
   }
-  .shift-summary .total .value { font-size: 40px; font-weight: 800; color: var(--accent-green-light); letter-spacing: -1px; }
-  .shift-summary .total .unit { font-size: 14px; color: var(--text-secondary); margin-left: 6px; }
+  .shift-summary .total .value {
+    font-size: 40px; font-weight: 800;
+    color: var(--accent-green-light);
+    letter-spacing: -1px;
+  }
+  .shift-summary .total .value.warn { color: var(--accent-red-light); }
+  .shift-summary .total .unit {
+    font-size: 14px; color: var(--text-secondary); margin-left: 6px;
+  }
+  .comment-field {
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: var(--surface-dark);
+    border: 1px solid var(--outline-soft);
+    border-radius: 10px;
+    color: var(--text-primary);
+    font-size: 13px;
+    width: 100%;
+    font-family: inherit;
+    resize: none;
+    outline: none;
+    min-height: 52px;
+    transition: border-color 150ms ease;
+  }
+  .comment-field:focus { border-color: var(--accent-blue); }
+  .comment-field.required { border-color: rgba(239,68,68,.5); }
+  .comment-required-note {
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--accent-red-light);
+  }
 
-  .icon-btn.pressable { transition: transform 100ms ease, background 150ms ease; }
-  .icon-btn.pressable:hover { background: var(--surface-dark); color: var(--text-primary); }
-  .icon-btn.pressable:active { transform: scale(.92); }
-  .lang-pill { cursor: pointer; transition: background 150ms ease; user-select: none; }
-  .lang-pill:hover { background: var(--surface-card-hi); color: var(--text-primary); }
-  .cal .cell { transition: transform 90ms ease; }
-  .cal .cell:active { transform: scale(.96); }
-  .info-card.clickable { cursor: pointer; transition: background 150ms ease, transform 100ms ease; }
-  .info-card.clickable:hover { background: var(--surface-card-hi); }
-  .info-card.clickable:active { transform: scale(.99); }
-  .chev { transition: background 150ms ease, transform 100ms ease; }
-  .chev:active { transform: scale(.92); }
+  /* Toast */
+  .toast-wrap {
+    position: absolute;
+    left: 14px; right: 14px; bottom: 28px;
+    display: flex; flex-direction: column; gap: 8px;
+    pointer-events: none; z-index: 30;
+  }
+  .toast {
+    background: var(--surface-card-hi);
+    border: 1px solid var(--outline-soft);
+    color: var(--text-primary);
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.4);
+    display: flex; gap: 10px; align-items: center;
+    animation: toast-in 220ms ease both;
+    pointer-events: auto;
+  }
+  .toast.leave { animation: toast-out 220ms ease both; }
+  .toast .pill {
+    background: var(--accent-blue);
+    color: #fff;
+    font-weight: 700;
+    font-size: 10px; letter-spacing: 0.4px; text-transform: uppercase;
+    padding: 3px 7px; border-radius: 999px;
+  }
+  .toast.success .pill { background: var(--accent-green); }
+  .toast.warn .pill { background: var(--accent-amber); color: #000; }
+  .toast.error .pill { background: var(--accent-red); }
+  @keyframes toast-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes toast-out {
+    from { opacity: 1; transform: translateY(0); }
+    to   { opacity: 0; transform: translateY(8px); }
+  }
+
+  /* Month slide animation */
+  .month-anim-next { animation: slide-left 260ms ease both; }
+  .month-anim-prev { animation: slide-right 260ms ease both; }
+  @keyframes slide-left {
+    from { opacity: 0; transform: translateX(18px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes slide-right {
+    from { opacity: 0; transform: translateX(-18px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  /* Screen transition */
+  .screen-enter { animation: fade-up 260ms ease both; }
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Modal */
+  .modal-scrim {
+    position: absolute;
+    inset: 0;
+    background: rgba(5, 10, 20, .7);
+    border-radius: 32px;
+    display: grid; place-items: center;
+    z-index: 20;
+    animation: fade-in 180ms ease both;
+  }
+  @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+  .modal-card {
+    background: var(--surface-card);
+    border-radius: 22px;
+    padding: 22px 20px;
+    width: calc(100% - 36px);
+    max-height: calc(100% - 40px);
+    overflow-y: auto;
+    animation: modal-in 220ms cubic-bezier(.2,.8,.2,1) both;
+  }
+  @keyframes modal-in {
+    from { opacity: 0; transform: translateY(12px) scale(.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .modal-card h3 {
+    margin: 0 0 6px;
+    font-size: 18px; font-weight: 700;
+  }
+  .modal-card p { margin: 0 0 14px; color: var(--text-secondary); font-size: 13px; }
+  .modal-card input, .modal-card textarea, .modal-card select {
+    display: block;
+    width: 100%;
+    background: var(--surface-dark);
+    border: 1px solid var(--outline-soft);
+    border-radius: 10px;
+    padding: 10px 12px;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-family: inherit;
+    margin-bottom: 10px;
+    outline: none;
+    transition: border-color 150ms ease;
+  }
+  .modal-card input:focus, .modal-card textarea:focus { border-color: var(--accent-blue); }
+  .modal-card .actions {
+    display: flex; justify-content: flex-end; gap: 8px;
+    margin-top: 6px;
+  }
+  .modal-card .btn {
+    border: 0;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 13px; font-weight: 700;
+    padding: 10px 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 150ms ease, color 150ms ease;
+  }
+  .modal-card .btn:hover { background: var(--surface-dark); color: var(--text-primary); }
+  .modal-card .btn.primary {
+    background: var(--accent-blue); color: #fff;
+  }
+  .modal-card .btn.primary:hover { filter: brightness(1.1); background: var(--accent-blue); }
+  .modal-card .btn.danger {
+    background: rgba(239,68,68,.2); color: var(--accent-red-light);
+  }
+  .modal-card .err {
+    font-size: 12px; color: var(--accent-red-light);
+    background: rgba(239,68,68,.08);
+    border-radius: 10px;
+    padding: 8px 10px;
+    margin-bottom: 10px;
+  }
+
+  /* History screen */
+  .hist-shift-card {
+    background: var(--surface-card);
+    border-radius: 16px;
+    padding: 14px 16px;
+    margin-top: 10px;
+  }
+  .hist-shift-card .top {
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .hist-shift-card .left {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .hist-shift-card .status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+  }
+  .hist-shift-card .status-dot.ok { background: var(--accent-green); }
+  .hist-shift-card .status-dot.warn { background: var(--accent-red); }
+  .hist-shift-card .date {
+    font-size: 13px; font-weight: 600;
+  }
+  .hist-shift-card .hrs {
+    font-size: 16px; font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .hist-shift-card .hrs.ok { color: var(--accent-green-light); }
+  .hist-shift-card .hrs.warn { color: var(--accent-red-light); }
+  .hist-shift-card .chips {
+    display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;
+  }
+  .hist-shift-card .chip {
+    font-size: 11px;
+    background: var(--surface-dark);
+    padding: 4px 8px;
+    border-radius: 999px;
+    color: var(--text-secondary);
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+  .hist-shift-card .chip svg { width: 11px; height: 11px; }
+  .hist-shift-card .comment {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-style: italic;
+  }
+  .hist-shift-card .week-status {
+    margin-top: 8px; display: inline-flex;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.4px;
+    padding: 3px 8px; border-radius: 999px; text-transform: uppercase;
+  }
+  .hist-shift-card .week-status.pending { background: rgba(245,158,11,.2); color: var(--accent-amber); }
+  .hist-shift-card .week-status.approved { background: rgba(16,185,129,.2); color: var(--accent-green-light); }
+
+  /* Map */
+  .mini-map {
+    position: relative;
+    width: 100%;
+    height: 180px;
+    border-radius: 16px;
+    overflow: hidden;
+    margin-top: 10px;
+    background: #0a1b2e;
+  }
+  .mini-map .tiles {
+    position: absolute;
+    inset: 0;
+    display: grid;
+  }
+  .mini-map .tiles img {
+    width: 100%; height: 100%;
+    display: block;
+    filter: hue-rotate(190deg) saturate(.35) brightness(.7) contrast(1.1);
+  }
+  .mini-map .pins {
+    position: absolute; inset: 0;
+    pointer-events: none;
+  }
+  .mini-map .pin {
+    position: absolute;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 2px rgba(0,0,0,.4), 0 2px 6px rgba(0,0,0,.5);
+    transform: translate(-50%, -50%);
+  }
+  .mini-map .pin.in { background: var(--accent-green); }
+  .mini-map .pin.out { background: var(--accent-red); }
+  .mini-map .legend {
+    position: absolute;
+    left: 10px; bottom: 10px;
+    display: flex; gap: 10px;
+    font-size: 10px; font-weight: 600;
+    background: rgba(13,27,42,.85);
+    padding: 4px 8px;
+    border-radius: 999px;
+    backdrop-filter: blur(4px);
+  }
+  .mini-map .legend span {
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .mini-map .legend span::before {
+    content: ""; width: 7px; height: 7px; border-radius: 50%;
+  }
+  .mini-map .legend .in::before { background: var(--accent-green); }
+  .mini-map .legend .out::before { background: var(--accent-red); }
+
+  /* Weekly approvals banner */
+  .approvals-banner {
+    background: linear-gradient(180deg, rgba(245,158,11,.18), rgba(245,158,11,.08));
+    border: 1px solid rgba(245,158,11,.25);
+    border-radius: 16px;
+    padding: 12px 14px;
+    margin-top: 12px;
+    display: flex; align-items: center; gap: 10px;
+    cursor: pointer;
+    transition: background 150ms ease;
+  }
+  .approvals-banner:hover { background: rgba(245,158,11,.15); }
+  .approvals-banner .icon {
+    width: 36px; height: 36px;
+    border-radius: 12px;
+    background: rgba(245,158,11,.25);
+    color: var(--accent-amber);
+    display: grid; place-items: center;
+    flex: 0 0 auto;
+  }
+  .approvals-banner .icon svg { width: 20px; height: 20px; }
+  .approvals-banner .body { flex: 1; }
+  .approvals-banner .title { font-size: 13px; font-weight: 700; }
+  .approvals-banner .meta { font-size: 11px; color: var(--text-secondary); margin-top: 1px; }
+
+  /* Week submission card */
+  .week-submit {
+    background: var(--surface-card);
+    border-radius: 16px;
+    padding: 14px 16px;
+    margin-top: 12px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .week-submit .left { flex: 1; min-width: 0; }
+  .week-submit .title { font-size: 13px; font-weight: 700; }
+  .week-submit .sub { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+  .week-submit .btn {
+    background: var(--accent-blue);
+    color: #fff;
+    border: 0;
+    font-size: 12px; font-weight: 700;
+    padding: 8px 14px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 0.3px;
+    transition: filter 150ms ease;
+  }
+  .week-submit .btn:hover { filter: brightness(1.1); }
+  .week-submit .btn:disabled {
+    filter: grayscale(.5) brightness(.7);
+    cursor: default;
+  }
+  .week-submit .status-pill {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 999px;
+  }
+  .week-submit .status-pill.pending { background: rgba(245,158,11,.2); color: var(--accent-amber); }
+  .week-submit .status-pill.approved { background: rgba(16,185,129,.2); color: var(--accent-green-light); }
+
+  /* Approval row (in modal) */
+  .approval-row {
+    background: var(--surface-dark);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+  }
+  .approval-row .top {
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .approval-row .who { font-size: 13px; font-weight: 700; }
+  .approval-row .total {
+    font-size: 14px; font-weight: 700;
+    color: var(--accent-blue-bright);
+    font-variant-numeric: tabular-nums;
+  }
+  .approval-row .week { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+  .approval-row .actions {
+    display: flex; gap: 8px; margin-top: 10px;
+  }
+  .approval-row .actions button {
+    flex: 1;
+    font-family: inherit;
+    border: 0;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 12px; font-weight: 700;
+    cursor: pointer;
+    transition: filter 150ms ease;
+  }
+  .approval-row .approve { background: var(--accent-green); color: #fff; }
+  .approval-row .reject { background: rgba(239,68,68,.2); color: var(--accent-red-light); }
+  .approval-row .approve:hover, .approval-row .reject:hover { filter: brightness(1.1); }
+
+  /* Read-only badge */
+  .readonly-banner {
+    background: rgba(245,158,11,.1);
+    border: 1px dashed rgba(245,158,11,.35);
+    color: var(--accent-amber);
+    font-size: 11px;
+    padding: 6px 10px;
+    border-radius: 10px;
+    margin-top: 6px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    display: flex; gap: 6px; align-items: center;
+  }
+  .readonly-banner svg { width: 14px; height: 14px; }
+
+  /* Sidebar */
+  .side {
+    padding: 0 8px;
+  }
+  .phone-caption {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 12px;
+    margin-top: 10px;
+    font-weight: 600;
+  }
+  .phone-caption b { color: var(--text-primary); }
+  .info-panel {
+    margin-top: 16px;
+    background: var(--surface-dark);
+    border-radius: 16px;
+    padding: 16px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  .info-panel h3 {
+    margin: 0 0 8px;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .info-panel ul { margin: 0; padding-left: 18px; }
+  .info-panel li { margin: 4px 0; }
+  .info-panel code {
+    background: var(--surface-card);
+    padding: 1px 5px; border-radius: 4px;
+    font-size: 12px;
+  }
+
+  .todo-list { display: flex; flex-direction: column; gap: 6px; }
+  .todo-list .item {
+    display: flex; gap: 8px; align-items: flex-start;
+  }
+  .todo-list .check {
+    flex: 0 0 auto;
+    width: 16px; height: 16px; border-radius: 4px;
+    display: grid; place-items: center;
+    margin-top: 2px;
+  }
+  .todo-list .check.done { background: var(--accent-green); }
+  .todo-list .check.done::after { content: "✓"; color: #fff; font-size: 11px; font-weight: 700; }
+  .todo-list .check.discuss { background: rgba(148,163,184,.2); color: var(--text-secondary); border: 1px dashed var(--outline-soft); }
+  .todo-list .check.discuss::after { content: "?"; font-size: 11px; font-weight: 700; }
+  .todo-list .txt { font-size: 12px; }
+  .todo-list .txt b { color: var(--text-primary); }
 </style>
 </head>
 <body>
 
 <header class="page">
   <div>
-    <h1>Calendar summary — layout options</h1>
-    <p>Tap a calendar day to see the day-detail expansion. Swap role and option to compare.</p>
-  </div>
-  <div class="role-toggle" id="roleToggle">
-    <button data-role="admin" class="active">Admin</button>
-    <button data-role="employee">Employee</button>
+    <h1>PunchCard — interactive mockup</h1>
+    <p>Web-only simulation. Tap demo accounts to log in.</p>
   </div>
 </header>
-
 
 <div class="stage">
   <div class="phone">
     <div class="screen">
       <div class="topbar" id="topbarRoot"></div>
       <div class="scroll" id="scrollRoot"></div>
+      <div id="fabRoot"></div>
       <div class="toast-wrap" id="toastWrap"></div>
+      <div id="modalRoot"></div>
     </div>
   </div>
-  <div style="padding:0 8px">
-    <div class="phone-caption"><b>Live preview</b> · swap role and option on the left</div>
-    <div style="margin-top:16px; background: var(--surface-dark); border-radius:16px; padding:16px; color: var(--text-secondary); font-size:13px; line-height:1.55;">
-      <div style="color:var(--text-primary); font-weight:700; margin-bottom:8px;">Locked in</div>
-      <div style="display:flex; flex-direction:column; gap:6px;">
-        <div><b style="color:var(--accent-green-light)">Layout:</b> summary card below + per-employee breakdown</div>
-        <div><b style="color:var(--accent-green-light)">Day cell:</b> hours · staff count</div>
-        <div><b style="color:var(--accent-green-light)">Day detail:</b> table header (Employee · Time · Hours)</div>
+  <div class="side">
+    <div class="phone-caption"><b>Live preview</b></div>
+    <div class="info-panel">
+      <h3>What's implemented from the feedback list</h3>
+      <div class="todo-list">
+        <div class="item"><div class="check done"></div><div class="txt"><b>Admin stats below calendar</b> — summary card with per-employee breakdown</div></div>
+        <div class="item"><div class="check done"></div><div class="txt"><b>Full Spanish coverage</b> — every UI string translates, including stats labels</div></div>
+        <div class="item"><div class="check done"></div><div class="txt"><b>Map zoom tightened</b> — 2×2 tiles, less padding, pins stay closer to center</div></div>
+        <div class="item"><div class="check done"></div><div class="txt"><b>9-hour comment threshold</b> — shorter shifts require a note</div></div>
+        <div class="item"><div class="check done"></div><div class="txt"><b>Read-only user</b> — viewer role can browse but not edit</div></div>
+        <div class="item"><div class="check done"></div><div class="txt"><b>Weekly sign-off</b> — employees submit week, admin approves</div></div>
+        <div class="item"><div class="check done"></div><div class="txt"><b>Formatting cleanup</b> — calendar summary, day detail, typography</div></div>
+        <div class="item"><div class="check discuss"></div><div class="txt"><b>Storage options</b> — needs discussion (cloud sync vs local only)</div></div>
+        <div class="item"><div class="check discuss"></div><div class="txt"><b>Account creation</b> — currently admin-only; needs discussion</div></div>
       </div>
-      <div style="margin-top:12px; padding-top:10px; border-top:1px solid var(--outline-soft); font-size:12px;">
-        Tap a day to see the detail. Swap Admin/Employee to preview the employee view.
-      </div>
+    </div>
+    <div class="info-panel">
+      <h3>Demo accounts</h3>
+      <ul>
+        <li><b>admin</b> / admin — full access</li>
+        <li><b>maria</b> / 1234 — employee, has a pending week</li>
+        <li><b>jose</b> / 1234 — employee with shorter shifts to test 9-hr rule</li>
+        <li><b>viewer</b> / 1234 — read-only accountant role</li>
+      </ul>
     </div>
   </div>
 </div>
 
 <script>
-  // Shared state -------------------------------------------------
+  // =============================================================
+  // STATE
+  // =============================================================
   const state = {
-    role: "admin",
-    selectedDay: 10,
-    year: 2026,
-    month: 3,        // April (0-indexed)
+    currentUser: null,
+    screen: "login",
+    viewingEmployeeId: null,
+    nav: [],            // screen history for back button
     lang: "en",
-    clock: "idle",   // idle | in | out
+    // calendar
+    calYear: 2026,
+    calMonth: 3,
+    selectedDay: 10,
+    lastAnim: 0,
+    // clock flow (employee)
+    clock: "idle",
     clockIn: null,
     clockOut: null,
-    lastAnim: 0,
+    clockInCoord: null,
+    clockOutCoord: null,
+    comment: "",
+    // modals
+    modal: null,        // "addEmployee" | "approvals" | "submitWeek"
+    // flashing toast for banner animation
   };
 
-  // Employees
-  const employees = [
-    { id: 1, name: "Maria R.",  short: "M", color: "var(--emp-2)" }, // green
-    { id: 2, name: "Jose A.",   short: "J", color: "var(--emp-1)" }, // blue
-    { id: 3, name: "Luis F.",   short: "L", color: "var(--emp-3)" }, // amber
-    { id: 4, name: "Sofia P.",  short: "S", color: "var(--emp-5)" }, // violet
-  ];
-  const empById = Object.fromEntries(employees.map(e => [e.id, e]));
+  // =============================================================
+  // DATA
+  // =============================================================
 
-  // Strings
+  const users = [
+    { id: 1, username: "admin",  password: "admin", displayName: "Nathan F.", role: "admin",    color: "var(--emp-10)" },
+    { id: 2, username: "maria",  password: "1234",  displayName: "Maria R.",  role: "employee", color: "var(--emp-2)"  },
+    { id: 3, username: "jose",   password: "1234",  displayName: "Jose A.",   role: "employee", color: "var(--emp-1)"  },
+    { id: 4, username: "luis",   password: "1234",  displayName: "Luis F.",   role: "employee", color: "var(--emp-3)"  },
+    { id: 5, username: "sofia",  password: "1234",  displayName: "Sofia P.",  role: "employee", color: "var(--emp-5)"  },
+    { id: 6, username: "viewer", password: "1234",  displayName: "Accountant", role: "readonly", color: "var(--emp-6)" },
+  ];
+  const userById = Object.fromEntries(users.map(u => [u.id, u]));
+  const employees = () => users.filter(u => u.role === "employee");
+
+  // Shifts: id, empId, date (YYYY-MM-DD), start, end, hours, comment, coords
+  // Curated April 2026 data (roughly matches prior mockup)
+  let nextShiftId = 100;
+  const shifts = [];
+  function addShift({empId, date, start, end, comment="", loc}) {
+    const [sh, sm] = start.split(":").map(Number);
+    const [eh, em] = end.split(":").map(Number);
+    const hours = ((eh*60+em) - (sh*60+sm)) / 60;
+    shifts.push({
+      id: nextShiftId++,
+      empId, date, start, end, hours, comment,
+      clockIn: loc?.in || null,
+      clockOut: loc?.out || null,
+    });
+  }
+
+  // Fake business near 37.775, -122.419 (SF)
+  const BIZ = { lat: 37.7751, lng: -122.4189 };
+  function jitterLoc(r = 0.0004) {
+    return { lat: BIZ.lat + (Math.random()-0.5)*r, lng: BIZ.lng + (Math.random()-0.5)*r };
+  }
+  // Seed a few deterministic locations so map isn't flickery
+  const FIXED_LOCS = [
+    { in:{lat:37.77518, lng:-122.41878}, out:{lat:37.77530, lng:-122.41902} },
+    { in:{lat:37.77505, lng:-122.41915}, out:{lat:37.77495, lng:-122.41882} },
+    { in:{lat:37.77521, lng:-122.41872}, out:{lat:37.77508, lng:-122.41935} },
+    { in:{lat:37.77497, lng:-122.41901}, out:{lat:37.77534, lng:-122.41889} },
+    { in:{lat:37.77540, lng:-122.41920}, out:{lat:37.77510, lng:-122.41875} },
+    { in:{lat:37.77486, lng:-122.41868}, out:{lat:37.77529, lng:-122.41910} },
+  ];
+  let locIdx = 0;
+  const nextLoc = () => FIXED_LOCS[(locIdx++) % FIXED_LOCS.length];
+
+  // Seed April 2026 shifts
+  const aprilPattern = [
+    [1, 2, "07:30","15:30"],
+    [1, 2, "08:00","16:00"],
+    [2, 2, "09:00","17:00"],
+    [3, 2, "07:30","15:00"],
+    [3, 3, "08:30","17:30"],
+    [6, 2, "08:00","13:30", "Left early for dentist"],
+    [7, 3, "08:00","17:00"],
+    [7, 4, "09:00","15:00"],
+    [8, 2, "07:30","16:30"],
+    [8, 3, "08:00","17:00"],
+    [8, 5, "12:00","20:00"],
+    [9, 4, "07:00","15:30"],
+    [10, 2, "08:00","17:00"],
+    [10, 3, "08:00","16:00"],
+    [10, 4, "08:00","16:00"],
+    [10, 5, "10:00","18:00"],
+    [13, 2, "07:30","16:30"],
+    [13, 3, "08:00","16:00"],
+    [14, 3, "08:00","12:00", "Half day — appointment"],
+    [14, 4, "08:00","17:00"],
+    [15, 2, "08:00","16:00"],
+    [15, 5, "09:00","17:00"],
+    [16, 2, "07:30","17:00"],
+    [16, 3, "08:00","17:00"],
+    [16, 4, "09:00","15:00"],
+    [17, 2, "07:30","16:30"],
+    [17, 3, "08:00","16:00"],
+    [17, 4, "08:30","16:30"],
+    [17, 5, "10:00","18:00"],
+    [20, 2, "08:00","16:00"],
+    [20, 3, "08:00","16:00"],
+    [21, 4, "09:00","17:00"],
+    [21, 5, "09:00","17:00"],
+    [22, 2, "07:30","15:30"],
+    [22, 3, "08:00","17:00"],
+    [22, 4, "08:00","16:00"],
+    [23, 2, "08:00","16:00"],
+    [24, 2, "07:30","17:00"],
+    [24, 3, "08:00","16:30"],
+    [24, 5, "10:00","18:00"],
+    // jose with some short shifts to test 9-hr rule
+    [11, 3, "09:00","13:00", "School pickup — ran long"],
+    [18, 3, "10:00","18:30"],
+  ];
+  for (const [day, emp, start, end, comment] of aprilPattern) {
+    const dateStr = `2026-04-${String(day).padStart(2,"0")}`;
+    addShift({empId: emp, date: dateStr, start, end, comment: comment || "", loc: nextLoc()});
+  }
+
+  // Week approvals: weekStart (Sunday date) + employeeId -> status
+  // Maria has week 2026-04-05 pending, jose has 2026-04-12 submitted
+  const weekApprovals = [
+    { empId: 2, weekStart: "2026-04-05", status: "approved" },
+    { empId: 2, weekStart: "2026-04-12", status: "pending" },
+    { empId: 3, weekStart: "2026-04-12", status: "pending" },
+  ];
+
+  function weekStatus(empId, weekStart) {
+    const wa = weekApprovals.find(w => w.empId === empId && w.weekStart === weekStart);
+    return wa ? wa.status : null;
+  }
+  function setWeekStatus(empId, weekStart, status) {
+    const wa = weekApprovals.find(w => w.empId === empId && w.weekStart === weekStart);
+    if (wa) wa.status = status; else weekApprovals.push({ empId, weekStart, status });
+  }
+
+  // =============================================================
+  // LOCALIZATION
+  // =============================================================
   const strings = {
     en: {
+      appName: "PunchCard",
+      tagline: "Simple shift tracking",
       welcome: "Welcome,",
       admin: "ADMIN",
+      readonly: "READ-ONLY",
       employees: "Employees",
       registered: "registered",
       hours: "Hours", days: "Days", shifts: "Shifts", staff: "Staff", avgDay: "Avg/day",
@@ -1005,16 +1216,49 @@
       start: "Start", end: "End",
       today: "Today",
       noShifts: "No shifts",
-      history: "History opened",
-      logout: "Logging out…",
-      addEmployee: "Add employee dialog would open",
+      history: "History",
+      logout: "Sign out",
+      signIn: "Sign in",
+      username: "Username", password: "Password",
+      invalidCreds: "Wrong username or password",
+      addEmployee: "Add employee",
+      fullName: "Full name",
+      cancel: "Cancel", add: "Add", save: "Save",
       viewEmployee: "Viewing",
       shiftLogged: "Shift logged",
       hoursShort: "h",
+      comments: "Add a note…",
+      commentRequired: "A note is required for shifts under 9 hours",
+      commentLabel: "Note",
+      mapLegendIn: "Clock-in",
+      mapLegendOut: "Clock-out",
+      submitWeek: "Submit week",
+      weekSubmitted: "Week submitted",
+      weekPending: "Pending review",
+      weekApproved: "Approved",
+      pendingApprovals: "Pending approvals",
+      nPending: (n) => `${n} ${n===1?"week":"weeks"} awaiting your review`,
+      approve: "Approve", reject: "Reject",
+      approvalsTitle: "Weekly approvals",
+      noPending: "Nothing pending — all caught up.",
+      readonlyBanner: "Read-only — changes are disabled",
+      thisWeek: "This week",
+      weekRange: (from, to) => `${from} – ${to}`,
+      loggedHours: "Logged this week",
+      shiftSaved: "Shift saved",
+      weekApprovedToast: "Week approved",
+      weekRejectedToast: "Week sent back for edits",
+      viewHistory: "View history",
+      totalHrs: "Total hours",
+      untilNineHours: (rem) => `Need ${rem} more or leave a note`,
+      signOutConfirm: "Sign out?",
     },
     es: {
+      appName: "PunchCard",
+      tagline: "Seguimiento simple de turnos",
       welcome: "Bienvenido,",
-      admin: "ADMIN",
+      admin: "ADMINISTRADOR",
+      readonly: "SOLO LECTURA",
       employees: "Empleados",
       registered: "registrados",
       hours: "Horas", days: "Días", shifts: "Turnos", staff: "Equipo", avgDay: "Prom/día",
@@ -1025,98 +1269,61 @@
       start: "Inicio", end: "Fin",
       today: "Hoy",
       noShifts: "Sin turnos",
-      history: "Historial abierto",
-      logout: "Cerrando sesión…",
-      addEmployee: "Se abriría el diálogo de agregar empleado",
+      history: "Historial",
+      logout: "Cerrar sesión",
+      signIn: "Iniciar sesión",
+      username: "Usuario", password: "Contraseña",
+      invalidCreds: "Usuario o contraseña incorrectos",
+      addEmployee: "Agregar empleado",
+      fullName: "Nombre completo",
+      cancel: "Cancelar", add: "Agregar", save: "Guardar",
       viewEmployee: "Viendo a",
       shiftLogged: "Turno registrado",
       hoursShort: "h",
+      comments: "Añade una nota…",
+      commentRequired: "Se requiere una nota para turnos menores a 9 horas",
+      commentLabel: "Nota",
+      mapLegendIn: "Entrada",
+      mapLegendOut: "Salida",
+      submitWeek: "Enviar semana",
+      weekSubmitted: "Semana enviada",
+      weekPending: "Pendiente de revisión",
+      weekApproved: "Aprobada",
+      pendingApprovals: "Aprobaciones pendientes",
+      nPending: (n) => `${n} ${n===1?"semana espera":"semanas esperan"} tu revisión`,
+      approve: "Aprobar", reject: "Rechazar",
+      approvalsTitle: "Aprobaciones semanales",
+      noPending: "Nada pendiente — al día.",
+      readonlyBanner: "Solo lectura — cambios deshabilitados",
+      thisWeek: "Esta semana",
+      weekRange: (from, to) => `${from} – ${to}`,
+      loggedHours: "Horas registradas esta semana",
+      shiftSaved: "Turno guardado",
+      weekApprovedToast: "Semana aprobada",
+      weekRejectedToast: "Semana devuelta para editar",
+      viewHistory: "Ver historial",
+      totalHrs: "Horas totales",
+      untilNineHours: (rem) => `Faltan ${rem} más o deja una nota`,
+      signOutConfirm: "¿Cerrar sesión?",
     },
   };
-  const tr = (k) => strings[state.lang][k] ?? k;
-
-  // Month label (localized)
-  function monthLabelText() {
-    const d = new Date(state.year, state.month, 1);
-    const fmt = new Intl.DateTimeFormat(state.lang === "es" ? "es-ES" : "en-US",
-      { month: "long", year: "numeric" });
-    return fmt.format(d).replace(/^./, c => c.toUpperCase());
+  function tr(k, ...args) {
+    const v = strings[state.lang][k];
+    if (typeof v === "function") return v(...args);
+    return v ?? k;
   }
+  const locale = () => state.lang === "es" ? "es-ES" : "en-US";
 
-  // Deterministic pseudo-random for seed-based data generation
-  function seeded(seed) {
-    let s = seed | 0;
-    return () => { s = (s * 1664525 + 1013904223) | 0; return ((s >>> 0) % 10000) / 10000; };
-  }
-
-  // Generate shifts for a given month. April 2026 uses the curated set.
-  const aprilData = {
-    1:  [ s(1, "07:30","15:30"), s(2,"08:00","16:00") ],
-    2:  [ s(1,"08:00","16:00"), s(2,"09:00","17:00"), s(3,"10:00","14:00") ],
-    3:  [ s(1,"07:30","15:00"), s(2,"08:30","17:30") ],
-    6:  [ s(1,"08:00","13:30","Left early for dentist") ],
-    7:  [ s(2,"08:00","17:00"), s(3,"09:00","15:00") ],
-    8:  [ s(1,"07:30","16:30"), s(2,"08:00","17:00"), s(4,"12:00","20:00") ],
-    9:  [ s(3,"07:00","15:30") ],
-    10: [ s(1,"08:00","17:00"), s(2,"08:00","16:00"), s(3,"08:00","16:00"), s(4,"10:00","18:00") ],
-    13: [ s(1,"07:30","16:30"), s(2,"08:00","16:00") ],
-    14: [ s(2,"08:00","12:00","Half day - appt"), s(3,"08:00","17:00") ],
-    15: [ s(1,"08:00","16:00"), s(4,"09:00","17:00") ],
-    16: [ s(1,"07:30","17:00"), s(2,"08:00","17:00"), s(3,"09:00","15:00") ],
-    17: [ s(1,"07:30","16:30"), s(2,"08:00","16:00"), s(3,"08:30","16:30"), s(4,"10:00","18:00") ],
-    20: [ s(1,"08:00","16:00"), s(2,"08:00","16:00") ],
-    21: [ s(3,"09:00","17:00"), s(4,"09:00","17:00") ],
-    22: [ s(1,"07:30","15:30"), s(2,"08:00","17:00"), s(3,"08:00","16:00") ],
-    23: [ s(1,"08:00","16:00") ],
-    24: [ s(1,"07:30","17:00"), s(2,"08:00","16:30"), s(4,"10:00","18:00") ],
-  };
-  function s(empId, start, end, comment="") {
-    const [sh, sm] = start.split(":").map(Number);
-    const [eh, em] = end.split(":").map(Number);
-    const hours = ((eh*60+em) - (sh*60+sm)) / 60;
-    return { empId, start, end, hours, comment };
-  }
-
-  function generateMonth(year, month) {
-    if (year === 2026 && month === 3) return aprilData;
-    const rng = seeded(year * 100 + month + 1);
-    const daysInMonth = new Date(year, month+1, 0).getDate();
-    const out = {};
-    for (let d = 1; d <= daysInMonth; d++) {
-      const dow = new Date(year, month, d).getDay();
-      // Fewer weekend shifts
-      const p = (dow === 0 || dow === 6) ? 0.25 : 0.75;
-      if (rng() > p) continue;
-      const nEmp = 1 + Math.floor(rng() * employees.length);
-      const picks = [...employees].sort(() => rng() - 0.5).slice(0, nEmp);
-      out[d] = picks.map(e => {
-        const startHour = 7 + Math.floor(rng() * 3);
-        const startMin = rng() < 0.5 ? 0 : 30;
-        const len = 4 + Math.floor(rng() * 6);
-        const endH = Math.min(23, startHour + len);
-        const pad = n => String(n).padStart(2,"0");
-        return s(e.id, `${pad(startHour)}:${pad(startMin)}`, `${pad(endH)}:${pad(startMin)}`);
-      });
-    }
-    return out;
-  }
-
-  // Current-month data accessor
-  function currentData() { return generateMonth(state.year, state.month); }
-
-  function currentToday() {
-    if (state.year === 2026 && state.month === 3) return new Date(2026, 3, 14);
-    return new Date(state.year, state.month, 1);
-  }
-
-  // Render helpers -----------------------------------------------
+  // =============================================================
+  // SHARED HELPERS
+  // =============================================================
   function el(tag, attrs={}, ...children) {
     const n = document.createElement(tag);
     for (const [k,v] of Object.entries(attrs)) {
       if (k === "class") n.className = v;
       else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
       else if (k === "html") n.innerHTML = v;
-      else n.setAttribute(k, v);
+      else if (v != null) n.setAttribute(k, v);
     }
     for (const c of children) {
       if (c == null) continue;
@@ -1124,106 +1331,204 @@
     }
     return n;
   }
-
-  function monthStats() {
-    let totalHours = 0, totalShifts = 0;
-    const days = new Set();
-    const empHours = {};
-    for (const [dayStr, shifts] of Object.entries(currentData())) {
-      for (const sh of shifts) {
-        totalHours += sh.hours;
-        totalShifts++;
-        days.add(dayStr);
-        empHours[sh.empId] = (empHours[sh.empId] || 0) + sh.hours;
-      }
+  function svg(paths, w=20) {
+    const ns = "http://www.w3.org/2000/svg";
+    const s = document.createElementNS(ns, "svg");
+    s.setAttribute("viewBox","0 0 24 24");
+    s.setAttribute("width", String(w));
+    s.setAttribute("height", String(w));
+    s.setAttribute("fill","none"); s.setAttribute("stroke","currentColor");
+    s.setAttribute("stroke-width","2"); s.setAttribute("stroke-linecap","round");
+    s.setAttribute("stroke-linejoin","round");
+    for (const d of paths.split("|")) {
+      const p = document.createElementNS(ns, "path");
+      p.setAttribute("d", d);
+      s.appendChild(p);
     }
-    return {
-      totalHours, totalShifts,
-      activeDays: days.size,
-      employees: Object.keys(empHours).length,
-      avgPerDay: days.size ? totalHours / days.size : 0,
-      empHours,
+    return s;
+  }
+  function ICON(name, w=20) {
+    const paths = {
+      chevLeft: "M15 18l-6-6 6-6",
+      chevRight: "M9 18l6-6-6-6",
+      history: "M3 3v5h5|M3.05 13a9 9 0 1 0 .5-5|M12 7v5l3 3",
+      logout: "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4|M16 17l5-5-5-5|M21 12H9",
+      back: "M19 12H5|M12 19l-7-7 7-7",
+      plus: "M12 5v14|M5 12h14",
+      addUser: "M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2|M8.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8|M20 8v6|M23 11h-6",
+      check: "M5 13l4 4L19 7",
+      x: "M18 6L6 18|M6 6l12 12",
+      clock: "M12 6v6l4 2",
+      play: "M8 5v14l11-7z",
+      stop: "M6 6h12v12H6z",
+      lock: "M5 11h14v11H5z|M8 11V7a4 4 0 1 1 8 0v4",
+      inbox: "M22 12h-6l-2 3h-4l-2-3H2|M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z",
+      eye: "M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z|M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
+      mapPin: "M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z|M12 8a2 2 0 1 0 0 4 2 2 0 0 0 0-4z",
     };
+    return svg(paths[name], w);
   }
 
-  function empMonthStats(empId) {
-    let totalHours = 0, totalShifts = 0;
-    const days = new Set();
-    for (const [dayStr, shifts] of Object.entries(currentData())) {
-      for (const sh of shifts) {
-        if (sh.empId !== empId) continue;
-        totalHours += sh.hours;
-        totalShifts++;
-        days.add(dayStr);
-      }
+  function fmt12(hhmm) {
+    const [h, m] = hhmm.split(":").map(Number);
+    const ampm = h >= 12 ? "PM" : "AM";
+    const hr = ((h + 11) % 12) + 1;
+    return `${hr}:${String(m).padStart(2,"0")} ${ampm}`;
+  }
+  function fmtTimeDate(d) {
+    return d.toLocaleTimeString(locale(), { hour: "numeric", minute: "2-digit" });
+  }
+  function fmtDateLong(dateStr) {
+    const d = new Date(dateStr + "T00:00:00");
+    return d.toLocaleDateString(locale(),
+      { weekday:"long", month:"long", day:"numeric" }).replace(/^./, c => c.toUpperCase());
+  }
+  function fmtDateShort(dateStr) {
+    const d = new Date(dateStr + "T00:00:00");
+    return d.toLocaleDateString(locale(), { month:"short", day:"numeric" });
+  }
+  function weekStartOf(dateStr) {
+    const d = new Date(dateStr + "T00:00:00");
+    const dow = d.getDay();
+    d.setDate(d.getDate() - dow); // Sunday
+    return d.toISOString().slice(0, 10);
+  }
+  function weekEndOf(dateStr) {
+    const d = new Date(dateStr + "T00:00:00");
+    const dow = d.getDay();
+    d.setDate(d.getDate() + (6 - dow));
+    return d.toISOString().slice(0, 10);
+  }
+  function thisWeekStart() {
+    // Pretend today is April 13, 2026 so the demo makes sense
+    return weekStartOf("2026-04-13");
+  }
+  function shiftsForWeek(empId, weekStartStr) {
+    const start = new Date(weekStartStr + "T00:00:00");
+    const end = new Date(start); end.setDate(end.getDate() + 7);
+    return shifts.filter(s => s.empId === empId &&
+      new Date(s.date + "T00:00:00") >= start &&
+      new Date(s.date + "T00:00:00") < end);
+  }
+  function pendingApprovals() {
+    return weekApprovals.filter(w => w.status === "pending");
+  }
+
+  // =============================================================
+  // TOAST
+  // =============================================================
+  function toast(msg, opts={}) {
+    const { kind="info", pill } = opts;
+    const wrap = document.getElementById("toastWrap");
+    const node = el("div", { class: `toast ${kind}` });
+    if (pill) node.appendChild(el("span", {class:"pill"}, pill));
+    node.appendChild(el("span", {}, msg));
+    wrap.appendChild(node);
+    setTimeout(() => {
+      node.classList.add("leave");
+      node.addEventListener("animationend", () => node.remove(), { once: true });
+    }, 2400);
+  }
+
+  // =============================================================
+  // NAV
+  // =============================================================
+  function navTo(screen, extra={}) {
+    state.nav.push({ screen: state.screen, selectedDay: state.selectedDay, viewingEmployeeId: state.viewingEmployeeId });
+    state.screen = screen;
+    Object.assign(state, extra);
+    state.lastAnim = 0;
+    render();
+  }
+  function navBack() {
+    const prev = state.nav.pop();
+    if (prev) {
+      state.screen = prev.screen;
+      state.selectedDay = prev.selectedDay ?? state.selectedDay;
+      state.viewingEmployeeId = prev.viewingEmployeeId ?? null;
     }
-    return { totalHours, totalShifts, activeDays: days.size, avgPerDay: days.size ? totalHours/days.size : 0 };
+    render();
+  }
+  function login(u) {
+    state.currentUser = u;
+    state.nav = [];
+    state.selectedDay = 10;
+    state.calYear = 2026; state.calMonth = 3;
+    state.screen = u.role === "admin" || u.role === "readonly" ? "admin_home" : "employee_home";
+    render();
+  }
+  function logout() {
+    state.currentUser = null;
+    state.screen = "login";
+    state.nav = [];
+    state.modal = null;
+    state.clock = "idle"; state.clockIn = state.clockOut = null; state.comment = "";
+    render();
   }
 
-  // Calendar -----------------------------------------------------
-  function renderCalendar() {
-    const firstOfMonth = new Date(state.year, state.month, 1);
-    const daysInMonth = new Date(state.year, state.month+1, 0).getDate();
-    const startOffset = firstOfMonth.getDay(); // 0=Sun
-    const data = currentData();
-    const today = currentToday();
+  // =============================================================
+  // CALENDAR / DAY DETAIL
+  // =============================================================
+  function dataByDay(year, month, scopeEmpId=null) {
+    const out = {};
+    for (const s of shifts) {
+      const d = new Date(s.date + "T00:00:00");
+      if (d.getFullYear() !== year || d.getMonth() !== month) continue;
+      if (scopeEmpId && s.empId !== scopeEmpId) continue;
+      (out[d.getDate()] = out[d.getDate()] || []).push(s);
+    }
+    return out;
+  }
+
+  function renderCalendar(scopeEmpId=null) {
+    const firstOfMonth = new Date(state.calYear, state.calMonth, 1);
+    const daysInMonth = new Date(state.calYear, state.calMonth+1, 0).getDate();
+    const startOffset = firstOfMonth.getDay();
+    const data = dataByDay(state.calYear, state.calMonth, scopeEmpId);
+    const today = new Date(2026, 3, 13); // fixed "today" for demo
 
     const dowKey = state.lang === "es"
       ? ["D","L","M","M","J","V","S"]
       : ["S","M","T","W","T","F","S"];
-    const dows = el("div", {class:"dows"},
-      ...dowKey.map(d => el("span", {}, d))
-    );
-
+    const dows = el("div", {class:"dows"}, ...dowKey.map(d => el("span", {}, d)));
     const grid = el("div", {class:"grid"});
     const maxHrs = Math.max(0, ...Object.values(data).map(arr => arr.reduce((s,x)=>s+x.hours,0)));
     const totalCells = startOffset + daysInMonth;
     const rows = Math.ceil(totalCells / 7);
 
-    // Inline day expansion is used (Option E keeps it)
-    const useInlineExpansion = true;
-
-    // Build row-by-row so we can insert the expansion after the selected row
     for (let r = 0; r < rows; r++) {
-      const rowStart = r*7;
       for (let c = 0; c < 7; c++) {
-        const cellIdx = rowStart + c;
+        const cellIdx = r*7 + c;
         const dayNum = cellIdx - startOffset + 1;
         if (dayNum < 1 || dayNum > daysInMonth) {
           grid.appendChild(el("div", {class:"cell empty"}));
           continue;
         }
-        const shifts = data[dayNum] || [];
-        const dayHours = shifts.reduce((s,x)=>s+x.hours,0);
-        const hasShifts = shifts.length > 0;
-        const isToday = dayNum === today.getDate();
+        const dayShifts = data[dayNum] || [];
+        const dayHours = dayShifts.reduce((s,x)=>s+x.hours,0);
+        const hasShifts = dayShifts.length > 0;
+        const isToday = today.getFullYear() === state.calYear && today.getMonth() === state.calMonth && dayNum === today.getDate();
         const isSelected = state.selectedDay === dayNum;
 
         const inner = el("div", {class:"inner"});
         inner.appendChild(el("span", {class:"num"}, String(dayNum)));
 
-        // Per-employee totals for this day
         const byEmp = hasShifts
-          ? Object.entries(shifts.reduce((m, sh) => {
-              m[sh.empId] = (m[sh.empId]||0) + sh.hours;
-              return m;
-            }, {})).sort((a,b)=>b[1]-a[1])
+          ? Object.entries(dayShifts.reduce((m,sh)=>{m[sh.empId]=(m[sh.empId]||0)+sh.hours;return m;}, {}))
+              .sort((a,b)=>b[1]-a[1])
           : [];
         const empCount = byEmp.length;
 
-        // Hours + staff count readout (employee sees their own hours; no staff count)
-        const displayedHours = state.role === "employee"
-          ? (byEmp.find(([id])=>Number(id)===1)?.[1] || 0)
+        const displayedHours = scopeEmpId
+          ? (byEmp.find(([id])=>Number(id)===scopeEmpId)?.[1] || 0)
           : dayHours;
         const showHoursText = displayedHours >= 1
-          ? `${Math.round(displayedHours)}h`
-          : displayedHours > 0 ? `${displayedHours.toFixed(1)}h` : "";
+          ? `${Math.round(displayedHours)}${tr("hoursShort")}`
+          : displayedHours > 0 ? `${displayedHours.toFixed(1)}${tr("hoursShort")}` : "";
 
         if (hasShifts && showHoursText) {
-          const pair = el("span", {class:"pair"},
-            el("span", {}, showHoursText),
-          );
-          if (state.role === "admin" && empCount > 0) {
+          const pair = el("span", {class:"pair"}, el("span", {}, showHoursText));
+          if (!scopeEmpId && empCount > 0) {
             pair.appendChild(el("span", {class:"mid"}, "·"));
             pair.appendChild(el("span", {class:"emp"}, String(empCount)));
           }
@@ -1247,42 +1552,30 @@
         grid.appendChild(cell);
       }
 
-      // Inline row-end expansion (for options that use it)
-      if (useInlineExpansion && state.selectedDay != null) {
-        const dayNum = state.selectedDay;
-        const row = Math.floor((dayNum - 1 + startOffset) / 7);
+      if (state.selectedDay != null) {
+        const row = Math.floor((state.selectedDay - 1 + startOffset) / 7);
         if (row === r) {
-          grid.appendChild(el("div", {class:"empty", style:"grid-column: span 7;"},
-            renderDayDetail(dayNum)
-          ));
+          grid.appendChild(el("div", {style:"grid-column: span 7;"},
+            renderDayDetail(state.selectedDay, scopeEmpId)));
         }
       }
     }
-
     return el("div", {class:"cal"}, dows, grid);
   }
 
-  function renderDayDetail(dayNum) {
-    const shifts = currentData()[dayNum] || [];
-    const d = new Date(state.year, state.month, dayNum);
-    const label = d.toLocaleDateString(state.lang === "es" ? "es-ES" : "en-US",
+  function renderDayDetail(dayNum, scopeEmpId=null) {
+    const data = dataByDay(state.calYear, state.calMonth, scopeEmpId);
+    const dayShifts = data[dayNum] || [];
+    const d = new Date(state.calYear, state.calMonth, dayNum);
+    const label = d.toLocaleDateString(locale(),
       { weekday:"long", month:"long", day:"numeric" }).replace(/^./, c => c.toUpperCase());
-
-    const wrap = el("div", {class:"day-detail"},
-      el("div", {class:"date-label"}, label)
-    );
-    if (shifts.length === 0) {
+    const wrap = el("div", {class:"day-detail"}, el("div", {class:"date-label"}, label));
+    if (!dayShifts.length) {
       wrap.appendChild(el("div", {class:"no-shifts"}, tr("noShifts")));
       return wrap;
     }
-
-    // Group shifts by employee (employee role only sees own)
     const groups = {};
-    for (const sh of shifts) {
-      if (state.role === "employee" && sh.empId !== 1) continue;
-      (groups[sh.empId] = groups[sh.empId] || []).push(sh);
-    }
-
+    for (const sh of dayShifts) (groups[sh.empId] = groups[sh.empId] || []).push(sh);
     const t = el("div", {class:"dd-table"});
     t.appendChild(el("div", {class:"head"},
       el("span", {}, state.lang === "es" ? "Empleado" : "Employee"),
@@ -1290,13 +1583,12 @@
       el("span", {class:"r"}, state.lang === "es" ? "Horas" : "Hours"),
     ));
     for (const [empIdStr, list] of Object.entries(groups)) {
-      const empId = Number(empIdStr);
-      const emp = empById[empId];
+      const emp = userById[Number(empIdStr)];
       for (const sh of list) {
         t.appendChild(el("div", {class:"trow"},
           el("span", {class:"nm"},
             el("span", {class:"sw", style:`background:${emp.color}`}),
-            el("span", {}, emp.name),
+            el("span", {}, emp.displayName),
           ),
           el("span", {class:"tm"}, `${fmt12(sh.start)} – ${fmt12(sh.end)}`),
           el("span", {class:"hrs", style:`color:${emp.color}`}, sh.hours.toFixed(1)),
@@ -1308,285 +1600,740 @@
     return wrap;
   }
 
-  function fmt12(hhmm) {
-    const [h, m] = hhmm.split(":").map(Number);
-    const ampm = h >= 12 ? "PM" : "AM";
-    const hr = ((h + 11) % 12) + 1;
-    return `${hr}:${String(m).padStart(2,"0")} ${ampm}`;
-  }
-
-  // Month summary widgets ---------------------------------------
-  function summaryCard() {
-    const st = monthStats();
-    if (state.role === "employee") {
-      const me = empMonthStats(1);
-      return el("div", {class:"info-card"},
-        el("div", {class:"row"},
-          stat("plain", me.totalHours.toFixed(1), tr("hours")),
-          stat("plain", String(me.activeDays), tr("days")),
-          stat("plain", me.avgPerDay.toFixed(1), tr("avgDay")),
-        )
-      );
+  // Summary card
+  function monthStats(scopeEmpId=null) {
+    const data = dataByDay(state.calYear, state.calMonth, scopeEmpId);
+    let totalHours = 0, totalShifts = 0;
+    const days = new Set();
+    const empHours = {};
+    for (const [dayStr, arr] of Object.entries(data)) {
+      for (const sh of arr) {
+        totalHours += sh.hours; totalShifts++;
+        days.add(dayStr);
+        empHours[sh.empId] = (empHours[sh.empId] || 0) + sh.hours;
+      }
     }
-    return el("div", {class:"info-card"},
-      el("div", {class:"row"},
-        stat("blue",  st.totalHours.toFixed(0), tr("hours")),
-        stat("green", String(st.activeDays), tr("days")),
-        stat("amber", String(st.totalShifts), tr("shifts")),
-        stat("plain", String(st.employees), tr("staff")),
-      )
-    );
+    return {
+      totalHours, totalShifts,
+      activeDays: days.size,
+      employees: Object.keys(empHours).length,
+      avgPerDay: days.size ? totalHours / days.size : 0,
+      empHours,
+    };
   }
   function stat(kind, value, label) {
     return el("div", {class:`stat ${kind}`},
       el("div", {class:"value"}, value),
-      el("div", {class:"label"}, label)
+      el("div", {class:"label"}, label),
     );
   }
-
-  function summaryCardWithBreakdown() {
-    const st = monthStats();
-    const base = summaryCard();
-    if (state.role !== "admin") return base;
+  function summaryCard(scopeEmpId=null) {
+    const st = monthStats(scopeEmpId);
+    if (scopeEmpId) {
+      return el("div", {class:"info-card"},
+        el("div", {class:"row"},
+          stat("plain", st.totalHours.toFixed(1), tr("hours")),
+          stat("plain", String(st.activeDays), tr("days")),
+          stat("plain", st.avgPerDay.toFixed(1), tr("avgDay")),
+        )
+      );
+    }
+    const card = el("div", {class:"info-card legend"});
+    card.appendChild(el("div", {class:"row"},
+      stat("blue",  st.totalHours.toFixed(0), tr("hours")),
+      stat("green", String(st.activeDays), tr("days")),
+      stat("amber", String(st.totalShifts), tr("shifts")),
+      stat("plain", String(st.employees), tr("staff")),
+    ));
     const sorted = Object.entries(st.empHours).sort((a,b)=>b[1]-a[1]);
-    const max = Math.max(...sorted.map(([,h])=>h));
-    const list = el("div", {class:"emp-breakdown"});
+    const maxH = Math.max(...sorted.map(([,h])=>h), 1);
+    const list = el("div", {class:"legend-list emp-breakdown"});
     for (const [empIdStr, hrs] of sorted) {
-      const empId = Number(empIdStr);
-      const emp = empById[empId];
-      list.appendChild(el("div", {class:"row"},
+      const emp = userById[Number(empIdStr)];
+      list.appendChild(el("div", {class:"brow"},
         el("div", {class:"swatch", style:`background:${emp.color}`}),
-        el("div", {class:"name"}, emp.name),
-        el("div", {class:"meter"}, el("span", {style:`width:${(hrs/max)*100}%; background:${emp.color}`})),
-        el("div", {class:"hrs", style:`color:${emp.color}`}, hrs.toFixed(1))
+        el("div", {class:"name"}, emp.displayName),
+        el("div", {class:"meter"}, el("span", {style:`width:${(hrs/maxH)*100}%; background:${emp.color}`})),
+        el("div", {class:"hrs", style:`color:${emp.color}`}, hrs.toFixed(1)),
       ));
     }
-    base.classList.add("legend");
-    base.appendChild(list);
-    return base;
+    card.appendChild(list);
+    return card;
   }
 
-  // Toast --------------------------------------------------------
-  function toast(message, { kind = "info", pill } = {}) {
-    const wrap = document.getElementById("toastWrap");
-    const node = el("div", {class:`toast ${kind}`});
-    if (pill) node.appendChild(el("span", {class:"pill"}, pill));
-    node.appendChild(el("span", {}, message));
-    wrap.appendChild(node);
-    setTimeout(() => {
-      node.classList.add("leave");
-      node.addEventListener("animationend", () => node.remove(), { once: true });
-    }, 2400);
-  }
-
-  // Topbar (dynamic) ---------------------------------------------
+  // =============================================================
+  // TOPBAR + FAB
+  // =============================================================
   function renderTopbar() {
     const root = document.getElementById("topbarRoot");
     root.innerHTML = "";
-    const langPill = el("span", {class:"lang-pill", onclick: onToggleLang},
-      state.lang === "en" ? "EN" : "ES");
-    root.appendChild(langPill);
-    if (state.role === "employee") {
-      const history = el("div", {class:"icon-btn pressable", title:"History", onclick: () => toast(tr("history"), {kind:"info", pill:"HISTORY"})},
-        svg("M3 3v5h5 M3.05 13a9 9 0 1 0 .5-5 M12 7v5l3 3"));
-      root.appendChild(history);
+    if (state.screen === "login") return;
+
+    const hasBack = state.nav.length > 0;
+    if (hasBack) {
+      root.appendChild(el("div", { class:"back", onclick: navBack }, ICON("back")));
     } else {
-      const add = el("div", {class:"icon-btn pressable", title:"Add employee",
-        onclick: () => toast(tr("addEmployee"), {kind:"info", pill:"+"})},
-        svg("M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M8.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8 M20 8v6 M23 11h-6"));
-      root.appendChild(add);
+      root.appendChild(el("div", { style:"width:38px" }));
     }
-    const logout = el("div", {class:"icon-btn pressable", title:"Logout",
-      onclick: () => toast(tr("logout"), {kind:"warn", pill:"LOGOUT"})},
-      svg("M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4 M16 17l5-5-5-5 M21 12H9"));
-    root.appendChild(logout);
+
+    // Title in middle of topbar for secondary screens
+    if (state.screen === "history") {
+      root.appendChild(el("div", {class:"title"}, tr("history")));
+    } else if (state.screen === "admin_employee") {
+      const emp = userById[state.viewingEmployeeId];
+      root.appendChild(el("div", {class:"title"}, emp?.displayName || ""));
+    } else {
+      root.appendChild(el("div", {class:"title"}, ""));
+    }
+
+    root.appendChild(el("div", { class:"spacer" }));
+
+    root.appendChild(el("span", {
+      class:"lang-pill",
+      onclick: () => { state.lang = state.lang === "en" ? "es" : "en"; render(); }
+    }, state.lang.toUpperCase()));
+
+    if (state.screen === "employee_home") {
+      root.appendChild(el("div", {
+        class:"icon-btn", title: tr("history"),
+        onclick: () => navTo("history")
+      }, ICON("history")));
+    }
+    root.appendChild(el("div", {
+      class:"icon-btn", title: tr("logout"),
+      onclick: () => {
+        if (confirm(tr("signOutConfirm"))) logout();
+      }
+    }, ICON("logout")));
   }
 
-  function svg(paths) {
-    const ns = "http://www.w3.org/2000/svg";
-    const s = document.createElementNS(ns, "svg");
-    s.setAttribute("viewBox","0 0 24 24"); s.setAttribute("class","ic");
-    s.setAttribute("fill","none"); s.setAttribute("stroke","currentColor");
-    for (const d of paths.split("M").filter(Boolean)) {
-      const p = document.createElementNS(ns, "path");
-      p.setAttribute("d","M"+d.trim());
-      s.appendChild(p);
+  function renderFab() {
+    const root = document.getElementById("fabRoot");
+    root.innerHTML = "";
+    if (state.screen === "admin_home" && state.currentUser?.role === "admin") {
+      root.appendChild(el("button", {
+        class:"fab", title: tr("addEmployee"),
+        onclick: () => { state.modal = "addEmployee"; render(); },
+      }, ICON("addUser", 24)));
     }
-    return s;
   }
 
-  // Button actions -----------------------------------------------
-  function onToggleLang() {
-    state.lang = state.lang === "en" ? "es" : "en";
-    render();
-    toast(state.lang === "es" ? "Idioma: Español" : "Language: English", { pill: state.lang.toUpperCase() });
-  }
-  function onPrevMonth() {
-    if (state.month === 0) { state.month = 11; state.year--; } else state.month--;
-    state.selectedDay = null; state.lastAnim = -1; render();
-  }
-  function onNextMonth() {
-    if (state.month === 11) { state.month = 0; state.year++; } else state.month++;
-    state.selectedDay = null; state.lastAnim = 1; render();
-  }
+  // =============================================================
+  // SCREENS
+  // =============================================================
+  function renderLogin() {
+    const s = strings[state.lang];
+    const root = document.getElementById("scrollRoot");
+    root.innerHTML = "";
+    root.className = "scroll";
 
-  // Clock flow (employee) ----------------------------------------
-  function fmtTime(d) {
-    return d.toLocaleTimeString(state.lang === "es" ? "es-ES" : "en-US",
-      { hour: "numeric", minute: "2-digit" });
-  }
-  function onClockIn() {
-    state.clock = "in"; state.clockIn = new Date(); render();
-  }
-  function onClockOut() {
-    state.clock = "out"; state.clockOut = new Date(); render();
-  }
-  function onSubmitShift() {
-    state.clock = "idle"; state.clockIn = null; state.clockOut = null;
-    toast(tr("shiftLogged"), { kind:"success", pill:"✓" });
-    render();
-  }
-  function clockSection() {
-    if (state.clock === "idle") {
-      return el("button", {class:"big-cta clock-in", onclick: onClockIn},
-        svg("M8 5v14l11-7z"),
-        el("div", {}, tr("clockIn"))
-      );
+    let errorBox = null;
+    const userIn = el("input", { placeholder: s.username, autocomplete:"username" });
+    const passIn = el("input", { placeholder: s.password, type:"password", autocomplete:"current-password" });
+
+    function attempt(username, password) {
+      const u = users.find(x => x.username === username && x.password === password);
+      if (!u) {
+        if (!errorBox) errorBox = el("div", {class:"err"}, s.invalidCreds);
+        form.insertBefore(errorBox, goBtn);
+        errorBox.textContent = s.invalidCreds;
+        return;
+      }
+      login(u);
     }
-    if (state.clock === "in") {
-      const wrap = el("div", {},
-        el("div", {class:"clock-card"},
-          el("div", {class:"pulse"}),
-          el("div", {style:"flex:1"},
-            el("div", {class:"label"}, tr("clockedInAt")),
-            el("div", {class:"time"}, fmtTime(state.clockIn)),
-          )
-        )
-      );
-      wrap.appendChild(el("div", {style:"height:14px"}));
-      wrap.appendChild(el("button", {class:"big-cta clock-out", onclick: onClockOut},
-        svg("M6 6h12v12H6z"),
-        el("div", {}, tr("clockOut"))
+
+    const goBtn = el("button", {
+      class:"go",
+      onclick: (e) => { e.preventDefault(); attempt(userIn.value.trim(), passIn.value); }
+    }, s.signIn);
+
+    const form = el("form", {class:"login-form", onsubmit: (e) => { e.preventDefault(); attempt(userIn.value.trim(), passIn.value); }},
+      userIn, passIn, goBtn);
+
+    const demo = el("div", {class:"demo-accounts"},
+      el("div", {class:"demo-title"}, state.lang === "es" ? "Cuentas de demostración" : "Demo accounts"),
+    );
+    [
+      { u:"admin", p:"admin", label: s.admin, kind:"admin" },
+      { u:"maria", p:"1234",  label: "Maria R.", kind:"emp" },
+      { u:"jose",  p:"1234",  label: "Jose A.",  kind:"emp" },
+      { u:"viewer", p:"1234", label: s.readonly, kind:"readonly" },
+    ].forEach(({u,p,label,kind}) => {
+      demo.appendChild(el("button", {
+        class:"demo-chip",
+        onclick: (e) => { e.preventDefault(); attempt(u, p); }
+      },
+        el("span", {html: `<b>${u}</b> / ${p}`}),
+        el("span", {class:`tag ${kind}`}, label),
       ));
-      return wrap;
-    }
-    // state.clock === "out"
-    const diffMin = (state.clockOut - state.clockIn) / 60000;
-    const hrs = diffMin / 60;
-    const wrap = el("div", {});
-    wrap.appendChild(el("div", {class:"shift-summary"},
-      el("div", {class:"row"},
-        el("div", {class:"col"},
-          el("div", {class:"l-label"}, tr("start")),
-          el("div", {class:"time"}, fmtTime(state.clockIn)),
-        ),
-        el("div", {class:"col r"},
-          el("div", {class:"l-label"}, tr("end")),
-          el("div", {class:"time"}, fmtTime(state.clockOut)),
-        ),
-      ),
-      el("div", {class:"total"},
-        el("span", {class:"value"}, hrs.toFixed(1)),
-        el("span", {class:"unit"}, tr("hours").toLowerCase())
-      )
+    });
+
+    const langRow = el("div", {style:"display:flex; justify-content:flex-end; width:100%;"},
+      el("span", {
+        class:"lang-pill", style:"display:inline-block;",
+        onclick: () => { state.lang = state.lang === "en" ? "es" : "en"; render(); }
+      }, state.lang.toUpperCase())
+    );
+
+    root.appendChild(el("div", {class:"login-wrap screen-enter"},
+      langRow,
+      el("div", {class:"brand"}, s.appName.slice(0,5), el("span", {class:"accent"}, s.appName.slice(5))),
+      el("div", {class:"tag"}, s.tagline),
+      form,
+      demo,
     ));
-    wrap.appendChild(el("div", {style:"height:14px"}));
-    wrap.appendChild(el("button", {class:"big-cta submit", onclick: onSubmitShift},
-      svg("M5 13l4 4L19 7"),
-      el("div", {}, tr("submit"))
-    ));
-    return wrap;
   }
 
-  // Top-level render --------------------------------------------
-  function render() {
-    renderTopbar();
+  function renderEmployeeHome() {
+    const u = state.currentUser;
     const root = document.getElementById("scrollRoot");
     root.innerHTML = "";
 
-    // greeting
-    const greeting = el("div", {class:"greeting"},
+    root.appendChild(el("div", {class:"greeting"},
       el("div", {class:"hello"}, tr("welcome")),
-      el("div", {class:"name"}, state.role === "admin" ? "Nathan F." : "Maria R."),
-      state.role === "admin" ? el("div", {class:"role"}, tr("admin")) : null
-    );
-    root.appendChild(greeting);
+      el("div", {class:"name"}, u.displayName),
+    ));
 
-    // month nav
-    const monthNav = el("div", {class:"month-nav"},
-      el("div", {class:"chev", onclick: onPrevMonth}, chevronSvg("left")),
-      el("div", {class:"label"}, monthLabelText()),
-      el("div", {class:"chev", onclick: onNextMonth}, chevronSvg("right"))
-    );
-    root.appendChild(monthNav);
+    // Month nav
+    root.appendChild(monthNav());
 
-    // animatable block (calendar + summary)
+    // Calendar block
     const block = el("div", {class: state.lastAnim === 1 ? "month-anim-next" : state.lastAnim === -1 ? "month-anim-prev" : ""});
     state.lastAnim = 0;
-    block.appendChild(renderCalendar());
-    block.appendChild(summaryCardWithBreakdown());
+    block.appendChild(renderCalendar(u.id));
+    block.appendChild(summaryCard(u.id));
     root.appendChild(block);
 
-    // section header (for the page below) — just to feel like the real app
-    if (state.role === "admin") {
-      root.appendChild(el("div", {class:"section-header"},
-        el("h3", {}, tr("employees")),
-        el("small", {}, `${employees.length} ${tr("registered")}`)
-      ));
-      for (const e of employees) {
-        root.appendChild(empCard(e));
-      }
-      root.appendChild(el("div", {style:"height:40px"}));
-    } else {
-      const todayLabel = new Date().toLocaleDateString(
-        state.lang === "es" ? "es-ES" : "en-US",
-        { weekday: "long", month: "long", day: "numeric" }
-      ).replace(/^./, c => c.toUpperCase());
-      root.appendChild(el("div", {style:"height:12px"}));
-      root.appendChild(el("div", {style:"text-align:center; font-size:12px; color: var(--text-secondary); letter-spacing:.4px; text-transform:uppercase; font-weight:700;"}, `${tr("today")} · ${todayLabel}`));
-      root.appendChild(el("div", {style:"height:14px"}));
-      root.appendChild(clockSection());
-      root.appendChild(el("div", {style:"height:40px"}));
-    }
+    // Weekly sign-off
+    root.appendChild(weekSignoffCard());
+
+    // Today / Clock-in
+    const todayLabel = new Date(2026, 3, 13).toLocaleDateString(locale(),
+      { weekday:"long", month:"long", day:"numeric" }).replace(/^./, c => c.toUpperCase());
+    root.appendChild(el("div", {style:"height:12px"}));
+    root.appendChild(el("div", {style:"text-align:center; font-size:12px; color:var(--text-secondary); letter-spacing:.4px; text-transform:uppercase; font-weight:700;"}, `${tr("today")} · ${todayLabel}`));
+    root.appendChild(el("div", {style:"height:14px"}));
+    root.appendChild(clockSection());
+    root.appendChild(el("div", {style:"height:40px"}));
   }
 
-  function empCard(e) {
-    const row = el("div", {
-      class:"info-card clickable",
-      style:"display:flex; align-items:center; gap:14px; padding:14px 16px; margin-top:10px;",
-      onclick: () => toast(`${tr("viewEmployee")} ${e.name}`, {kind:"info", pill:e.short}),
-    },
-      el("div", {style:`width:36px;height:36px;border-radius:50%;background:${e.color}26;color:${e.color};display:grid;place-items:center;font-weight:700;font-size:14px;`}, e.short),
-      el("div", {style:"flex:1"},
-        el("div", {style:"font-size:14px; font-weight:600;"}, e.name),
-        el("div", {style:"font-size:11px; color:var(--text-secondary); margin-top:2px;"}, "@" + e.name.toLowerCase().split(" ")[0])
+  function weekSignoffCard() {
+    const u = state.currentUser;
+    const wkStart = thisWeekStart();
+    const wkEnd = weekEndOf(wkStart);
+    const wkShifts = shiftsForWeek(u.id, wkStart);
+    const wkHours = wkShifts.reduce((s,x)=>s+x.hours,0);
+    const status = weekStatus(u.id, wkStart);
+
+    const card = el("div", {class:"week-submit"},
+      el("div", {class:"left"},
+        el("div", {class:"title"}, `${tr("thisWeek")} · ${fmtDateShort(wkStart)} – ${fmtDateShort(wkEnd)}`),
+        el("div", {class:"sub"}, `${wkHours.toFixed(1)} ${tr("hours").toLowerCase()} · ${wkShifts.length} ${tr("shifts").toLowerCase()}`),
       ),
-      el("div", {style:"color:var(--text-secondary)"}, chevronSvg("right"))
     );
-    return row;
+    if (status === "approved") {
+      card.appendChild(el("span", {class:"status-pill approved"}, tr("weekApproved")));
+    } else if (status === "pending") {
+      card.appendChild(el("span", {class:"status-pill pending"}, tr("weekPending")));
+    } else {
+      card.appendChild(el("button", {
+        class:"btn",
+        onclick: () => {
+          setWeekStatus(u.id, wkStart, "pending");
+          toast(tr("weekSubmitted"), {kind:"success", pill:"✓"});
+          render();
+        }
+      }, tr("submitWeek")));
+    }
+    return card;
   }
 
-  function chevronSvg(dir) {
-    const d = dir === "left" ? "M15 18l-6-6 6-6" : "M9 18l6-6-6-6";
-    const svg = document.createElementNS("http://www.w3.org/2000/svg","svg");
-    svg.setAttribute("viewBox","0 0 24 24");
-    svg.setAttribute("class","ic");
-    svg.setAttribute("fill","none");
-    svg.setAttribute("stroke","currentColor");
-    const p = document.createElementNS("http://www.w3.org/2000/svg","path");
-    p.setAttribute("d", d);
-    svg.appendChild(p);
-    return svg;
+  function clockSection() {
+    const readonly = false; // employees are never readonly here
+    if (state.clock === "idle") {
+      return el("button", {
+        class:"big-cta clock-in",
+        onclick: () => {
+          state.clock = "in";
+          state.clockIn = new Date();
+          state.clockInCoord = jitterLoc();
+          render();
+        }
+      }, ICON("play", 32), el("div", {}, tr("clockIn")));
+    }
+    if (state.clock === "in") {
+      const wrap = el("div", {});
+      wrap.appendChild(el("div", {class:"clock-card"},
+        el("div", {class:"pulse"}),
+        el("div", {style:"flex:1"},
+          el("div", {class:"label"}, tr("clockedInAt")),
+          el("div", {class:"time"}, fmtTimeDate(state.clockIn)),
+        )
+      ));
+      wrap.appendChild(el("div", {style:"height:14px"}));
+      wrap.appendChild(el("button", {
+        class:"big-cta clock-out",
+        onclick: () => {
+          state.clock = "out";
+          state.clockOut = new Date();
+          state.clockOutCoord = jitterLoc();
+          render();
+        }
+      }, ICON("stop", 32), el("div", {}, tr("clockOut"))));
+      return wrap;
+    }
+    // state.clock === "out": summary + comment + submit
+    const diffMin = (state.clockOut - state.clockIn) / 60000;
+    const hrs = diffMin / 60;
+    const needsNote = hrs < 9 && !state.comment.trim();
+
+    const commentField = el("textarea", {
+      class: `comment-field ${needsNote ? "required" : ""}`,
+      placeholder: tr("comments"),
+      oninput: (e) => { state.comment = e.target.value; updateSubmitState(); },
+    });
+    commentField.value = state.comment;
+
+    const wrap = el("div", {});
+    const summaryEl = el("div", {class:"shift-summary"},
+      el("div", {class:"row"},
+        el("div", {class:"col"},
+          el("div", {class:"l-label"}, tr("start")),
+          el("div", {class:"time"}, fmtTimeDate(state.clockIn)),
+        ),
+        el("div", {class:"col r"},
+          el("div", {class:"l-label"}, tr("end")),
+          el("div", {class:"time"}, fmtTimeDate(state.clockOut)),
+        ),
+      ),
+      el("div", {class:"total"},
+        el("span", {class:`value ${hrs < 9 ? "warn":""}`}, hrs.toFixed(1)),
+        el("span", {class:"unit"}, tr("hours").toLowerCase()),
+      ),
+      commentField,
+    );
+
+    if (hrs < 9) {
+      summaryEl.appendChild(el("div", {class:"comment-required-note"}, tr("commentRequired")));
+    }
+    wrap.appendChild(summaryEl);
+    wrap.appendChild(el("div", {style:"height:14px"}));
+    const submitBtn = el("button", {
+      class:`big-cta submit ${needsNote ? "disabled":""}`,
+      onclick: () => {
+        if (hrs < 9 && !state.comment.trim()) {
+          commentField.focus();
+          commentField.classList.add("required");
+          return;
+        }
+        // Save shift
+        const d = state.clockIn;
+        const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+        const pad = n => String(n).padStart(2,"0");
+        addShift({
+          empId: state.currentUser.id,
+          date: dateStr,
+          start: `${pad(state.clockIn.getHours())}:${pad(state.clockIn.getMinutes())}`,
+          end:   `${pad(state.clockOut.getHours())}:${pad(state.clockOut.getMinutes())}`,
+          comment: state.comment.trim(),
+          loc: { in: state.clockInCoord, out: state.clockOutCoord },
+        });
+        state.clock = "idle";
+        state.clockIn = state.clockOut = null;
+        state.clockInCoord = state.clockOutCoord = null;
+        state.comment = "";
+        toast(tr("shiftLogged"), {kind:"success", pill:"✓"});
+        render();
+      }
+    }, ICON("check", 32), el("div", {}, tr("submit")));
+    wrap.appendChild(submitBtn);
+
+    function updateSubmitState() {
+      const stillNeeds = hrs < 9 && !state.comment.trim();
+      submitBtn.classList.toggle("disabled", stillNeeds);
+      commentField.classList.toggle("required", stillNeeds);
+    }
+    return wrap;
   }
 
-  // Wire up toggles ---------------------------------------------
-  document.getElementById("roleToggle").addEventListener("click", (e) => {
-    const b = e.target.closest("button"); if (!b) return;
-    state.role = b.dataset.role;
-    state.selectedDay = null;
-    document.querySelectorAll("#roleToggle button").forEach(x => x.classList.toggle("active", x === b));
-    render();
-  });
+  function renderAdminHome() {
+    const u = state.currentUser;
+    const root = document.getElementById("scrollRoot");
+    root.innerHTML = "";
+    const readonly = u.role === "readonly";
+
+    root.appendChild(el("div", {class:"greeting"},
+      el("div", {class:"hello"}, tr("welcome")),
+      el("div", {class:"name"}, u.displayName),
+      el("div", {class:`role ${readonly ? "readonly":""}`}, readonly ? tr("readonly") : tr("admin")),
+      readonly ? el("div", {class:"readonly-banner"}, ICON("eye", 14), el("span", {}, tr("readonlyBanner"))) : null,
+    ));
+
+    root.appendChild(monthNav());
+
+    const block = el("div", {class: state.lastAnim === 1 ? "month-anim-next" : state.lastAnim === -1 ? "month-anim-prev" : ""});
+    state.lastAnim = 0;
+    block.appendChild(renderCalendar(null));
+    block.appendChild(summaryCard(null));
+    root.appendChild(block);
+
+    // Approvals banner
+    const pending = pendingApprovals();
+    if (pending.length > 0) {
+      root.appendChild(el("div", {
+        class:"approvals-banner",
+        onclick: () => { state.modal = "approvals"; render(); },
+      },
+        el("div", {class:"icon"}, ICON("inbox")),
+        el("div", {class:"body"},
+          el("div", {class:"title"}, tr("pendingApprovals")),
+          el("div", {class:"meta"}, tr("nPending", pending.length)),
+        ),
+        el("div", {}, ICON("chevRight")),
+      ));
+    }
+
+    // Employees list
+    root.appendChild(el("div", {class:"section-header"},
+      el("h3", {}, tr("employees")),
+      el("small", {}, `${employees().length} ${tr("registered")}`),
+    ));
+    for (const e of employees()) {
+      const hasPending = weekApprovals.some(w => w.empId === e.id && w.status === "pending");
+      root.appendChild(el("div", {
+        class: "emp-row",
+        onclick: () => navTo("admin_employee", { viewingEmployeeId: e.id, selectedDay: null }),
+      },
+        el("div", {class:"av", style:`background:${e.color}26; color:${e.color}`}, e.displayName.charAt(0)),
+        el("div", {class:"body"},
+          el("div", {class:"name"},
+            el("span", {}, e.displayName),
+            hasPending ? el("span", {class:"badge"}, tr("weekPending")) : null,
+          ),
+          el("div", {class:"meta"}, "@" + e.username),
+        ),
+        el("div", {class:"chev"}, ICON("chevRight")),
+      ));
+    }
+    root.appendChild(el("div", {style:"height:60px"}));
+  }
+
+  function renderAdminEmployee() {
+    const e = userById[state.viewingEmployeeId];
+    const root = document.getElementById("scrollRoot");
+    root.innerHTML = "";
+
+    // Employee header
+    root.appendChild(el("div", {class:"greeting", style:"display:flex; align-items:center; gap:14px;"},
+      el("div", {
+        style: `width:56px; height:56px; border-radius:50%; background:${e.color}26; color:${e.color}; display:grid; place-items:center; font-size:22px; font-weight:800;`
+      }, e.displayName.charAt(0)),
+      el("div", {style:"flex:1"},
+        el("div", {class:"name", style:"font-size:22px;"}, e.displayName),
+        el("div", {class:"hello", style:"font-size:12px;"}, "@" + e.username),
+      ),
+    ));
+
+    // Admin view: show employee history (shift list + map)
+    const empShifts = shifts.filter(s => s.empId === e.id)
+      .sort((a,b) => b.date.localeCompare(a.date) || b.start.localeCompare(a.start));
+    const total = empShifts.reduce((s,x)=>s+x.hours,0);
+
+    root.appendChild(el("div", {class:"info-card"},
+      el("div", {class:"row"},
+        stat("blue", String(empShifts.length), tr("shifts")),
+        stat("green", total.toFixed(1), tr("hours")),
+      ),
+    ));
+
+    // Map
+    const withCoords = empShifts.filter(s => s.clockIn || s.clockOut);
+    if (withCoords.length > 0) {
+      root.appendChild(miniMap(withCoords));
+    }
+
+    // Shift list
+    for (const sh of empShifts) {
+      root.appendChild(renderShiftCard(sh));
+    }
+    root.appendChild(el("div", {style:"height:40px"}));
+  }
+
+  function renderHistory() {
+    const u = state.currentUser;
+    const root = document.getElementById("scrollRoot");
+    root.innerHTML = "";
+
+    const mine = shifts.filter(s => s.empId === u.id)
+      .sort((a,b) => b.date.localeCompare(a.date) || b.start.localeCompare(a.start));
+    const total = mine.reduce((s,x)=>s+x.hours,0);
+
+    root.appendChild(el("div", {class:"info-card"},
+      el("div", {class:"row"},
+        stat("blue", String(mine.length), tr("shifts")),
+        stat("green", total.toFixed(1), tr("hours")),
+      ),
+    ));
+
+    const withCoords = mine.filter(s => s.clockIn || s.clockOut);
+    if (withCoords.length > 0) {
+      root.appendChild(miniMap(withCoords));
+    }
+
+    for (const sh of mine) {
+      root.appendChild(renderShiftCard(sh));
+    }
+    root.appendChild(el("div", {style:"height:40px"}));
+  }
+
+  function renderShiftCard(sh) {
+    const emp = userById[sh.empId];
+    const ok = sh.hours >= 9;
+    const wkStart = weekStartOf(sh.date);
+    const status = weekStatus(sh.empId, wkStart);
+    return el("div", {class:"hist-shift-card"},
+      el("div", {class:"top"},
+        el("div", {class:"left"},
+          el("div", {class:`status-dot ${ok ? "ok":"warn"}`}),
+          el("div", {class:"date"}, fmtDateLong(sh.date)),
+        ),
+        el("div", {class:`hrs ${ok ? "ok":"warn"}`}, `${sh.hours.toFixed(1)}${tr("hoursShort")}`),
+      ),
+      el("div", {class:"chips"},
+        el("span", {class:"chip"}, ICON("clock", 11), el("span", {}, `${tr("start")} ${fmt12(sh.start)}`)),
+        el("span", {class:"chip"}, ICON("clock", 11), el("span", {}, `${tr("end")} ${fmt12(sh.end)}`)),
+      ),
+      sh.comment ? el("div", {class:"comment"}, `"${sh.comment}"`) : null,
+      status ? el("div", {class:`week-status ${status}`}, status === "approved" ? tr("weekApproved") : tr("weekPending")) : null,
+    );
+  }
+
+  // =============================================================
+  // MAP
+  // =============================================================
+  // Tight-framed OSM tile map — 2x2 grid, minimal padding, high zoom.
+  // Improves on the prior "too zoomed out" issue.
+  function lng2tileX(lng, zoom) { const n = 1 << zoom; return (lng + 180) / 360 * n; }
+  function lat2tileY(lat, zoom) {
+    const n = 1 << zoom;
+    return (1 - Math.log(Math.tan(lat*Math.PI/180) + 1/Math.cos(lat*Math.PI/180))/Math.PI)/2*n;
+  }
+
+  function miniMap(locatedShifts) {
+    const pins = [];
+    for (const sh of locatedShifts) {
+      if (sh.clockIn)  pins.push({ lat: sh.clockIn.lat,  lng: sh.clockIn.lng,  in: true });
+      if (sh.clockOut) pins.push({ lat: sh.clockOut.lat, lng: sh.clockOut.lng, in: false });
+    }
+    if (!pins.length) return el("div", {});
+    const lats = pins.map(p => p.lat);
+    const lngs = pins.map(p => p.lng);
+    const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+    const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+    // Tight padding (was 30%; reduced to 12% to zoom in more)
+    const latSpread = maxLat - minLat || 0.0005;
+    const lngSpread = maxLng - minLng || 0.0005;
+    const latPad = Math.max(latSpread * 0.12, 0.0003);
+    const lngPad = Math.max(lngSpread * 0.12, 0.0003);
+    const padMinLat = minLat - latPad, padMaxLat = maxLat + latPad;
+    const padMinLng = minLng - lngPad, padMaxLng = maxLng + lngPad;
+    // Use 2x2 grid instead of 3x2 for tighter framing
+    const tilesWide = 2, tilesTall = 2;
+    let zoom = 19;
+    while (zoom > 1) {
+      const minTX = lng2tileX(padMinLng, zoom), maxTX = lng2tileX(padMaxLng, zoom);
+      const minTY = lat2tileY(padMaxLat, zoom), maxTY = lat2tileY(padMinLat, zoom);
+      if ((maxTX - minTX) <= tilesWide && (maxTY - minTY) <= tilesTall) break;
+      zoom--;
+    }
+    const centerLng = (padMinLng + padMaxLng) / 2;
+    const centerLat = (padMinLat + padMaxLat) / 2;
+    const centerTX = lng2tileX(centerLng, zoom);
+    const centerTY = lat2tileY(centerLat, zoom);
+    const startTX = Math.floor(centerTX - tilesWide / 2);
+    const startTY = Math.floor(centerTY - tilesTall / 2);
+
+    const mapEl = el("div", {class:"mini-map"});
+    const tiles = el("div", {class:"tiles",
+      style: `grid-template-columns: repeat(${tilesWide}, 1fr); grid-template-rows: repeat(${tilesTall}, 1fr);`});
+    for (let r = 0; r < tilesTall; r++) {
+      for (let c = 0; c < tilesWide; c++) {
+        const tx = startTX + c;
+        const ty = startTY + r;
+        const url = `https://tile.openstreetmap.org/${zoom}/${tx}/${ty}.png`;
+        tiles.appendChild(el("img", { src: url, alt:"", loading:"lazy" }));
+      }
+    }
+    mapEl.appendChild(tiles);
+
+    const pinsEl = el("div", {class:"pins"});
+    for (const p of pins) {
+      const tX = lng2tileX(p.lng, zoom), tY = lat2tileY(p.lat, zoom);
+      const xPct = ((tX - startTX) / tilesWide) * 100;
+      const yPct = ((tY - startTY) / tilesTall) * 100;
+      pinsEl.appendChild(el("div", {
+        class: `pin ${p.in ? "in" : "out"}`,
+        style: `left:${xPct}%; top:${yPct}%`
+      }));
+    }
+    mapEl.appendChild(pinsEl);
+    mapEl.appendChild(el("div", {class:"legend"},
+      el("span", {class:"in"}, tr("mapLegendIn")),
+      el("span", {class:"out"}, tr("mapLegendOut")),
+    ));
+    return mapEl;
+  }
+
+  // =============================================================
+  // MONTH NAV (shared)
+  // =============================================================
+  function monthNav() {
+    const label = new Date(state.calYear, state.calMonth, 1)
+      .toLocaleDateString(locale(), { month:"long", year:"numeric" })
+      .replace(/^./, c => c.toUpperCase());
+    return el("div", {class:"month-nav"},
+      el("div", {class:"chev", onclick: () => {
+        if (state.calMonth === 0) { state.calMonth = 11; state.calYear--; } else state.calMonth--;
+        state.selectedDay = null; state.lastAnim = -1; render();
+      }}, ICON("chevLeft")),
+      el("div", {class:"label"}, label),
+      el("div", {class:"chev", onclick: () => {
+        if (state.calMonth === 11) { state.calMonth = 0; state.calYear++; } else state.calMonth++;
+        state.selectedDay = null; state.lastAnim = 1; render();
+      }}, ICON("chevRight")),
+    );
+  }
+
+  // =============================================================
+  // MODALS
+  // =============================================================
+  function renderModal() {
+    const root = document.getElementById("modalRoot");
+    root.innerHTML = "";
+    if (!state.modal) return;
+
+    const close = () => { state.modal = null; render(); };
+    const card = el("div", {class:"modal-card"});
+    const scrim = el("div", {
+      class:"modal-scrim",
+      onclick: (e) => { if (e.target === scrim) close(); },
+    }, card);
+
+    if (state.modal === "addEmployee") {
+      const nameIn = el("input", { placeholder: strings[state.lang].fullName });
+      const userIn = el("input", { placeholder: strings[state.lang].username });
+      const passIn = el("input", { placeholder: strings[state.lang].password, type:"password" });
+      const err = el("div", {class:"err", style:"display:none"});
+      card.appendChild(el("h3", {}, tr("addEmployee")));
+      card.appendChild(nameIn);
+      card.appendChild(userIn);
+      card.appendChild(passIn);
+      card.appendChild(err);
+      card.appendChild(el("div", {class:"actions"},
+        el("button", {class:"btn", onclick: close}, tr("cancel")),
+        el("button", {class:"btn primary", onclick: () => {
+          const name = nameIn.value.trim(), u = userIn.value.trim(), p = passIn.value;
+          if (!name || !u || !p) {
+            err.textContent = state.lang === "es"
+              ? "Todos los campos son obligatorios"
+              : "All fields are required";
+            err.style.display = "block";
+            return;
+          }
+          if (users.some(x => x.username === u)) {
+            err.textContent = state.lang === "es"
+              ? "Ese nombre de usuario ya existe"
+              : "Username already exists";
+            err.style.display = "block";
+            return;
+          }
+          const newId = Math.max(...users.map(x => x.id)) + 1;
+          const colors = ["var(--emp-1)","var(--emp-2)","var(--emp-3)","var(--emp-4)","var(--emp-5)","var(--emp-6)","var(--emp-7)","var(--emp-8)","var(--emp-9)","var(--emp-10)"];
+          users.push({
+            id: newId, username: u, password: p, displayName: name,
+            role: "employee", color: colors[newId % colors.length],
+          });
+          userById[newId] = users[users.length-1];
+          toast(state.lang === "es" ? "Empleado agregado" : "Employee added", {kind:"success", pill:"+"});
+          close();
+        }}, tr("add")),
+      ));
+    } else if (state.modal === "approvals") {
+      card.appendChild(el("h3", {}, tr("approvalsTitle")));
+      const pending = pendingApprovals();
+      if (!pending.length) {
+        card.appendChild(el("p", {}, tr("noPending")));
+      } else {
+        for (const w of pending) {
+          const emp = userById[w.empId];
+          const wkShifts = shiftsForWeek(w.empId, w.weekStart);
+          const wkHours = wkShifts.reduce((s,x)=>s+x.hours,0);
+          const row = el("div", {class:"approval-row"},
+            el("div", {class:"top"},
+              el("div", {class:"who", style:`color:${emp.color}`}, emp.displayName),
+              el("div", {class:"total"}, `${wkHours.toFixed(1)}${tr("hoursShort")}`),
+            ),
+            el("div", {class:"week"}, `${fmtDateShort(w.weekStart)} – ${fmtDateShort(weekEndOf(w.weekStart))} · ${wkShifts.length} ${tr("shifts").toLowerCase()}`),
+          );
+          if (state.currentUser?.role === "admin") {
+            row.appendChild(el("div", {class:"actions"},
+              el("button", {
+                class:"reject",
+                onclick: () => {
+                  w.status = null;
+                  const idx = weekApprovals.findIndex(x => x === w);
+                  if (idx >= 0) weekApprovals.splice(idx, 1);
+                  toast(tr("weekRejectedToast"), {kind:"warn", pill:"↺"});
+                  render();
+                }
+              }, tr("reject")),
+              el("button", {
+                class:"approve",
+                onclick: () => {
+                  w.status = "approved";
+                  toast(tr("weekApprovedToast"), {kind:"success", pill:"✓"});
+                  render();
+                }
+              }, tr("approve")),
+            ));
+          }
+          card.appendChild(row);
+        }
+      }
+      card.appendChild(el("div", {class:"actions"},
+        el("button", {class:"btn", onclick: close}, state.lang === "es" ? "Cerrar" : "Close"),
+      ));
+    }
+
+    root.appendChild(scrim);
+  }
+
+  // =============================================================
+  // ROOT RENDER
+  // =============================================================
+  function render() {
+    const scroll = document.getElementById("scrollRoot");
+    scroll.classList.remove("screen-enter");
+    void scroll.offsetWidth;
+    scroll.classList.add("screen-enter");
+
+    renderTopbar();
+    renderFab();
+
+    if (state.screen === "login") {
+      renderLogin();
+    } else if (state.screen === "employee_home") {
+      renderEmployeeHome();
+    } else if (state.screen === "history") {
+      renderHistory();
+    } else if (state.screen === "admin_home") {
+      renderAdminHome();
+    } else if (state.screen === "admin_employee") {
+      renderAdminEmployee();
+    }
+
+    renderModal();
+  }
 
   render();
 </script>

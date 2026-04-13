@@ -942,14 +942,6 @@
   </div>
 </header>
 
-<div class="options-bar" id="detailBar">
-  <span style="font-size:11px; color:var(--text-secondary); padding:8px 6px 0; letter-spacing:.4px; text-transform:uppercase; font-weight:700;">Day detail style:</span>
-  <button class="opt-pill" data-detail="timeline">Timeline (current)</button>
-  <button class="opt-pill active" data-detail="rows">Simple rows</button>
-  <button class="opt-pill" data-detail="cards">Colored cards</button>
-  <button class="opt-pill" data-detail="table">Table header</button>
-  <button class="opt-pill" data-detail="pill">Avatar + pill</button>
-</div>
 
 <div class="stage">
   <div class="phone">
@@ -963,17 +955,13 @@
     <div class="phone-caption"><b>Live preview</b> · swap role and option on the left</div>
     <div style="margin-top:16px; background: var(--surface-dark); border-radius:16px; padding:16px; color: var(--text-secondary); font-size:13px; line-height:1.55;">
       <div style="color:var(--text-primary); font-weight:700; margin-bottom:8px;">Locked in</div>
-      <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:12px;">
+      <div style="display:flex; flex-direction:column; gap:6px;">
         <div><b style="color:var(--accent-green-light)">Layout:</b> summary card below + per-employee breakdown</div>
         <div><b style="color:var(--accent-green-light)">Day cell:</b> hours · staff count</div>
+        <div><b style="color:var(--accent-green-light)">Day detail:</b> table header (Employee · Time · Hours)</div>
       </div>
-      <div style="color:var(--text-primary); font-weight:700; margin-bottom:6px; padding-top:10px; border-top:1px solid var(--outline-soft);">Picking: day detail style</div>
-      <div style="display:flex; flex-direction:column; gap:6px;">
-        <div><b style="color:var(--accent-blue-bright)">Timeline</b> — current bars-on-a-track visualization.</div>
-        <div><b style="color:var(--accent-blue-bright)">Simple rows</b> — one row per shift: name · time range · hours.</div>
-        <div><b style="color:var(--accent-blue-bright)">Colored cards</b> — each shift in its own card, colored left stripe.</div>
-        <div><b style="color:var(--accent-blue-bright)">Table header</b> — labeled columns at the top, values below.</div>
-        <div><b style="color:var(--accent-blue-bright)">Avatar + pill</b> — initial avatar and a time-range pill, more visual.</div>
+      <div style="margin-top:12px; padding-top:10px; border-top:1px solid var(--outline-soft); font-size:12px;">
+        Tap a day to see the detail. Swap Admin/Employee to preview the employee view.
       </div>
     </div>
   </div>
@@ -983,7 +971,6 @@
   // Shared state -------------------------------------------------
   const state = {
     role: "admin",
-    detailStyle: "rows",
     selectedDay: 10,
     year: 2026,
     month: 3,        // April (0-indexed)
@@ -1295,118 +1282,29 @@
       if (state.role === "employee" && sh.empId !== 1) continue;
       (groups[sh.empId] = groups[sh.empId] || []).push(sh);
     }
-    const entries = Object.entries(groups);
 
-    if (state.detailStyle === "timeline") {
-      for (const [empIdStr, list] of entries) {
-        const empId = Number(empIdStr);
-        wrap.appendChild(timelineRow(empId, list));
-        for (const sh of list) if (sh.comment) {
-          wrap.appendChild(el("div", {class:"timeline-comment"},
-            el("span", {class:"q", style:`color:${empById[empId].color}`}, "\u201C"),
-            el("span", {}, sh.comment)
-          ));
-        }
-      }
-      return wrap;
-    }
-
-    if (state.detailStyle === "rows") {
-      const rows = el("div", {class:"dd-rows"});
-      for (const [empIdStr, list] of entries) {
-        const empId = Number(empIdStr);
-        const emp = empById[empId];
-        for (const sh of list) {
-          rows.appendChild(el("div", {class:"dd-row"},
+    const t = el("div", {class:"dd-table"});
+    t.appendChild(el("div", {class:"head"},
+      el("span", {}, state.lang === "es" ? "Empleado" : "Employee"),
+      el("span", {class:"r"}, state.lang === "es" ? "Horario" : "Time"),
+      el("span", {class:"r"}, state.lang === "es" ? "Horas" : "Hours"),
+    ));
+    for (const [empIdStr, list] of Object.entries(groups)) {
+      const empId = Number(empIdStr);
+      const emp = empById[empId];
+      for (const sh of list) {
+        t.appendChild(el("div", {class:"trow"},
+          el("span", {class:"nm"},
             el("span", {class:"sw", style:`background:${emp.color}`}),
-            el("span", {class:"nm"}, emp.name),
-            el("span", {class:"tm"}, `${fmt12(sh.start)} – ${fmt12(sh.end)}`),
-            el("span", {class:"hrs", style:`color:${emp.color}`}, `${sh.hours.toFixed(1)}h`),
-          ));
-          if (sh.comment) rows.appendChild(el("div", {class:"cmt"}, `"${sh.comment}"`));
-        }
+            el("span", {}, emp.name),
+          ),
+          el("span", {class:"tm"}, `${fmt12(sh.start)} – ${fmt12(sh.end)}`),
+          el("span", {class:"hrs", style:`color:${emp.color}`}, sh.hours.toFixed(1)),
+        ));
+        if (sh.comment) t.appendChild(el("div", {class:"cmt"}, `"${sh.comment}"`));
       }
-      wrap.appendChild(rows);
-      return wrap;
     }
-
-    if (state.detailStyle === "cards") {
-      const cards = el("div", {class:"dd-cards"});
-      for (const [empIdStr, list] of entries) {
-        const empId = Number(empIdStr);
-        const emp = empById[empId];
-        for (const sh of list) {
-          const card = el("div", {class:"dd-card", style:`border-left-color:${emp.color}`},
-            el("div", {class:"top"},
-              el("span", {class:"nm", style:`color:${emp.color}`}, emp.name),
-              el("span", {class:"hrs"}, `${sh.hours.toFixed(1)}h`),
-            ),
-            el("span", {class:"tm"}, `${fmt12(sh.start)}  →  ${fmt12(sh.end)}`),
-          );
-          if (sh.comment) card.appendChild(el("span", {class:"cmt"}, `"${sh.comment}"`));
-          cards.appendChild(card);
-        }
-      }
-      wrap.appendChild(cards);
-      return wrap;
-    }
-
-    if (state.detailStyle === "table") {
-      const t = el("div", {class:"dd-table"});
-      t.appendChild(el("div", {class:"head"},
-        el("span", {}, state.lang === "es" ? "Empleado" : "Employee"),
-        el("span", {class:"r"}, state.lang === "es" ? "Horario" : "Time"),
-        el("span", {class:"r"}, state.lang === "es" ? "Horas" : "Hours"),
-      ));
-      for (const [empIdStr, list] of entries) {
-        const empId = Number(empIdStr);
-        const emp = empById[empId];
-        for (const sh of list) {
-          t.appendChild(el("div", {class:"trow"},
-            el("span", {class:"nm"},
-              el("span", {class:"sw", style:`background:${emp.color}`}),
-              el("span", {}, emp.name),
-            ),
-            el("span", {class:"tm"}, `${fmt12(sh.start)} – ${fmt12(sh.end)}`),
-            el("span", {class:"hrs", style:`color:${emp.color}`}, sh.hours.toFixed(1)),
-          ));
-          if (sh.comment) t.appendChild(el("div", {class:"cmt"}, `"${sh.comment}"`));
-        }
-      }
-      wrap.appendChild(t);
-      return wrap;
-    }
-
-    if (state.detailStyle === "pill") {
-      const box = el("div", {class:"dd-pill"});
-      for (const [empIdStr, list] of entries) {
-        const empId = Number(empIdStr);
-        const emp = empById[empId];
-        for (const sh of list) {
-          const row = el("div", {class:"dd-pill-row"},
-            el("div", {class:"av", style:`background:${emp.color}`}, emp.short),
-            el("div", {class:"body"},
-              el("div", {class:"top"},
-                el("span", {class:"nm"}, emp.name),
-                el("span", {class:"hrs", style:`color:${emp.color}`}, `${sh.hours.toFixed(1)}h`),
-              ),
-              el("span", {class:"range"},
-                el("span", {}, fmt12(sh.start)),
-                el("span", {class:"arrow"}, "→"),
-                el("span", {}, fmt12(sh.end)),
-              ),
-            ),
-          );
-          if (sh.comment) {
-            row.querySelector(".body").appendChild(el("div", {class:"cmt"}, `"${sh.comment}"`));
-          }
-          box.appendChild(row);
-        }
-      }
-      wrap.appendChild(box);
-      return wrap;
-    }
-
+    wrap.appendChild(t);
     return wrap;
   }
 
@@ -1415,31 +1313,6 @@
     const ampm = h >= 12 ? "PM" : "AM";
     const hr = ((h + 11) % 12) + 1;
     return `${hr}:${String(m).padStart(2,"0")} ${ampm}`;
-  }
-
-  function timelineRow(empId, shifts) {
-    const tlStart = 5, tlEnd = 22;
-    const totalMin = (tlEnd - tlStart) * 60;
-    const color = empById[empId].color;
-    const track = el("div", {class:"track"},
-      el("span", {class:"edge l"}, `${tlStart}a`),
-      el("span", {class:"edge r"}, `${tlEnd-12}p`),
-    );
-    for (const sh of shifts) {
-      const [sh_h, sh_m] = sh.start.split(":").map(Number);
-      const [eh, em] = sh.end.split(":").map(Number);
-      const startMin = Math.max(0, sh_h*60 + sh_m - tlStart*60);
-      const endMin = Math.min(totalMin, eh*60 + em - tlStart*60);
-      const left = (startMin/totalMin)*100;
-      const width = ((endMin-startMin)/totalMin)*100;
-      track.appendChild(el("span", {class:"seg", style:`left:${left}%; width:${width}%; background:${color};`}));
-    }
-    const hrs = shifts.reduce((s,x)=>s+x.hours,0);
-    return el("div", {class:"timeline-row"},
-      el("div", {class:"dot", style:`background:${color}`}),
-      track,
-      el("div", {class:"hrs", style:`color:${color}`}, hrs.toFixed(1))
-    );
   }
 
   // Month summary widgets ---------------------------------------
@@ -1712,12 +1585,6 @@
     state.role = b.dataset.role;
     state.selectedDay = null;
     document.querySelectorAll("#roleToggle button").forEach(x => x.classList.toggle("active", x === b));
-    render();
-  });
-  document.getElementById("detailBar").addEventListener("click", (e) => {
-    const b = e.target.closest("button"); if (!b) return;
-    state.detailStyle = b.dataset.detail;
-    document.querySelectorAll("#detailBar button").forEach(x => x.classList.toggle("active", x === b));
     render();
   });
 

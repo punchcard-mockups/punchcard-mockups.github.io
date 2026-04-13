@@ -2149,11 +2149,15 @@
   (function () {
     const sw = document.getElementById("themeSwitch");
     if (!sw) return;
+    const VALID = ["v1", "minimal", "warm", "nordic", "tactile"];
+    const THEME_CLASSES = ["theme-minimal", "theme-warm", "theme-nordic", "theme-tactile"];
     const apply = (theme) => {
-      document.body.classList.toggle("theme-v2", theme === "v2");
+      if (!VALID.includes(theme)) theme = "v1";
+      // Strip any existing theme classes
+      document.body.classList.remove(...THEME_CLASSES);
+      if (theme !== "v1") document.body.classList.add(`theme-${theme}`);
+      // Toggle active pill
       sw.querySelectorAll(".opt").forEach(b => b.classList.toggle("active", b.dataset.theme === theme));
-      const sliderTarget = theme === "v2" ? "100%" : "0";
-      sw.querySelector(".slider").style.transform = `translateX(${sliderTarget})`;
       try { localStorage.setItem("pc_theme", theme); } catch (_) {}
     };
     let saved = "v1";

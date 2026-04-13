@@ -577,6 +577,13 @@
   .clock-card .time {
     font-size: 22px; font-weight: 700; color: var(--accent-green-light);
   }
+  .gps-note {
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.2px;
+    margin-top: 2px;
+    font-family: ui-monospace, Menlo, monospace;
+  }
 
   .shift-summary {
     background: var(--surface-card);
@@ -2600,7 +2607,7 @@
 <body class="theme-editorial">
 
 <div class="app-root">
-  <div class="version-tag" id="versionTag">v.2026-04-13.1510</div>
+  <div class="version-tag" id="versionTag">v.2026-04-13.1530</div>
   <div class="topbar" id="topbarRoot"></div>
   <div class="scroll" id="scrollRoot"></div>
   <div id="fabRoot"></div>
@@ -2670,6 +2677,34 @@
 
   // Fake business near 37.775, -122.419 (SF)
   const BIZ = { lat: 37.7751, lng: -122.4189 };
+  function gpsNoteText(coord) {
+    if (!coord) return "Locating…";
+    return `📍 ${coord.lat.toFixed(5)}, ${coord.lng.toFixed(5)}`;
+  }
+
+  // Real-GPS capture with a mocked fallback so the demo always works.
+  // Returns a promise that resolves to { lat, lng, real: bool }.
+  function getCurrentCoord() {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        resolve({ ...jitterLoc(), real: false });
+        return;
+      }
+      const timeout = setTimeout(() => resolve({ ...jitterLoc(), real: false }), 9000);
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          clearTimeout(timeout);
+          resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude, real: true });
+        },
+        () => {
+          clearTimeout(timeout);
+          resolve({ ...jitterLoc(), real: false });
+        },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 }
+      );
+    });
+  }
+
   function jitterLoc(r = 0.0004) {
     return { lat: BIZ.lat + (Math.random()-0.5)*r, lng: BIZ.lng + (Math.random()-0.5)*r };
   }
@@ -3465,11 +3500,21 @@
     if (state.clock === "idle") {
       return el("button", {
         class:"big-cta clock-in",
-        onclick: () => {
+        onclick: async () => {
           state.clock = "in";
           state.clockIn = new Date();
-          state.clockInCoord = jitterLoc();
+          state.clockInCoord = null;
           render();
+          const c = await getCurrentCoord();
+          state.clockInCoord = { lat: c.lat, lng: c.lng };
+          toast(
+            c.real ? "Clock-in location captured"
+                   : "No GPS — using demo location",
+            { kind: c.real ? "success" : "warn", pill: c.real ? "GPS" : "MOCK" }
+          );
+          // Show the coord in the clock-card
+          const lbl = document.querySelector(".gps-note");
+          if (lbl) lbl.textContent = gpsNoteText(state.clockInCoord);
         }
       }, ICON("play", 32), el("div", {}, tr("clockIn")));
     }
@@ -3480,16 +3525,26 @@
         el("div", {style:"flex:1"},
           el("div", {class:"label"}, tr("clockedInAt")),
           el("div", {class:"time"}, fmtTimeDate(state.clockIn)),
+          el("div", {class:"gps-note"}, gpsNoteText(state.clockInCoord)),
         )
       ));
       wrap.appendChild(el("div", {style:"height:14px"}));
       wrap.appendChild(el("button", {
         class:"big-cta clock-out",
-        onclick: () => {
+        onclick: async () => {
           state.clock = "out";
           state.clockOut = new Date();
-          state.clockOutCoord = jitterLoc();
+          state.clockOutCoord = null;
           render();
+          const c = await getCurrentCoord();
+          state.clockOutCoord = { lat: c.lat, lng: c.lng };
+          toast(
+            c.real ? "Clock-out location captured"
+                   : "No GPS — using demo location",
+            { kind: c.real ? "success" : "warn", pill: c.real ? "GPS" : "MOCK" }
+          );
+          const lbl = document.querySelector(".gps-note-out");
+          if (lbl) lbl.textContent = gpsNoteText(state.clockOutCoord);
         }
       }, ICON("stop", 32), el("div", {}, tr("clockOut"))));
       return wrap;
@@ -3512,10 +3567,12 @@
         el("div", {class:"col"},
           el("div", {class:"l-label"}, tr("start")),
           el("div", {class:"time"}, fmtTimeDate(state.clockIn)),
+          el("div", {class:"gps-note"}, gpsNoteText(state.clockInCoord)),
         ),
         el("div", {class:"col r"},
           el("div", {class:"l-label"}, tr("end")),
           el("div", {class:"time"}, fmtTimeDate(state.clockOut)),
+          el("div", {class:"gps-note"}, gpsNoteText(state.clockOutCoord)),
         ),
       ),
       el("div", {class:"total"},

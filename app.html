@@ -2125,7 +2125,22 @@
     -webkit-overflow-scrolling: touch;
   }
   /* Prevent any child from forcing horizontal overflow */
-  .scroll > * { max-width: 100%; }
+  .scroll > * { max-width: 100%; box-sizing: border-box; }
+
+  /* Calendar cells must shrink with the viewport, not expand to content.
+     Without `minmax(0, 1fr)` the grid widens when a cell's content (e.g. the
+     day-detail expansion spanning 7 columns) has a larger intrinsic size. */
+  .cal .grid { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+  .day-detail-slot { min-width: 0; overflow: hidden; }
+  .day-detail { max-width: 100%; box-sizing: border-box; }
+  .dd-table,
+  .dd-table .head,
+  .dd-table .trow,
+  .dd-table .nm { min-width: 0; }
+  .dd-table .tm { min-width: 0; white-space: nowrap; }
+  /* Approval row, employee row, etc. all need the safety too */
+  .info-card, .emp-row, .hist-shift-card, .approvals-banner,
+  .week-submit, .clock-card, .shift-summary { min-width: 0; }
 
   /* Toast / FAB / Modal stay anchored to the shell */
   .toast-wrap {

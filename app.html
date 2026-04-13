@@ -589,6 +589,156 @@
     font-family: ui-monospace, Menlo, monospace;
   }
 
+  /* =========================================================
+     SHIFT DETAIL — compact layout
+     ========================================================= */
+  .sd-name {
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+  .sd-date {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+    letter-spacing: 0.1px;
+  }
+  .sd-total-hrs {
+    font-size: 22px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.3px;
+    flex: 0 0 auto;
+  }
+  .sd-total-hrs.ok { color: var(--accent-green); }
+  .sd-total-hrs.warn { color: var(--accent-red); }
+
+  .sd-rows {
+    margin-top: 14px;
+    border-top: 1px solid var(--outline-soft);
+    border-bottom: 1px solid var(--outline-soft);
+  }
+  .sd-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 10px 2px;
+    border-bottom: 1px dotted var(--outline-soft);
+  }
+  .sd-row:last-child { border-bottom: 0; }
+  .sd-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .sd-value {
+    font-size: 15px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-primary);
+  }
+
+  .sd-section-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-top: 18px;
+    margin-bottom: 6px;
+  }
+  .sd-comment {
+    padding: 10px 12px;
+    background: var(--surface-card);
+    border: 1px solid var(--outline-soft);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-style: italic;
+    line-height: 1.4;
+  }
+  .sd-no-loc {
+    margin-top: 14px;
+    padding: 14px;
+    border: 1px dashed var(--outline-soft);
+    border-radius: 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: center;
+  }
+
+  .sd-edit-req {
+    padding: 10px 12px;
+    background: color-mix(in oklab, var(--accent-amber) 10%, transparent);
+    border: 1px solid color-mix(in oklab, var(--accent-amber) 35%, transparent);
+    border-radius: 8px;
+  }
+  .sd-edit-times {
+    font-size: 13px;
+    color: var(--text-primary);
+  }
+  .sd-edit-comment {
+    margin-top: 6px;
+    font-size: 12px;
+    font-style: italic;
+    color: var(--text-secondary);
+  }
+
+  .sd-action-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .sd-btn {
+    flex: 1;
+    padding: 12px;
+    border: 0;
+    border-radius: 8px;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    transition: filter 150ms ease;
+  }
+  .sd-btn:hover { filter: brightness(1.08); }
+  .sd-btn.approve {
+    background: var(--accent-green);
+    color: #fff;
+  }
+  .sd-btn.reject {
+    background: transparent;
+    color: var(--accent-red);
+    border: 1px solid var(--accent-red);
+  }
+  .sd-btn.primary {
+    background: var(--accent-blue);
+    color: #fff;
+  }
+  .sd-btn-full {
+    width: 100%;
+    margin-top: 18px;
+    padding: 14px;
+    font-size: 14px;
+  }
+
+  /* Explicit overrides so Editorial's big serif stat styles
+     never leak into the shift-detail compact values. */
+  body.theme-editorial .sd-name { font-family: var(--tf-display); font-weight: 400; font-size: 17px; letter-spacing: -0.2px; }
+  body.theme-editorial .sd-date { font-family: var(--tf-body); font-style: italic; font-size: 12px; }
+  body.theme-editorial .sd-total-hrs { font-family: var(--tf-mono); }
+  body.theme-editorial .sd-value { font-family: var(--tf-mono); }
+  body.theme-editorial .sd-label,
+  body.theme-editorial .sd-section-label {
+    font-family: var(--tf-body); font-style: italic; font-weight: 400;
+    letter-spacing: 0.4px; text-transform: none; font-size: 11px;
+  }
+  body.theme-editorial .sd-comment { font-family: var(--tf-body); background: transparent; }
+  body.theme-editorial .sd-edit-comment { font-family: var(--tf-body); }
+  body.theme-editorial .sd-btn { font-family: var(--tf-body); letter-spacing: 0.4px; border-radius: 3px; }
+
 
   .shift-summary {
     background: var(--surface-card);
@@ -2612,7 +2762,7 @@
 <body class="theme-editorial">
 
 <div class="app-root">
-  <div class="version-tag" id="versionTag">v.2026-04-13.1805</div>
+  <div class="version-tag" id="versionTag">v.2026-04-13.1825</div>
   <div class="topbar" id="topbarRoot"></div>
   <div class="scroll" id="scrollRoot"></div>
   <div id="fabRoot"></div>
@@ -3851,81 +4001,80 @@
     const u = state.currentUser;
     const editReq = pendingEditRequestFor(sh.id);
 
-    // Header: employee + date
+    // Header: who + when + hours
     root.appendChild(el("div", {
-      style:"display:flex; align-items:center; gap:12px; padding: 10px 0 6px;"
+      style:"display:flex; align-items:center; gap:12px; padding: 4px 0 2px;"
     },
       el("div", {
-        style:`width:40px;height:40px;border-radius:50%;background:color-mix(in oklab, ${emp.color} 22%, transparent);color:${emp.color};display:grid;place-items:center;font-weight:700;font-size:15px;`
+        style:`width:40px;height:40px;border-radius:50%;background:color-mix(in oklab, ${emp.color} 22%, transparent);color:${emp.color};display:grid;place-items:center;font-weight:700;font-size:15px;flex:0 0 auto;`
       }, emp.displayName.charAt(0)),
       el("div", {style:"flex:1; min-width:0"},
-        el("div", {style:"font-size:16px; font-weight:600;"}, emp.displayName),
-        el("div", {style:"font-size:12px; color:var(--text-secondary)"}, fmtDateLong(sh.date)),
+        el("div", {class:"sd-name"}, emp.displayName),
+        el("div", {class:"sd-date"}, fmtDateLong(sh.date)),
       ),
-      el("div", {class:`hrs ${ok ? "ok":"warn"}`, style:"font-size:24px; font-weight:700; font-variant-numeric:tabular-nums;"}, `${sh.hours.toFixed(1)}${tr("hoursShort")}`),
+      el("div", {
+        class: `sd-total-hrs ${ok ? "ok":"warn"}`
+      }, `${sh.hours.toFixed(1)}${tr("hoursShort")}`),
     ));
 
-    // Time chips
-    root.appendChild(el("div", {class:"info-card", style:"margin-top:14px"},
-      el("div", {class:"row"},
-        stat("plain", fmt12(sh.start), tr("start")),
-        stat("plain", fmt12(sh.end), tr("end")),
-        stat("plain", `${sh.hours.toFixed(1)}${tr("hoursShort")}`, tr("hours")),
-      ),
+    // Start / End rows (compact, not stats-card giant text)
+    const times = el("div", {class:"sd-rows"});
+    times.appendChild(el("div", {class:"sd-row"},
+      el("span", {class:"sd-label"}, tr("start")),
+      el("span", {class:"sd-value"}, fmt12(sh.start)),
     ));
+    times.appendChild(el("div", {class:"sd-row"},
+      el("span", {class:"sd-label"}, tr("end")),
+      el("span", {class:"sd-value"}, fmt12(sh.end)),
+    ));
+    root.appendChild(times);
 
-    // Comment
+    // Comment (if present)
     if (sh.comment) {
-      root.appendChild(el("div", {
-        style:"margin-top:14px; padding:12px 14px; border:1px solid var(--outline-soft); border-radius:12px; font-size:13px; font-style:italic; color:var(--text-secondary);"
-      }, `"${sh.comment}"`));
+      root.appendChild(el("div", {class:"sd-section-label"}, tr("commentLabel")));
+      root.appendChild(el("div", {class:"sd-comment"}, `"${sh.comment}"`));
     }
 
     // Map for just this shift
     const locShifts = [];
     if (sh.clockIn || sh.clockOut) locShifts.push(sh);
     if (locShifts.length > 0) {
-      root.appendChild(el("div", {
-        style:"font-size:11px; color:var(--text-muted); letter-spacing:0.4px; text-transform:uppercase; font-weight:700; margin-top:18px; margin-bottom:4px;"
-      }, tr("locationCaptured")));
+      root.appendChild(el("div", {class:"sd-section-label"}, tr("locationCaptured")));
       root.appendChild(miniMap(locShifts));
     } else {
-      root.appendChild(el("div", {
-        style:"margin-top:14px; padding:12px 14px; border:1px dashed var(--outline-soft); border-radius:10px; font-size:12px; color:var(--text-muted); text-align:center;"
-      }, tr("noLocation")));
+      root.appendChild(el("div", {class:"sd-no-loc"}, tr("noLocation")));
     }
 
     // Pending edit request banner
     if (editReq) {
-      root.appendChild(el("div", {
-        class:"approvals-banner", style:"margin-top:14px; cursor:default;"
-      },
-        el("div", {class:"icon"}, ICON("clock")),
-        el("div", {class:"body"},
-          el("div", {class:"title"}, tr("editPending")),
-          el("div", {class:"meta", style:"margin-top:3px; font-style:italic;"}, `"${editReq.comment}"`),
-          el("div", {class:"meta"}, `${fmt12(editReq.start)} – ${fmt12(editReq.end)}`),
+      root.appendChild(el("div", {class:"sd-section-label", style:"color:var(--accent-amber);"}, tr("editPending")));
+      root.appendChild(el("div", {class:"sd-edit-req"},
+        el("div", {class:"sd-edit-times"},
+          el("span", {style:"color:var(--text-muted); text-decoration:line-through; font-variant-numeric:tabular-nums;"},
+            `${fmt12(sh.start)} – ${fmt12(sh.end)}`),
+          el("span", {style:"margin: 0 8px; color:var(--text-muted);"}, "→"),
+          el("span", {style:"font-weight:700; font-variant-numeric:tabular-nums;"},
+            `${fmt12(editReq.start)} – ${fmt12(editReq.end)}`),
         ),
+        el("div", {class:"sd-edit-comment"}, `"${editReq.comment}"`),
       ));
     }
 
     // Actions: owner/admin (not readonly) can approve/reject; employees on their own shift can request edit
     if (editReq && canApprove(u)) {
-      root.appendChild(el("div", {style:"display:flex; gap:10px; margin-top:14px;"},
+      root.appendChild(el("div", {class:"sd-action-row"},
         el("button", {
-          class:"week-submit",
-          style:"flex:1; background:var(--accent-green); color:#fff; border:0; padding:12px; border-radius:10px; font-weight:700; font-family:inherit; cursor:pointer; letter-spacing:0.3px;",
+          class:"sd-btn approve",
           onclick: () => approveEditRequest(editReq.id),
         }, tr("approveEdit")),
         el("button", {
-          class:"week-submit",
-          style:"flex:1; background:transparent; color:var(--accent-red); border:1px solid var(--accent-red); padding:12px; border-radius:10px; font-weight:700; font-family:inherit; cursor:pointer; letter-spacing:0.3px;",
+          class:"sd-btn reject",
           onclick: () => rejectEditRequest(editReq.id),
         }, tr("rejectEdit")),
       ));
     } else if (!editReq && isEmployee(u) && u.id === sh.empId) {
       root.appendChild(el("button", {
-        style:"margin-top:18px; width:100%; background:var(--accent-blue); color:#fff; border:0; padding:14px; border-radius:10px; font-weight:700; font-family:inherit; cursor:pointer; letter-spacing:0.3px; font-size:14px;",
+        class:"sd-btn primary sd-btn-full",
         onclick: () => { state.modal = "editShift"; render(); },
       }, tr("requestEdit")));
     }

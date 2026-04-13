@@ -4,6 +4,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>PunchCard — interactive mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Fira+Sans:wght@300;400;500;600;700&family=Azeret+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --navy: #0D1B2A;
@@ -1027,6 +1030,762 @@
   .todo-list .check.discuss::after { content: "?"; font-size: 11px; font-weight: 700; }
   .todo-list .txt { font-size: 12px; }
   .todo-list .txt b { color: var(--text-primary); }
+
+  /* =========================================================
+     THEME SWITCH (page header)
+     ========================================================= */
+  .theme-switch {
+    margin-left: auto;
+    position: relative;
+    display: inline-flex;
+    background: var(--surface-dark);
+    border: 1px solid var(--outline-soft);
+    border-radius: 999px;
+    padding: 3px;
+    user-select: none;
+  }
+  .theme-switch .slider {
+    position: absolute;
+    top: 3px; bottom: 3px;
+    left: 3px;
+    width: calc(50% - 3px);
+    background: var(--accent-blue);
+    border-radius: 999px;
+    transition: transform 260ms cubic-bezier(.2,.8,.2,1), background 260ms ease;
+    box-shadow: 0 2px 6px rgba(59,130,246,.3);
+  }
+  .theme-switch.es .slider { transform: translateX(100%); }
+  .theme-switch .opt {
+    position: relative;
+    z-index: 1;
+    border: 0;
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    padding: 6px 16px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: color 200ms ease;
+  }
+  .theme-switch .opt.active { color: #fff; }
+
+  /* =========================================================
+     THEME V2 — "Ledger"
+     Warm paper, deep ink navy, vermilion stamp red.
+     Young Serif display, Fira Sans body, Azeret Mono numerals.
+     ========================================================= */
+  body.theme-v2 {
+    /* Token overrides — map existing vars to a warm paper palette */
+    --navy: oklch(96% 0.018 80);              /* cream page */
+    --deep-blue: oklch(92% 0.022 80);         /* deeper cream panel */
+    --slate: oklch(55% 0.02 250);
+    --surface-dark: oklch(94% 0.022 80);      /* kraft panel */
+    --surface-card: oklch(98% 0.012 80);      /* paper */
+    --surface-card-hi: oklch(91% 0.025 65);   /* hover kraft */
+    --accent-blue: oklch(52% 0.17 25);        /* vermilion */
+    --accent-blue-bright: oklch(47% 0.19 25); /* stronger vermilion */
+    --accent-green: oklch(50% 0.10 145);      /* muted forest */
+    --accent-green-light: oklch(45% 0.10 145);
+    --accent-red: oklch(48% 0.17 30);         /* stamp red */
+    --accent-red-light: oklch(45% 0.15 30);
+    --accent-amber: oklch(58% 0.14 65);       /* mustard */
+    --text-primary: oklch(22% 0.03 255);      /* deep ink */
+    --text-secondary: oklch(42% 0.025 250);   /* faded ink */
+    --text-muted: oklch(60% 0.02 250);
+    --outline-soft: oklch(80% 0.02 80);       /* hairline rule */
+
+    --font-display: "Young Serif", Georgia, serif;
+    --font-body: "Fira Sans", system-ui, sans-serif;
+    --font-mono: "Azeret Mono", ui-monospace, monospace;
+
+    background: oklch(93% 0.023 75);
+    font-family: var(--font-body);
+    font-weight: 400;
+    color: var(--text-primary);
+  }
+
+  /* Page header in ledger mode */
+  body.theme-v2 header.page h1 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: 0;
+    font-size: 24px;
+  }
+  body.theme-v2 header.page p { color: var(--text-secondary); }
+  body.theme-v2 .theme-switch {
+    background: oklch(88% 0.028 75);
+    border-color: var(--outline-soft);
+  }
+  body.theme-v2 .theme-switch .slider {
+    background: var(--text-primary);
+    box-shadow: 0 1px 3px oklch(22% 0.03 255 / .25);
+  }
+  body.theme-v2 .theme-switch .opt { color: var(--text-secondary); }
+  body.theme-v2 .theme-switch .opt.active { color: oklch(97% 0.015 80); }
+
+  /* Phone shell — warm paper envelope */
+  body.theme-v2 .phone {
+    background: oklch(96% 0.018 80);
+    box-shadow:
+      0 28px 70px oklch(22% 0.03 255 / .18),
+      0 0 0 10px oklch(86% 0.028 75),
+      0 0 0 11px oklch(78% 0.035 75);
+  }
+  body.theme-v2 .phone::before { background: oklch(22% 0.03 255); }
+  body.theme-v2 .screen {
+    background: oklch(96% 0.018 80);
+  }
+  body.theme-v2 .scroll::-webkit-scrollbar-thumb {
+    background: oklch(80% 0.025 75);
+  }
+
+  /* Typography — serif display, mono for numbers */
+  body.theme-v2 .greeting .name,
+  body.theme-v2 .month-nav .label,
+  body.theme-v2 .section-header h3,
+  body.theme-v2 .modal-card h3,
+  body.theme-v2 .topbar .title,
+  body.theme-v2 .login-wrap .brand,
+  body.theme-v2 .approvals-banner .title,
+  body.theme-v2 .week-submit .title {
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: -0.2px;
+  }
+  body.theme-v2 .greeting .hello {
+    color: var(--text-secondary);
+    font-size: 13px;
+    letter-spacing: 0.3px;
+  }
+  body.theme-v2 .greeting .role {
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 1.4px;
+    color: var(--accent-blue);
+    padding: 2px 0;
+    border-top: 1px solid var(--outline-soft);
+    border-bottom: 1px solid var(--outline-soft);
+    display: inline-block;
+    padding: 3px 10px;
+  }
+  body.theme-v2 .greeting .role.readonly { color: var(--accent-amber); }
+
+  /* Mono for any numeric readouts */
+  body.theme-v2 .info-card .stat .value,
+  body.theme-v2 .cal .inner .num,
+  body.theme-v2 .cal .pair,
+  body.theme-v2 .dd-table .tm,
+  body.theme-v2 .dd-table .hrs,
+  body.theme-v2 .clock-card .time,
+  body.theme-v2 .shift-summary .time,
+  body.theme-v2 .shift-summary .total .value,
+  body.theme-v2 .hist-shift-card .hrs,
+  body.theme-v2 .hist-shift-card .chip,
+  body.theme-v2 .emp-breakdown .brow .hrs,
+  body.theme-v2 .approval-row .total,
+  body.theme-v2 .week-submit .sub {
+    font-family: var(--font-mono);
+    font-feature-settings: "tnum" 1, "ss01" 1;
+    letter-spacing: -0.2px;
+  }
+  body.theme-v2 .info-card .stat .label {
+    font-family: var(--font-body);
+    letter-spacing: 1.2px;
+    color: var(--text-secondary);
+  }
+
+  /* Topbar */
+  body.theme-v2 .topbar {
+    border-bottom: 1px solid var(--outline-soft);
+    margin-bottom: 10px;
+    padding-bottom: 4px;
+  }
+  body.theme-v2 .topbar .title {
+    font-size: 17px;
+    letter-spacing: -0.3px;
+  }
+  body.theme-v2 .topbar .icon-btn,
+  body.theme-v2 .topbar .back {
+    color: var(--text-primary);
+    border-radius: 8px;
+  }
+  body.theme-v2 .topbar .icon-btn:hover,
+  body.theme-v2 .topbar .back:hover {
+    background: oklch(88% 0.025 75);
+  }
+
+  /* Language toggle */
+  body.theme-v2 .lang-toggle {
+    background: oklch(94% 0.022 80);
+    border: 1px solid var(--outline-soft);
+  }
+  body.theme-v2 .lang-toggle:hover { background: oklch(92% 0.022 80); }
+  body.theme-v2 .lang-toggle .slider {
+    background: var(--text-primary);
+    box-shadow: none;
+  }
+  body.theme-v2 .lang-toggle .opt { color: var(--text-secondary); }
+  body.theme-v2 .lang-toggle .opt.active { color: oklch(97% 0.012 80); }
+
+  /* Month nav */
+  body.theme-v2 .month-nav .label { font-size: 22px; }
+  body.theme-v2 .month-nav .chev {
+    color: var(--text-primary);
+    border-radius: 8px;
+  }
+  body.theme-v2 .month-nav .chev:hover {
+    background: oklch(88% 0.025 75);
+  }
+
+  /* Calendar */
+  body.theme-v2 .cal .dows span {
+    color: var(--text-muted);
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 2px;
+  }
+  body.theme-v2 .cal .cell { padding: 1px; }
+  body.theme-v2 .cal .inner {
+    border-radius: 2px;
+    border: 1px solid transparent;
+  }
+  body.theme-v2 .cal .cell.has-shifts .inner {
+    background: oklch(94% 0.02 80);
+    border-color: oklch(86% 0.025 75);
+  }
+  body.theme-v2 .cal .cell.empty .inner { background: transparent; }
+  body.theme-v2 .cal .inner .num {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+  body.theme-v2 .cal .cell.has-shifts .num { font-weight: 600; }
+  body.theme-v2 .cal .cell.empty .num { opacity: 0.25; }
+  body.theme-v2 .cal .cell.today .inner {
+    background: transparent;
+    border: 1.5px solid var(--accent-blue);
+    border-radius: 50%;
+  }
+  body.theme-v2 .cal .cell.today .num {
+    color: var(--accent-blue);
+    font-weight: 700;
+  }
+  body.theme-v2 .cal .cell.selected .inner {
+    background: var(--accent-blue);
+    border-color: var(--accent-blue-bright);
+    border-radius: 2px;
+  }
+  body.theme-v2 .cal .cell.selected .num { color: oklch(97% 0.012 80); }
+  body.theme-v2 .cal .pair {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--accent-blue);
+  }
+  body.theme-v2 .cal .pair .mid { color: var(--text-muted); }
+  body.theme-v2 .cal .pair .emp { color: var(--text-primary); }
+  body.theme-v2 .cal .cell.selected .pair,
+  body.theme-v2 .cal .cell.selected .pair .mid,
+  body.theme-v2 .cal .cell.selected .pair .emp {
+    color: oklch(97% 0.012 80);
+  }
+  /* Heat tints as subtle kraft, not blue glow */
+  body.theme-v2 .cal .heat-1 .inner { background: oklch(93% 0.03 70); }
+  body.theme-v2 .cal .heat-2 .inner { background: oklch(90% 0.045 65); }
+  body.theme-v2 .cal .heat-3 .inner { background: oklch(87% 0.06 60); }
+  body.theme-v2 .cal .heat-4 .inner { background: oklch(83% 0.075 55); }
+
+  /* Day detail panel */
+  body.theme-v2 .day-detail {
+    background: oklch(98% 0.012 80);
+    border: 1px solid var(--outline-soft);
+    border-radius: 4px;
+    padding: 14px 14px 12px;
+  }
+  body.theme-v2 .day-detail .date-label {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 16px;
+    text-transform: none;
+    letter-spacing: 0;
+    margin-bottom: 10px;
+    border-bottom: 1px solid var(--outline-soft);
+    padding-bottom: 8px;
+  }
+  body.theme-v2 .dd-table .head {
+    font-size: 10px;
+    letter-spacing: 1.6px;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--text-primary);
+  }
+  body.theme-v2 .dd-table .trow {
+    border-bottom: 1px dotted var(--outline-soft);
+  }
+  body.theme-v2 .dd-table .nm {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 14px;
+    letter-spacing: -0.1px;
+  }
+
+  /* Info card — flattened, ruled */
+  body.theme-v2 .info-card {
+    background: transparent;
+    border: 1px solid var(--outline-soft);
+    border-radius: 4px;
+    padding: 18px 18px 14px;
+  }
+  body.theme-v2 .info-card.clickable:hover {
+    background: oklch(94% 0.02 80);
+  }
+  body.theme-v2 .info-card .stat .value { font-size: 28px; font-weight: 600; }
+  body.theme-v2 .info-card .stat .label { font-size: 9px; }
+  body.theme-v2 .info-card .stat.blue .value { color: var(--accent-blue); }
+  body.theme-v2 .info-card .stat.green .value { color: var(--accent-green); }
+  body.theme-v2 .info-card .stat.amber .value { color: var(--accent-amber); }
+  body.theme-v2 .info-card .stat.plain .value { color: var(--text-primary); }
+  body.theme-v2 .info-card.legend .legend-list {
+    border-top: 1px solid var(--text-primary);
+    margin-top: 14px;
+    padding-top: 12px;
+  }
+  body.theme-v2 .emp-breakdown .brow {
+    padding: 7px 0;
+    border-bottom: 1px dotted var(--outline-soft);
+  }
+  body.theme-v2 .emp-breakdown .brow:last-child { border-bottom: 0; }
+  body.theme-v2 .emp-breakdown .brow .swatch {
+    width: 6px; height: 16px; border-radius: 1px;
+  }
+  body.theme-v2 .emp-breakdown .brow .name {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 13px;
+  }
+  body.theme-v2 .emp-breakdown .brow .meter {
+    background: oklch(88% 0.02 75);
+    border-radius: 0;
+    height: 4px;
+  }
+  body.theme-v2 .emp-breakdown .brow .meter span { border-radius: 0; }
+  body.theme-v2 .emp-breakdown .brow .hrs { font-size: 12px; font-weight: 600; }
+
+  /* Section header */
+  body.theme-v2 .section-header {
+    border-bottom: 1px solid var(--text-primary);
+    padding-bottom: 6px;
+    margin-top: 22px;
+  }
+  body.theme-v2 .section-header h3 { font-size: 19px; letter-spacing: -0.3px; }
+  body.theme-v2 .section-header small {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* Employee row — ruled list item, not card */
+  body.theme-v2 .emp-row {
+    background: transparent;
+    border-radius: 0;
+    border-bottom: 1px solid var(--outline-soft);
+    padding: 14px 4px;
+    margin-top: 0;
+  }
+  body.theme-v2 .emp-row:hover { background: oklch(94% 0.02 80); }
+  body.theme-v2 .emp-row .name {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 16px;
+  }
+  body.theme-v2 .emp-row .meta {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  body.theme-v2 .emp-row .av {
+    border-radius: 50%;
+    border: 1px solid currentColor;
+  }
+  body.theme-v2 .emp-row .badge {
+    font-family: var(--font-body);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    background: transparent;
+    color: var(--accent-amber);
+    border: 1px solid var(--accent-amber);
+    padding: 2px 7px;
+    border-radius: 2px;
+    font-size: 9px;
+  }
+
+  /* FAB */
+  body.theme-v2 .fab {
+    border-radius: 50%;
+    background: var(--accent-blue);
+    box-shadow: 0 10px 24px oklch(52% 0.17 25 / .35);
+  }
+
+  /* Login screen */
+  body.theme-v2 .login-wrap .brand {
+    font-size: 42px;
+    letter-spacing: -1px;
+    text-align: center;
+    line-height: 0.95;
+  }
+  body.theme-v2 .login-wrap .brand .accent { color: var(--accent-blue); }
+  body.theme-v2 .login-wrap .tag {
+    font-family: var(--font-display);
+    font-size: 14px;
+    color: var(--text-secondary);
+    font-style: italic;
+  }
+  body.theme-v2 .login-form input {
+    background: oklch(98% 0.012 80);
+    border: 1px solid var(--outline-soft);
+    border-radius: 4px;
+    color: var(--text-primary);
+    font-family: var(--font-body);
+  }
+  body.theme-v2 .login-form input::placeholder {
+    color: var(--text-muted);
+  }
+  body.theme-v2 .login-form input:focus { border-color: var(--accent-blue); }
+  body.theme-v2 .login-form .go {
+    background: var(--accent-blue);
+    border-radius: 4px;
+    font-family: var(--font-body);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  body.theme-v2 .login-form .err {
+    background: oklch(92% 0.06 30);
+    color: var(--accent-red);
+    border-radius: 4px;
+  }
+  body.theme-v2 .demo-accounts {
+    background: oklch(94% 0.022 80);
+    border: 1px solid var(--outline-soft);
+    border-radius: 4px;
+  }
+  body.theme-v2 .demo-accounts .demo-title {
+    letter-spacing: 1.6px;
+    color: var(--text-muted);
+  }
+  body.theme-v2 .demo-chip {
+    background: oklch(98% 0.012 80);
+    border: 1px solid var(--outline-soft);
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+  }
+  body.theme-v2 .demo-chip:hover { background: oklch(95% 0.018 80); }
+  body.theme-v2 .demo-chip b { color: var(--text-primary); font-weight: 700; }
+  body.theme-v2 .demo-chip .tag {
+    font-family: var(--font-body);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-radius: 2px;
+    border: 1px solid currentColor;
+    background: transparent;
+  }
+  body.theme-v2 .demo-chip .tag.admin { color: var(--accent-blue); background: transparent; }
+  body.theme-v2 .demo-chip .tag.emp { color: var(--accent-green); background: transparent; }
+  body.theme-v2 .demo-chip .tag.readonly { color: var(--accent-amber); background: transparent; }
+
+  /* Clock-in flow — flat stamp buttons, no gradients */
+  body.theme-v2 .big-cta {
+    border-radius: 4px;
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 20px;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 0 oklch(22% 0.03 255 / .2);
+    transition: transform 100ms ease, box-shadow 150ms ease;
+  }
+  body.theme-v2 .big-cta:active {
+    transform: translateY(2px);
+    box-shadow: 0 0 0 oklch(22% 0.03 255 / .2);
+  }
+  body.theme-v2 .big-cta.clock-in {
+    background: var(--accent-blue);
+    color: oklch(97% 0.012 80);
+  }
+  body.theme-v2 .big-cta.clock-out {
+    background: var(--text-primary);
+    color: oklch(97% 0.012 80);
+  }
+  body.theme-v2 .big-cta.submit {
+    background: var(--accent-green);
+    color: oklch(97% 0.012 80);
+  }
+  body.theme-v2 .big-cta.disabled {
+    filter: none;
+    background: oklch(86% 0.02 75);
+    color: var(--text-muted);
+    box-shadow: none;
+  }
+
+  body.theme-v2 .clock-card {
+    background: transparent;
+    border: 1px solid var(--outline-soft);
+    border-radius: 4px;
+  }
+  body.theme-v2 .clock-card .pulse {
+    background: var(--accent-green);
+  }
+  body.theme-v2 .clock-card .pulse::after { background: var(--accent-green); }
+  body.theme-v2 .clock-card .label {
+    font-family: var(--font-body);
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+  }
+  body.theme-v2 .clock-card .time { color: var(--accent-green); }
+
+  body.theme-v2 .shift-summary {
+    background: oklch(94% 0.022 80);
+    border: 1px solid var(--outline-soft);
+    border-radius: 4px;
+  }
+  body.theme-v2 .shift-summary .l-label { letter-spacing: 1.5px; }
+  body.theme-v2 .shift-summary .total .value { color: var(--accent-green); }
+  body.theme-v2 .shift-summary .total .value.warn { color: var(--accent-red); }
+  body.theme-v2 .shift-summary .total .unit {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-style: italic;
+    color: var(--text-secondary);
+  }
+  body.theme-v2 .comment-field {
+    background: oklch(98% 0.012 80);
+    border-color: var(--outline-soft);
+    border-radius: 3px;
+    font-family: var(--font-body);
+  }
+  body.theme-v2 .comment-field:focus { border-color: var(--accent-blue); }
+  body.theme-v2 .comment-field.required { border-color: var(--accent-red); }
+  body.theme-v2 .comment-required-note { color: var(--accent-red); }
+
+  /* Toast */
+  body.theme-v2 .toast {
+    background: var(--text-primary);
+    color: oklch(97% 0.012 80);
+    border: 1px solid var(--text-primary);
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.3px;
+  }
+  body.theme-v2 .toast .pill {
+    font-family: var(--font-body);
+    border-radius: 2px;
+    letter-spacing: 1.2px;
+  }
+
+  /* Approvals banner — no side-stripe, thin full border + kraft tint */
+  body.theme-v2 .approvals-banner {
+    background: oklch(93% 0.055 70);
+    border: 1px solid oklch(65% 0.12 65);
+    border-radius: 4px;
+  }
+  body.theme-v2 .approvals-banner .icon {
+    background: oklch(65% 0.14 65);
+    color: oklch(97% 0.012 80);
+    border-radius: 2px;
+  }
+  body.theme-v2 .approvals-banner .title {
+    color: oklch(35% 0.08 65);
+    font-size: 15px;
+    letter-spacing: -0.1px;
+  }
+  body.theme-v2 .approvals-banner .meta {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: oklch(45% 0.08 65);
+  }
+
+  /* Week submit card */
+  body.theme-v2 .week-submit {
+    background: transparent;
+    border: 1px solid var(--outline-soft);
+    border-radius: 4px;
+  }
+  body.theme-v2 .week-submit .title { font-size: 15px; }
+  body.theme-v2 .week-submit .sub {
+    font-size: 11px;
+    letter-spacing: 0.2px;
+  }
+  body.theme-v2 .week-submit .btn {
+    background: var(--accent-blue);
+    border-radius: 3px;
+    font-family: var(--font-body);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-size: 11px;
+  }
+  body.theme-v2 .week-submit .status-pill {
+    border-radius: 2px;
+    background: transparent;
+    border: 1px solid currentColor;
+    font-family: var(--font-body);
+    letter-spacing: 1.3px;
+  }
+  body.theme-v2 .week-submit .status-pill.pending { color: var(--accent-amber); }
+  body.theme-v2 .week-submit .status-pill.approved { color: var(--accent-green); }
+
+  /* Read-only banner */
+  body.theme-v2 .readonly-banner {
+    background: oklch(93% 0.055 70);
+    border: 1px solid oklch(65% 0.12 65);
+    color: oklch(40% 0.12 65);
+    font-family: var(--font-body);
+    letter-spacing: 0.8px;
+    border-radius: 3px;
+  }
+
+  /* History shift cards */
+  body.theme-v2 .hist-shift-card {
+    background: transparent;
+    border-bottom: 1px solid var(--outline-soft);
+    border-radius: 0;
+    padding: 14px 4px;
+    margin-top: 0;
+  }
+  body.theme-v2 .hist-shift-card .date {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 15px;
+  }
+  body.theme-v2 .hist-shift-card .hrs { font-size: 18px; font-weight: 600; }
+  body.theme-v2 .hist-shift-card .hrs.ok { color: var(--accent-green); }
+  body.theme-v2 .hist-shift-card .hrs.warn { color: var(--accent-red); }
+  body.theme-v2 .hist-shift-card .chip {
+    background: transparent;
+    border: 1px solid var(--outline-soft);
+    border-radius: 2px;
+    color: var(--text-secondary);
+    font-size: 11px;
+  }
+  body.theme-v2 .hist-shift-card .comment {
+    font-style: italic;
+    color: var(--text-secondary);
+    font-family: var(--font-display);
+    font-size: 13px;
+  }
+  body.theme-v2 .hist-shift-card .week-status {
+    border-radius: 2px;
+    background: transparent;
+    border: 1px solid currentColor;
+    font-family: var(--font-body);
+    letter-spacing: 1.2px;
+  }
+  body.theme-v2 .hist-shift-card .week-status.pending { color: var(--accent-amber); }
+  body.theme-v2 .hist-shift-card .week-status.approved { color: var(--accent-green); }
+
+  /* Map — warm filter instead of cool blue */
+  body.theme-v2 .mini-map {
+    border-radius: 4px;
+    border: 1px solid var(--outline-soft);
+    background: oklch(88% 0.03 75);
+  }
+  body.theme-v2 .mini-map .tiles img {
+    filter: sepia(0.25) saturate(0.7) brightness(0.95) contrast(1.05);
+  }
+  body.theme-v2 .mini-map .legend {
+    background: oklch(22% 0.03 255 / .85);
+    color: oklch(97% 0.012 80);
+    border-radius: 2px;
+    font-family: var(--font-body);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-size: 9px;
+  }
+
+  /* Modal */
+  body.theme-v2 .modal-scrim {
+    background: oklch(22% 0.03 255 / .45);
+  }
+  body.theme-v2 .modal-card {
+    background: oklch(96% 0.018 80);
+    border: 1px solid var(--outline-soft);
+    border-radius: 4px;
+  }
+  body.theme-v2 .modal-card h3 { font-size: 22px; }
+  body.theme-v2 .modal-card input,
+  body.theme-v2 .modal-card textarea {
+    background: oklch(98% 0.012 80);
+    border: 1px solid var(--outline-soft);
+    border-radius: 3px;
+    font-family: var(--font-body);
+    color: var(--text-primary);
+  }
+  body.theme-v2 .modal-card .btn {
+    font-family: var(--font-body);
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    font-size: 11px;
+    border-radius: 3px;
+  }
+  body.theme-v2 .modal-card .btn.primary { background: var(--accent-blue); }
+  body.theme-v2 .approval-row {
+    background: oklch(94% 0.022 80);
+    border: 1px solid var(--outline-soft);
+    border-radius: 4px;
+  }
+  body.theme-v2 .approval-row .who {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 15px;
+  }
+  body.theme-v2 .approval-row .week {
+    font-family: var(--font-mono);
+    font-size: 11px;
+  }
+  body.theme-v2 .approval-row .actions button {
+    border-radius: 3px;
+    font-family: var(--font-body);
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    font-size: 11px;
+  }
+  body.theme-v2 .approval-row .approve { background: var(--accent-green); }
+  body.theme-v2 .approval-row .reject {
+    background: transparent;
+    color: var(--accent-red);
+    border: 1px solid var(--accent-red);
+  }
+
+  /* Sidebar panels */
+  body.theme-v2 .phone-caption b { color: var(--text-primary); }
+  body.theme-v2 .info-panel {
+    background: oklch(94% 0.022 80);
+    border: 1px solid var(--outline-soft);
+    border-radius: 4px;
+    color: var(--text-secondary);
+  }
+  body.theme-v2 .info-panel h3 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    color: var(--text-primary);
+    font-size: 15px;
+    letter-spacing: -0.1px;
+  }
+  body.theme-v2 .info-panel code {
+    font-family: var(--font-mono);
+    background: oklch(98% 0.012 80);
+    border: 1px solid var(--outline-soft);
+  }
+  body.theme-v2 .todo-list .check.done { background: var(--accent-green); }
+  body.theme-v2 .todo-list .check.discuss {
+    background: transparent;
+    border: 1px dashed var(--outline-soft);
+    color: var(--text-muted);
+  }
+  body.theme-v2 .todo-list .txt b { color: var(--text-primary); }
 </style>
 </head>
 <body>
@@ -1035,6 +1794,11 @@
   <div>
     <h1>PunchCard — interactive mockup</h1>
     <p>Web-only simulation. Tap demo accounts to log in.</p>
+  </div>
+  <div class="theme-switch" id="themeSwitch" role="tablist" aria-label="App theme">
+    <div class="slider"></div>
+    <button data-theme="v1" class="opt active" role="tab">Default</button>
+    <button data-theme="v2" class="opt" role="tab">Ledger</button>
   </div>
 </header>
 
@@ -1077,6 +1841,28 @@
 </div>
 
 <script>
+  // =============================================================
+  // THEME SWITCH
+  // =============================================================
+  (function () {
+    const sw = document.getElementById("themeSwitch");
+    if (!sw) return;
+    const apply = (theme) => {
+      document.body.classList.toggle("theme-v2", theme === "v2");
+      sw.querySelectorAll(".opt").forEach(b => b.classList.toggle("active", b.dataset.theme === theme));
+      const sliderTarget = theme === "v2" ? "100%" : "0";
+      sw.querySelector(".slider").style.transform = `translateX(${sliderTarget})`;
+      try { localStorage.setItem("pc_theme", theme); } catch (_) {}
+    };
+    let saved = "v1";
+    try { saved = localStorage.getItem("pc_theme") || "v1"; } catch (_) {}
+    apply(saved);
+    sw.addEventListener("click", (e) => {
+      const b = e.target.closest("button"); if (!b) return;
+      apply(b.dataset.theme);
+    });
+  })();
+
   // =============================================================
   // STATE
   // =============================================================

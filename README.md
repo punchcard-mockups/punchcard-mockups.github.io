@@ -48,14 +48,14 @@ All passwords are `1234` (except `alee` which is also `1234`). Click a chip on t
 **Employee**
 - Clock in / clock out with real browser GPS (falls back to a mocked coord if permission denied or unavailable)
 - Captured lat/lng shown inline during the flow
-- Shift calendar + month summary (hours · days · shifts)
+- Shift calendar + month summary (hours · days)
 - Weekly sign-off: submit the current week for approval
 - Edit requests on past shifts (requires a comment explaining the change)
 - History with a mini-map of all located shifts
 - 9-hour threshold — shifts under 9 hours require a comment
 
 **Admin / Owner**
-- Calendar view with per-day hours · staff count, per-employee breakdown in the summary card
+- Calendar view with per-day hours · staff count on each cell, month summary (hours · days) and per-employee breakdown in the summary card
 - Pending-approvals banner (weeks + edit requests combined count)
 - Approvals modal: approve/reject weeks and shift edit requests
 - Employee list with pending-week badges

@@ -63,7 +63,7 @@ Last updated alongside web `v.2026-04-13.1745`. The Android tree surveyed lives 
 | --- | --- | --- |
 | Admin calendar view | ✅ | ✅ |
 | Calendar day summary (per-day stats) | ✅ colored cards | ✅ `24h · 3` staff count readout, heatmap tint |
-| Month-level summary card | ❌ (or minimal) | 🆕 ✅ hours · days · shifts · staff |
+| Month-level summary card | ❌ (or minimal) | 🆕 ✅ hours · days |
 | Per-employee breakdown | ❌ | 🆕 ✅ horizontal bar graph |
 | Employee list | ✅ | ✅ |
 | Add employee dialog | ✅ with unique-username check | 🟡 ✅ (in-memory; not persisted) |

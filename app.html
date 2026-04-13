@@ -27,16 +27,19 @@
     --text-muted: #64748B;
     --outline-soft: rgba(148,163,184,.15);
 
-    --emp-1:#3B82F6;
-    --emp-2:#10B981;
-    --emp-3:#F59E0B;
-    --emp-4:#EF4444;
-    --emp-5:#8B5CF6;
-    --emp-6:#EC4899;
-    --emp-7:#06B6D4;
-    --emp-8:#F97316;
-    --emp-9:#14B8A6;
-    --emp-10:#6366F1;
+    /* Employee colors — deep jewel tones, not pastel.
+       Each sits in a distinct hue band, avoiding the semantic
+       red/green/amber zones reserved for warnings/ok/pending. */
+    --emp-1: #1D4ED8;  /* royal blue */
+    --emp-2: #0F766E;  /* dark teal */
+    --emp-3: #831843;  /* plum */
+    --emp-4: #4338CA;  /* indigo-blue */
+    --emp-5: #6D28D9;  /* deep violet */
+    --emp-6: #A21CAF;  /* magenta */
+    --emp-7: #0E7490;  /* deep cyan */
+    --emp-8: #78350F;  /* dark bronze */
+    --emp-9: #155E75;  /* teal-blue */
+    --emp-10: #581C87; /* dark purple */
   }
 
   * { box-sizing: border-box; }
@@ -2628,7 +2631,7 @@
 <body class="theme-editorial">
 
 <div class="app-root">
-  <div class="version-tag" id="versionTag">v.2026-04-13.1615</div>
+  <div class="version-tag" id="versionTag">v.2026-04-13.1630</div>
   <div class="topbar" id="topbarRoot"></div>
   <div class="scroll" id="scrollRoot"></div>
   <div id="fabRoot"></div>
@@ -2671,13 +2674,14 @@
 
   const users = [
     // Employee colors chosen to avoid overlap with semantic colors
-    // (oxblood = action, green = approved/ok, red = warn, amber = pending).
-    { id: 1, username: "admin",  password: "admin", displayName: "Alejandra A.", role: "admin",    color: "var(--emp-10)" }, // indigo
-    { id: 2, username: "maria",  password: "1234",  displayName: "Maria R.",  role: "employee", color: "var(--emp-9)"  }, // teal
-    { id: 3, username: "jose",   password: "1234",  displayName: "Jose A.",   role: "employee", color: "var(--emp-1)"  }, // blue
-    { id: 4, username: "luis",   password: "1234",  displayName: "Luis F.",   role: "employee", color: "var(--emp-7)"  }, // cyan
-    { id: 5, username: "sofia",  password: "1234",  displayName: "Sofia P.",  role: "employee", color: "var(--emp-5)"  }, // violet
-    { id: 6, username: "viewer", password: "1234",  displayName: "Accountant", role: "readonly", color: "var(--emp-6)" }, // pink
+    // (accent = action, green = approved/ok, red = warn, amber = pending).
+    // Each user gets a distinct hue in the jewel-tone palette.
+    { id: 1, username: "admin",  password: "admin", displayName: "Alejandra A.", role: "admin",    color: "var(--emp-3)"  }, // plum
+    { id: 2, username: "maria",  password: "1234",  displayName: "Maria R.",  role: "employee", color: "var(--emp-2)"  }, // dark teal
+    { id: 3, username: "jose",   password: "1234",  displayName: "Jose A.",   role: "employee", color: "var(--emp-1)"  }, // royal blue
+    { id: 4, username: "luis",   password: "1234",  displayName: "Luis F.",   role: "employee", color: "var(--emp-6)"  }, // magenta
+    { id: 5, username: "sofia",  password: "1234",  displayName: "Sofia P.",  role: "employee", color: "var(--emp-5)"  }, // deep violet
+    { id: 6, username: "viewer", password: "1234",  displayName: "Accountant", role: "readonly", color: "var(--emp-7)"  }, // deep cyan
   ];
   const userById = Object.fromEntries(users.map(u => [u.id, u]));
   const employees = () => users.filter(u => u.role === "employee");
@@ -3748,7 +3752,7 @@
         class: "emp-row",
         onclick: () => navTo("admin_employee", { viewingEmployeeId: e.id, selectedDay: null }),
       },
-        el("div", {class:"av", style:`background:${e.color}26; color:${e.color}`}, e.displayName.charAt(0)),
+        el("div", {class:"av", style:`background:color-mix(in oklab, ${e.color} 22%, transparent); color:${e.color}`}, e.displayName.charAt(0)),
         el("div", {class:"body"},
           el("div", {class:"name"},
             el("span", {}, e.displayName),
@@ -3770,7 +3774,7 @@
     // Employee header
     root.appendChild(el("div", {class:"greeting", style:"display:flex; align-items:center; gap:14px;"},
       el("div", {
-        style: `width:56px; height:56px; border-radius:50%; background:${e.color}26; color:${e.color}; display:grid; place-items:center; font-size:22px; font-weight:800;`
+        style: `width:56px; height:56px; border-radius:50%; background:color-mix(in oklab, ${e.color} 22%, transparent); color:${e.color}; display:grid; place-items:center; font-size:22px; font-weight:800;`
       }, e.displayName.charAt(0)),
       el("div", {style:"flex:1"},
         el("div", {class:"name", style:"font-size:22px;"}, e.displayName),

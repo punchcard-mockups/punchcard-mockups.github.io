@@ -2160,8 +2160,8 @@
   }
   body.theme-editorial .greeting .role {
     background: transparent;
-    border: 1px solid var(--accent-blue);
-    color: var(--accent-blue);
+    border: 1px solid var(--text-secondary);
+    color: var(--text-secondary);
     font-family: var(--tf-body);
     font-weight: 700;
     padding: 3px 10px;
@@ -2216,9 +2216,10 @@
     font-size: 11px;
     color: var(--text-secondary);
   }
-  body.theme-editorial .info-card .stat.blue .value { color: var(--accent-blue); }
-  body.theme-editorial .info-card .stat.green .value { color: var(--accent-green); }
-  body.theme-editorial .info-card .stat.amber .value { color: var(--accent-amber); }
+  /* Stats are informational, not actions — keep all neutral ink. */
+  body.theme-editorial .info-card .stat.blue .value,
+  body.theme-editorial .info-card .stat.green .value,
+  body.theme-editorial .info-card .stat.amber .value,
   body.theme-editorial .info-card .stat.plain .value { color: var(--text-primary); }
   body.theme-editorial .info-card.legend .legend-list {
     border-top: 1px solid var(--outline-soft); padding-top: 12px; margin-top: 14px;
@@ -2241,10 +2242,10 @@
   body.theme-editorial .cal .inner { border-radius: 2px; }
   body.theme-editorial .cal .cell.today .inner {
     background: transparent;
-    outline: 1.5px solid var(--accent-blue);
+    outline: 1.5px solid var(--text-primary);
     outline-offset: -2px;
   }
-  body.theme-editorial .cal .cell.today .num { color: var(--accent-blue); font-weight: 700; font-family: var(--tf-display); }
+  body.theme-editorial .cal .cell.today .num { color: var(--text-primary); font-weight: 700; font-family: var(--tf-display); }
   body.theme-editorial .cal .cell.selected .inner { background: var(--accent-blue); }
   body.theme-editorial .cal .cell.selected .num,
   body.theme-editorial .cal .cell.selected .pair,
@@ -2312,9 +2313,9 @@
     border-radius: 2px; letter-spacing: 1.2px; font-family: var(--tf-body);
   }
   body.theme-editorial .fab {
-    background: var(--text-primary); color: var(--t-bg);
+    background: var(--accent-blue); color: var(--t-bg);
     border-radius: 50%;
-    box-shadow: 0 10px 24px oklch(16% 0.015 30 / .3);
+    box-shadow: 0 10px 24px oklch(35% 0.15 15 / .35);
   }
   /* Buttons — flat, sharp */
   body.theme-editorial .big-cta {
@@ -2388,10 +2389,17 @@
   }
   body.theme-editorial .demo-chip:hover { background: oklch(94% 0.02 85); }
   body.theme-editorial .demo-chip b { color: var(--accent-blue); }
-  body.theme-editorial .demo-chip .tag { background: transparent; border: 1px solid currentColor; border-radius: 2px; letter-spacing: 1.2px; font-family: var(--tf-body); }
-  body.theme-editorial .demo-chip .tag.admin { color: var(--accent-blue); }
-  body.theme-editorial .demo-chip .tag.emp { color: var(--accent-green); }
-  body.theme-editorial .demo-chip .tag.readonly { color: var(--accent-amber); }
+  body.theme-editorial .demo-chip .tag {
+    background: transparent;
+    border: 1px solid var(--text-secondary);
+    color: var(--text-secondary);
+    border-radius: 2px;
+    letter-spacing: 1.2px;
+    font-family: var(--tf-body);
+  }
+  body.theme-editorial .demo-chip .tag.admin,
+  body.theme-editorial .demo-chip .tag.emp,
+  body.theme-editorial .demo-chip .tag.readonly { color: var(--text-secondary); border-color: var(--text-secondary); }
   /* Approvals */
   body.theme-editorial .approvals-banner {
     background: transparent; border: 0;
@@ -2592,7 +2600,7 @@
 <body class="theme-editorial">
 
 <div class="app-root">
-  <div class="version-tag" id="versionTag">v.2026-04-13.1425</div>
+  <div class="version-tag" id="versionTag">v.2026-04-13.1445</div>
   <div class="topbar" id="topbarRoot"></div>
   <div class="scroll" id="scrollRoot"></div>
   <div id="fabRoot"></div>
@@ -2632,12 +2640,14 @@
   // =============================================================
 
   const users = [
-    { id: 1, username: "admin",  password: "admin", displayName: "Alejandra A.", role: "admin",    color: "var(--emp-10)" },
-    { id: 2, username: "maria",  password: "1234",  displayName: "Maria R.",  role: "employee", color: "var(--emp-2)"  },
-    { id: 3, username: "jose",   password: "1234",  displayName: "Jose A.",   role: "employee", color: "var(--emp-1)"  },
-    { id: 4, username: "luis",   password: "1234",  displayName: "Luis F.",   role: "employee", color: "var(--emp-3)"  },
-    { id: 5, username: "sofia",  password: "1234",  displayName: "Sofia P.",  role: "employee", color: "var(--emp-5)"  },
-    { id: 6, username: "viewer", password: "1234",  displayName: "Accountant", role: "readonly", color: "var(--emp-6)" },
+    // Employee colors chosen to avoid overlap with semantic colors
+    // (oxblood = action, green = approved/ok, red = warn, amber = pending).
+    { id: 1, username: "admin",  password: "admin", displayName: "Alejandra A.", role: "admin",    color: "var(--emp-10)" }, // indigo
+    { id: 2, username: "maria",  password: "1234",  displayName: "Maria R.",  role: "employee", color: "var(--emp-9)"  }, // teal
+    { id: 3, username: "jose",   password: "1234",  displayName: "Jose A.",   role: "employee", color: "var(--emp-1)"  }, // blue
+    { id: 4, username: "luis",   password: "1234",  displayName: "Luis F.",   role: "employee", color: "var(--emp-7)"  }, // cyan
+    { id: 5, username: "sofia",  password: "1234",  displayName: "Sofia P.",  role: "employee", color: "var(--emp-5)"  }, // violet
+    { id: 6, username: "viewer", password: "1234",  displayName: "Accountant", role: "readonly", color: "var(--emp-6)" }, // pink
   ];
   const userById = Object.fromEntries(users.map(u => [u.id, u]));
   const employees = () => users.filter(u => u.role === "employee");

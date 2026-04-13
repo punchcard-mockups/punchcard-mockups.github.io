@@ -648,6 +648,158 @@
   }
 
   .hidden { display: none !important; }
+
+  /* Toast */
+  .toast-wrap {
+    position: absolute;
+    left: 14px; right: 14px;
+    bottom: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+    z-index: 30;
+  }
+  .toast {
+    background: var(--surface-card-hi);
+    border: 1px solid var(--outline-soft);
+    color: var(--text-primary);
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.4);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    animation: toast-in 220ms ease both;
+    pointer-events: auto;
+  }
+  .toast.leave { animation: toast-out 220ms ease both; }
+  .toast .pill {
+    background: var(--accent-blue);
+    color: #fff;
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    padding: 3px 7px;
+    border-radius: 999px;
+  }
+  .toast.success .pill { background: var(--accent-green); }
+  .toast.warn .pill { background: var(--accent-amber); color: #000; }
+  @keyframes toast-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes toast-out {
+    from { opacity: 1; transform: translateY(0); }
+    to   { opacity: 0; transform: translateY(8px); }
+  }
+
+  /* Month slide animation */
+  .month-anim-next { animation: slide-left 260ms ease both; }
+  .month-anim-prev { animation: slide-right 260ms ease both; }
+  @keyframes slide-left {
+    from { opacity: 0; transform: translateX(18px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes slide-right {
+    from { opacity: 0; transform: translateX(-18px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  /* Clock-in flow */
+  .big-cta {
+    border: 0;
+    width: 100%;
+    height: 116px;
+    border-radius: 24px;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+    justify-content: center;
+    letter-spacing: 0.3px;
+    transition: transform 100ms ease, filter 150ms ease;
+  }
+  .big-cta:active { transform: scale(.985); }
+  .big-cta.clock-in {
+    background: linear-gradient(180deg, var(--accent-green), #059669);
+  }
+  .big-cta.clock-out {
+    background: linear-gradient(180deg, var(--accent-red), #dc2626);
+  }
+  .big-cta.submit {
+    background: linear-gradient(180deg, var(--accent-blue), #1d4ed8);
+  }
+  .big-cta svg { width: 32px; height: 32px; }
+  .clock-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 20px;
+    background: var(--surface-card);
+    border-radius: 18px;
+  }
+  .clock-card .pulse {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--accent-green);
+    position: relative;
+  }
+  .clock-card .pulse::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    background: var(--accent-green);
+    opacity: .3;
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0% { transform: scale(.85); opacity: .35; }
+    70% { transform: scale(1.5); opacity: 0; }
+    100% { transform: scale(.85); opacity: 0; }
+  }
+  .clock-card .label { font-size: 11px; color: var(--text-secondary); letter-spacing: 0.4px; text-transform: uppercase; font-weight: 700;}
+  .clock-card .time { font-size: 22px; font-weight: 700; color: var(--accent-green-light); }
+  .shift-summary {
+    background: var(--surface-card);
+    border-radius: 18px;
+    padding: 16px 18px;
+  }
+  .shift-summary .row {
+    display: flex; justify-content: space-between; align-items: flex-end;
+  }
+  .shift-summary .col { display: flex; flex-direction: column; gap: 2px; }
+  .shift-summary .col.r { align-items: flex-end; }
+  .shift-summary .l-label { font-size: 10px; color: var(--text-secondary); letter-spacing: 0.4px; text-transform: uppercase; font-weight: 700; }
+  .shift-summary .time { font-size: 22px; font-weight: 700; }
+  .shift-summary .total {
+    text-align: center;
+    margin-top: 12px;
+    border-top: 1px solid var(--outline-soft);
+    padding-top: 14px;
+  }
+  .shift-summary .total .value { font-size: 40px; font-weight: 800; color: var(--accent-green-light); letter-spacing: -1px; }
+  .shift-summary .total .unit { font-size: 14px; color: var(--text-secondary); margin-left: 6px; }
+
+  .icon-btn.pressable { transition: transform 100ms ease, background 150ms ease; }
+  .icon-btn.pressable:hover { background: var(--surface-dark); color: var(--text-primary); }
+  .icon-btn.pressable:active { transform: scale(.92); }
+  .lang-pill { cursor: pointer; transition: background 150ms ease; user-select: none; }
+  .lang-pill:hover { background: var(--surface-card-hi); color: var(--text-primary); }
+  .cal .cell { transition: transform 90ms ease; }
+  .cal .cell:active { transform: scale(.96); }
+  .info-card.clickable { cursor: pointer; transition: background 150ms ease, transform 100ms ease; }
+  .info-card.clickable:hover { background: var(--surface-card-hi); }
+  .info-card.clickable:active { transform: scale(.99); }
+  .chev { transition: background 150ms ease, transform 100ms ease; }
+  .chev:active { transform: scale(.92); }
 </style>
 </head>
 <body>
@@ -684,16 +836,9 @@
 <div class="stage">
   <div class="phone">
     <div class="screen">
-      <div class="topbar">
-        <span class="lang-pill" id="langPill">EN</span>
-        <div class="icon-btn" title="History">
-          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 3v5h5"/><path d="M3.05 13a9 9 0 1 0 .5-5"/><path d="M12 7v5l3 3"/></svg>
-        </div>
-        <div class="icon-btn" title="Logout">
-          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
-        </div>
-      </div>
+      <div class="topbar" id="topbarRoot"></div>
       <div class="scroll" id="scrollRoot"></div>
+      <div class="toast-wrap" id="toastWrap"></div>
     </div>
   </div>
   <div style="padding:0 8px">
@@ -720,22 +865,23 @@
   </div>
 </div>
 
-<div class="footnote">
-  <h2>Implementation notes</h2>
-  <p>Option A is the safest: it's a drop-in <code>InfoCard</code> under the calendar in <code>AdminScreen.kt</code> mirroring the employee-side stats block. Option B needs a small refactor of the month-nav <code>Row</code>. Option C is the most work — moving <code>DayDetailExpansion</code> out of <code>CalendarGrid</code> and hoisting the selected-date slot. Option D is trivial. Option E is A plus a derived <code>shiftsByEmployee</code> list.</p>
-</div>
-
 <script>
   // Shared state -------------------------------------------------
-  const state = { role: "admin", opt: "A", cellStyle: "bar", selectedDay: null };
+  const state = {
+    role: "admin",
+    opt: "A",
+    cellStyle: "bar",
+    selectedDay: null,
+    year: 2026,
+    month: 3,        // April (0-indexed)
+    lang: "en",
+    clock: "idle",   // idle | in | out
+    clockIn: null,
+    clockOut: null,
+    lastAnim: 0,
+  };
 
-  // Mock month data — April 2026
-  // Each day -> { shifts: [{empId, start, end, hours, comment}] }
-  const year = 2026;
-  const month = 3; // April (0-indexed)
-  const monthLabel = "April 2026";
-
-  // Make a believable set of employees & days
+  // Employees
   const employees = [
     { id: 1, name: "Maria R.",  short: "M", color: "var(--emp-2)" }, // green
     { id: 2, name: "Jose A.",   short: "J", color: "var(--emp-1)" }, // blue
@@ -744,8 +890,67 @@
   ];
   const empById = Object.fromEntries(employees.map(e => [e.id, e]));
 
-  // Seeded mock shifts — realistic overlapping pattern
-  const data = {
+  // Strings
+  const strings = {
+    en: {
+      welcome: "Welcome,",
+      admin: "ADMIN",
+      employees: "Employees",
+      registered: "registered",
+      hours: "Hours", days: "Days", shifts: "Shifts", staff: "Staff", avgDay: "Avg/day",
+      thisMonth: "this month",
+      clockIn: "Clock In", clockOut: "Clock Out",
+      submit: "Submit shift",
+      clockedInAt: "Clocked in at",
+      start: "Start", end: "End",
+      today: "Today",
+      noShifts: "No shifts",
+      history: "History opened",
+      logout: "Logging out…",
+      addEmployee: "Add employee dialog would open",
+      viewEmployee: "Viewing",
+      shiftLogged: "Shift logged",
+      hoursShort: "h",
+    },
+    es: {
+      welcome: "Bienvenido,",
+      admin: "ADMIN",
+      employees: "Empleados",
+      registered: "registrados",
+      hours: "Horas", days: "Días", shifts: "Turnos", staff: "Equipo", avgDay: "Prom/día",
+      thisMonth: "este mes",
+      clockIn: "Entrar", clockOut: "Salir",
+      submit: "Enviar turno",
+      clockedInAt: "Entró a las",
+      start: "Inicio", end: "Fin",
+      today: "Hoy",
+      noShifts: "Sin turnos",
+      history: "Historial abierto",
+      logout: "Cerrando sesión…",
+      addEmployee: "Se abriría el diálogo de agregar empleado",
+      viewEmployee: "Viendo a",
+      shiftLogged: "Turno registrado",
+      hoursShort: "h",
+    },
+  };
+  const tr = (k) => strings[state.lang][k] ?? k;
+
+  // Month label (localized)
+  function monthLabelText() {
+    const d = new Date(state.year, state.month, 1);
+    const fmt = new Intl.DateTimeFormat(state.lang === "es" ? "es-ES" : "en-US",
+      { month: "long", year: "numeric" });
+    return fmt.format(d).replace(/^./, c => c.toUpperCase());
+  }
+
+  // Deterministic pseudo-random for seed-based data generation
+  function seeded(seed) {
+    let s = seed | 0;
+    return () => { s = (s * 1664525 + 1013904223) | 0; return ((s >>> 0) % 10000) / 10000; };
+  }
+
+  // Generate shifts for a given month. April 2026 uses the curated set.
+  const aprilData = {
     1:  [ s(1, "07:30","15:30"), s(2,"08:00","16:00") ],
     2:  [ s(1,"08:00","16:00"), s(2,"09:00","17:00"), s(3,"10:00","14:00") ],
     3:  [ s(1,"07:30","15:00"), s(2,"08:30","17:30") ],
@@ -772,7 +977,37 @@
     return { empId, start, end, hours, comment };
   }
 
-  const today = new Date(year, month, 14); // fake "today"
+  function generateMonth(year, month) {
+    if (year === 2026 && month === 3) return aprilData;
+    const rng = seeded(year * 100 + month + 1);
+    const daysInMonth = new Date(year, month+1, 0).getDate();
+    const out = {};
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dow = new Date(year, month, d).getDay();
+      // Fewer weekend shifts
+      const p = (dow === 0 || dow === 6) ? 0.25 : 0.75;
+      if (rng() > p) continue;
+      const nEmp = 1 + Math.floor(rng() * employees.length);
+      const picks = [...employees].sort(() => rng() - 0.5).slice(0, nEmp);
+      out[d] = picks.map(e => {
+        const startHour = 7 + Math.floor(rng() * 3);
+        const startMin = rng() < 0.5 ? 0 : 30;
+        const len = 4 + Math.floor(rng() * 6);
+        const endH = Math.min(23, startHour + len);
+        const pad = n => String(n).padStart(2,"0");
+        return s(e.id, `${pad(startHour)}:${pad(startMin)}`, `${pad(endH)}:${pad(startMin)}`);
+      });
+    }
+    return out;
+  }
+
+  // Current-month data accessor
+  function currentData() { return generateMonth(state.year, state.month); }
+
+  function currentToday() {
+    if (state.year === 2026 && state.month === 3) return new Date(2026, 3, 14);
+    return new Date(state.year, state.month, 1);
+  }
 
   // Render helpers -----------------------------------------------
   function el(tag, attrs={}, ...children) {
@@ -794,7 +1029,7 @@
     let totalHours = 0, totalShifts = 0;
     const days = new Set();
     const empHours = {};
-    for (const [dayStr, shifts] of Object.entries(data)) {
+    for (const [dayStr, shifts] of Object.entries(currentData())) {
       for (const sh of shifts) {
         totalHours += sh.hours;
         totalShifts++;
@@ -814,7 +1049,7 @@
   function empMonthStats(empId) {
     let totalHours = 0, totalShifts = 0;
     const days = new Set();
-    for (const [dayStr, shifts] of Object.entries(data)) {
+    for (const [dayStr, shifts] of Object.entries(currentData())) {
       for (const sh of shifts) {
         if (sh.empId !== empId) continue;
         totalHours += sh.hours;
@@ -827,12 +1062,17 @@
 
   // Calendar -----------------------------------------------------
   function renderCalendar() {
-    const firstOfMonth = new Date(year, month, 1);
-    const daysInMonth = new Date(year, month+1, 0).getDate();
+    const firstOfMonth = new Date(state.year, state.month, 1);
+    const daysInMonth = new Date(state.year, state.month+1, 0).getDate();
     const startOffset = firstOfMonth.getDay(); // 0=Sun
+    const data = currentData();
+    const today = currentToday();
 
+    const dowKey = state.lang === "es"
+      ? ["D","L","M","M","J","V","S"]
+      : ["S","M","T","W","T","F","S"];
     const dows = el("div", {class:"dows"},
-      ...["S","M","T","W","T","F","S"].map(d => el("span", {}, d))
+      ...dowKey.map(d => el("span", {}, d))
     );
 
     const grid = el("div", {class:"grid"});
@@ -971,15 +1211,16 @@
   }
 
   function renderDayDetail(dayNum) {
-    const shifts = data[dayNum] || [];
-    const d = new Date(year, month, dayNum);
-    const label = d.toLocaleDateString(undefined, { weekday:"long", month:"long", day:"numeric" });
+    const shifts = currentData()[dayNum] || [];
+    const d = new Date(state.year, state.month, dayNum);
+    const label = d.toLocaleDateString(state.lang === "es" ? "es-ES" : "en-US",
+      { weekday:"long", month:"long", day:"numeric" }).replace(/^./, c => c.toUpperCase());
 
     const wrap = el("div", {class:"day-detail"},
       el("div", {class:"date-label"}, label)
     );
     if (shifts.length === 0) {
-      wrap.appendChild(el("div", {class:"no-shifts"}, "No shifts"));
+      wrap.appendChild(el("div", {class:"no-shifts"}, tr("noShifts")));
       return wrap;
     }
     const byEmp = {};
@@ -1025,23 +1266,23 @@
 
   // Month summary widgets ---------------------------------------
   function summaryCard() {
-    const s = monthStats();
+    const st = monthStats();
     if (state.role === "employee") {
       const me = empMonthStats(1);
       return el("div", {class:"info-card"},
         el("div", {class:"row"},
-          stat("plain", me.totalHours.toFixed(1), "Hours"),
-          stat("plain", String(me.activeDays), "Days"),
-          stat("plain", me.avgPerDay.toFixed(1), "Avg/day"),
+          stat("plain", me.totalHours.toFixed(1), tr("hours")),
+          stat("plain", String(me.activeDays), tr("days")),
+          stat("plain", me.avgPerDay.toFixed(1), tr("avgDay")),
         )
       );
     }
     return el("div", {class:"info-card"},
       el("div", {class:"row"},
-        stat("blue",  s.totalHours.toFixed(0), "Hours"),
-        stat("green", String(s.activeDays), "Days"),
-        stat("amber", String(s.totalShifts), "Shifts"),
-        stat("plain", String(s.employees), "Staff"),
+        stat("blue",  st.totalHours.toFixed(0), tr("hours")),
+        stat("green", String(st.activeDays), tr("days")),
+        stat("amber", String(st.totalShifts), tr("shifts")),
+        stat("plain", String(st.employees), tr("staff")),
       )
     );
   }
@@ -1053,10 +1294,10 @@
   }
 
   function summaryCardWithBreakdown() {
-    const s = monthStats();
+    const st = monthStats();
     const base = summaryCard();
     if (state.role !== "admin") return base;
-    const sorted = Object.entries(s.empHours).sort((a,b)=>b[1]-a[1]);
+    const sorted = Object.entries(st.empHours).sort((a,b)=>b[1]-a[1]);
     const max = Math.max(...sorted.map(([,h])=>h));
     const list = el("div", {class:"emp-breakdown"});
     for (const [empIdStr, hrs] of sorted) {
@@ -1075,66 +1316,64 @@
   }
 
   function headerStatsLine() {
-    const s = monthStats();
+    const st = monthStats();
     if (state.role === "employee") {
       const me = empMonthStats(1);
       return el("div", {class:"sub"},
-        el("b", {}, me.totalHours.toFixed(0)+"h"),
+        el("b", {}, me.totalHours.toFixed(0)+tr("hoursShort")),
         el("span", {class:"dot"}, "·"),
         el("b", {}, String(me.activeDays)),
-        el("span", {}, " days"),
+        el("span", {}, " " + tr("days").toLowerCase()),
       );
     }
     return el("div", {class:"sub"},
-      el("b", {}, s.totalHours.toFixed(0)+"h"),
+      el("b", {}, st.totalHours.toFixed(0)+tr("hoursShort")),
       el("span", {class:"dot"}, "·"),
-      el("b", {}, String(s.employees)),
-      el("span", {}, " staff"),
+      el("b", {}, String(st.employees)),
+      el("span", {}, " " + tr("staff").toLowerCase()),
       el("span", {class:"dot"}, "·"),
-      el("b", {}, String(s.totalShifts)),
-      el("span", {}, " shifts"),
+      el("b", {}, String(st.totalShifts)),
+      el("span", {}, " " + tr("shifts").toLowerCase()),
     );
   }
 
   function ticker() {
-    const s = monthStats();
+    const st = monthStats();
     if (state.role === "employee") {
       const me = empMonthStats(1);
       return el("div", {class:"ticker"},
-        el("span", {class:"chip"}, el("b", {}, me.totalHours.toFixed(0)+"h"), " this month"),
+        el("span", {class:"chip"}, el("b", {}, me.totalHours.toFixed(0)+tr("hoursShort")), " " + tr("thisMonth")),
         el("span", {class:"sep"}),
-        el("span", {class:"chip"}, el("b", {}, String(me.activeDays)), " days"),
+        el("span", {class:"chip"}, el("b", {}, String(me.activeDays)), " " + tr("days").toLowerCase()),
         el("span", {class:"sep"}),
-        el("span", {class:"chip"}, el("b", {}, me.avgPerDay.toFixed(1)), " avg/day"),
+        el("span", {class:"chip"}, el("b", {}, me.avgPerDay.toFixed(1)), " " + tr("avgDay").toLowerCase()),
       );
     }
     return el("div", {class:"ticker"},
-      el("span", {class:"chip"}, el("b", {}, s.totalHours.toFixed(0)+"h")),
+      el("span", {class:"chip"}, el("b", {}, st.totalHours.toFixed(0)+tr("hoursShort"))),
       el("span", {class:"sep"}),
-      el("span", {class:"chip"}, el("b", {}, String(s.employees)), " staff"),
+      el("span", {class:"chip"}, el("b", {}, String(st.employees)), " " + tr("staff").toLowerCase()),
       el("span", {class:"sep"}),
-      el("span", {class:"chip"}, el("b", {}, String(s.activeDays)), " days"),
+      el("span", {class:"chip"}, el("b", {}, String(st.activeDays)), " " + tr("days").toLowerCase()),
       el("span", {class:"sep"}),
-      el("span", {class:"chip"}, el("b", {}, String(s.totalShifts)), " shifts"),
+      el("span", {class:"chip"}, el("b", {}, String(st.totalShifts)), " " + tr("shifts").toLowerCase()),
     );
   }
 
   function contextSlot() {
-    // Option C — shows month summary OR day detail
     if (state.selectedDay != null) {
       return el("div", {class:"context-slot"}, renderDayDetail(state.selectedDay));
     }
-    // Month summary with stacked breakdown bar
-    const s = monthStats();
-    const sorted = Object.entries(s.empHours).sort((a,b)=>b[1]-a[1]);
-    const tot = sorted.reduce((a,[,h])=>a+h,0);
+    const st = monthStats();
+    const sorted = Object.entries(st.empHours).sort((a,b)=>b[1]-a[1]);
+    const tot = sorted.reduce((a,[,h])=>a+h,0) || 1;
     const card = el("div", {class:"info-card context-slot"});
     if (state.role === "admin") {
       card.appendChild(el("div", {class:"row"},
-        stat("blue",  s.totalHours.toFixed(0), "Hours"),
-        stat("green", String(s.activeDays), "Days"),
-        stat("amber", String(s.totalShifts), "Shifts"),
-        stat("plain", String(s.employees), "Staff"),
+        stat("blue",  st.totalHours.toFixed(0), tr("hours")),
+        stat("green", String(st.activeDays), tr("days")),
+        stat("amber", String(st.totalShifts), tr("shifts")),
+        stat("plain", String(st.employees), tr("staff")),
       ));
       const bar = el("div", {class:"stacked-bar"});
       for (const [empId, h] of sorted) {
@@ -1144,74 +1383,213 @@
     } else {
       const me = empMonthStats(1);
       card.appendChild(el("div", {class:"row"},
-        stat("plain", me.totalHours.toFixed(1), "Hours"),
-        stat("plain", String(me.activeDays), "Days"),
-        stat("plain", me.avgPerDay.toFixed(1), "Avg/day"),
+        stat("plain", me.totalHours.toFixed(1), tr("hours")),
+        stat("plain", String(me.activeDays), tr("days")),
+        stat("plain", me.avgPerDay.toFixed(1), tr("avgDay")),
       ));
     }
     return card;
   }
 
+  // Toast --------------------------------------------------------
+  function toast(message, { kind = "info", pill } = {}) {
+    const wrap = document.getElementById("toastWrap");
+    const node = el("div", {class:`toast ${kind}`});
+    if (pill) node.appendChild(el("span", {class:"pill"}, pill));
+    node.appendChild(el("span", {}, message));
+    wrap.appendChild(node);
+    setTimeout(() => {
+      node.classList.add("leave");
+      node.addEventListener("animationend", () => node.remove(), { once: true });
+    }, 2400);
+  }
+
+  // Topbar (dynamic) ---------------------------------------------
+  function renderTopbar() {
+    const root = document.getElementById("topbarRoot");
+    root.innerHTML = "";
+    const langPill = el("span", {class:"lang-pill", onclick: onToggleLang},
+      state.lang === "en" ? "EN" : "ES");
+    root.appendChild(langPill);
+    if (state.role === "employee") {
+      const history = el("div", {class:"icon-btn pressable", title:"History", onclick: () => toast(tr("history"), {kind:"info", pill:"HISTORY"})},
+        svg("M3 3v5h5 M3.05 13a9 9 0 1 0 .5-5 M12 7v5l3 3"));
+      root.appendChild(history);
+    } else {
+      const add = el("div", {class:"icon-btn pressable", title:"Add employee",
+        onclick: () => toast(tr("addEmployee"), {kind:"info", pill:"+"})},
+        svg("M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M8.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8 M20 8v6 M23 11h-6"));
+      root.appendChild(add);
+    }
+    const logout = el("div", {class:"icon-btn pressable", title:"Logout",
+      onclick: () => toast(tr("logout"), {kind:"warn", pill:"LOGOUT"})},
+      svg("M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4 M16 17l5-5-5-5 M21 12H9"));
+    root.appendChild(logout);
+  }
+
+  function svg(paths) {
+    const ns = "http://www.w3.org/2000/svg";
+    const s = document.createElementNS(ns, "svg");
+    s.setAttribute("viewBox","0 0 24 24"); s.setAttribute("class","ic");
+    s.setAttribute("fill","none"); s.setAttribute("stroke","currentColor");
+    for (const d of paths.split("M").filter(Boolean)) {
+      const p = document.createElementNS(ns, "path");
+      p.setAttribute("d","M"+d.trim());
+      s.appendChild(p);
+    }
+    return s;
+  }
+
+  // Button actions -----------------------------------------------
+  function onToggleLang() {
+    state.lang = state.lang === "en" ? "es" : "en";
+    render();
+    toast(state.lang === "es" ? "Idioma: Español" : "Language: English", { pill: state.lang.toUpperCase() });
+  }
+  function onPrevMonth() {
+    if (state.month === 0) { state.month = 11; state.year--; } else state.month--;
+    state.selectedDay = null; state.lastAnim = -1; render();
+  }
+  function onNextMonth() {
+    if (state.month === 11) { state.month = 0; state.year++; } else state.month++;
+    state.selectedDay = null; state.lastAnim = 1; render();
+  }
+
+  // Clock flow (employee) ----------------------------------------
+  function fmtTime(d) {
+    return d.toLocaleTimeString(state.lang === "es" ? "es-ES" : "en-US",
+      { hour: "numeric", minute: "2-digit" });
+  }
+  function onClockIn() {
+    state.clock = "in"; state.clockIn = new Date(); render();
+  }
+  function onClockOut() {
+    state.clock = "out"; state.clockOut = new Date(); render();
+  }
+  function onSubmitShift() {
+    state.clock = "idle"; state.clockIn = null; state.clockOut = null;
+    toast(tr("shiftLogged"), { kind:"success", pill:"✓" });
+    render();
+  }
+  function clockSection() {
+    if (state.clock === "idle") {
+      return el("button", {class:"big-cta clock-in", onclick: onClockIn},
+        svg("M8 5v14l11-7z"),
+        el("div", {}, tr("clockIn"))
+      );
+    }
+    if (state.clock === "in") {
+      const wrap = el("div", {},
+        el("div", {class:"clock-card"},
+          el("div", {class:"pulse"}),
+          el("div", {style:"flex:1"},
+            el("div", {class:"label"}, tr("clockedInAt")),
+            el("div", {class:"time"}, fmtTime(state.clockIn)),
+          )
+        )
+      );
+      wrap.appendChild(el("div", {style:"height:14px"}));
+      wrap.appendChild(el("button", {class:"big-cta clock-out", onclick: onClockOut},
+        svg("M6 6h12v12H6z"),
+        el("div", {}, tr("clockOut"))
+      ));
+      return wrap;
+    }
+    // state.clock === "out"
+    const diffMin = (state.clockOut - state.clockIn) / 60000;
+    const hrs = diffMin / 60;
+    const wrap = el("div", {});
+    wrap.appendChild(el("div", {class:"shift-summary"},
+      el("div", {class:"row"},
+        el("div", {class:"col"},
+          el("div", {class:"l-label"}, tr("start")),
+          el("div", {class:"time"}, fmtTime(state.clockIn)),
+        ),
+        el("div", {class:"col r"},
+          el("div", {class:"l-label"}, tr("end")),
+          el("div", {class:"time"}, fmtTime(state.clockOut)),
+        ),
+      ),
+      el("div", {class:"total"},
+        el("span", {class:"value"}, hrs.toFixed(1)),
+        el("span", {class:"unit"}, tr("hours").toLowerCase())
+      )
+    ));
+    wrap.appendChild(el("div", {style:"height:14px"}));
+    wrap.appendChild(el("button", {class:"big-cta submit", onclick: onSubmitShift},
+      svg("M5 13l4 4L19 7"),
+      el("div", {}, tr("submit"))
+    ));
+    return wrap;
+  }
+
   // Top-level render --------------------------------------------
   function render() {
+    renderTopbar();
     const root = document.getElementById("scrollRoot");
     root.innerHTML = "";
 
     // greeting
     const greeting = el("div", {class:"greeting"},
-      el("div", {class:"hello"}, "Welcome,"),
+      el("div", {class:"hello"}, tr("welcome")),
       el("div", {class:"name"}, state.role === "admin" ? "Nathan F." : "Maria R."),
-      state.role === "admin" ? el("div", {class:"role"}, "ADMIN") : null
+      state.role === "admin" ? el("div", {class:"role"}, tr("admin")) : null
     );
     root.appendChild(greeting);
 
     // month nav
     const monthNav = el("div", {class:"month-nav" + (state.opt === "B" ? " with-stats" : "")},
-      el("div", {class:"chev"}, chevronSvg("left")),
+      el("div", {class:"chev", onclick: onPrevMonth}, chevronSvg("left")),
       state.opt === "B"
         ? el("div", {class:"label-block"},
-            el("div", {class:"label"}, monthLabel),
+            el("div", {class:"label"}, monthLabelText()),
             headerStatsLine()
           )
-        : el("div", {class:"label"}, monthLabel),
-      el("div", {class:"chev"}, chevronSvg("right"))
+        : el("div", {class:"label"}, monthLabelText()),
+      el("div", {class:"chev", onclick: onNextMonth}, chevronSvg("right"))
     );
     root.appendChild(monthNav);
 
-    // option D ticker goes above the calendar
-    if (state.opt === "D") root.appendChild(ticker());
+    // animatable block (calendar + summary)
+    const block = el("div", {class: state.lastAnim === 1 ? "month-anim-next" : state.lastAnim === -1 ? "month-anim-prev" : ""});
+    state.lastAnim = 0;
 
-    // calendar grid
-    root.appendChild(renderCalendar());
-
-    // option A: summary card below
-    if (state.opt === "A") root.appendChild(summaryCard());
-    // option E: summary card + breakdown
-    if (state.opt === "E") root.appendChild(summaryCardWithBreakdown());
-    // option C: context slot
-    if (state.opt === "C") root.appendChild(contextSlot());
+    if (state.opt === "D") block.appendChild(ticker());
+    block.appendChild(renderCalendar());
+    if (state.opt === "A") block.appendChild(summaryCard());
+    if (state.opt === "E") block.appendChild(summaryCardWithBreakdown());
+    if (state.opt === "C") block.appendChild(contextSlot());
+    root.appendChild(block);
 
     // section header (for the page below) — just to feel like the real app
     if (state.role === "admin") {
       root.appendChild(el("div", {class:"section-header"},
-        el("h3", {}, "Employees"),
-        el("small", {}, `${employees.length} registered`)
+        el("h3", {}, tr("employees")),
+        el("small", {}, `${employees.length} ${tr("registered")}`)
       ));
       for (const e of employees) {
         root.appendChild(empCard(e));
       }
       root.appendChild(el("div", {style:"height:40px"}));
     } else {
-      root.appendChild(el("div", {style:"height:20px"}));
-      root.appendChild(el("div", {class:"info-card", style:"text-align:center; padding:28px;"},
-        el("div", {style:"font-size:12px; color: var(--text-secondary); letter-spacing:.4px; text-transform:uppercase; font-weight:700;"}, "Today · Monday, April 13"),
-        el("div", {style:"margin-top:8px; font-size:13px; color: var(--text-secondary);"}, "Clock-in button would go here"),
-      ));
+      const todayLabel = new Date().toLocaleDateString(
+        state.lang === "es" ? "es-ES" : "en-US",
+        { weekday: "long", month: "long", day: "numeric" }
+      ).replace(/^./, c => c.toUpperCase());
+      root.appendChild(el("div", {style:"height:12px"}));
+      root.appendChild(el("div", {style:"text-align:center; font-size:12px; color: var(--text-secondary); letter-spacing:.4px; text-transform:uppercase; font-weight:700;"}, `${tr("today")} · ${todayLabel}`));
+      root.appendChild(el("div", {style:"height:14px"}));
+      root.appendChild(clockSection());
+      root.appendChild(el("div", {style:"height:40px"}));
     }
   }
 
   function empCard(e) {
-    const row = el("div", {class:"info-card", style:"display:flex; align-items:center; gap:14px; padding:14px 16px; margin-top:10px;"},
+    const row = el("div", {
+      class:"info-card clickable",
+      style:"display:flex; align-items:center; gap:14px; padding:14px 16px; margin-top:10px;",
+      onclick: () => toast(`${tr("viewEmployee")} ${e.name}`, {kind:"info", pill:e.short}),
+    },
       el("div", {style:`width:36px;height:36px;border-radius:50%;background:${e.color}26;color:${e.color};display:grid;place-items:center;font-weight:700;font-size:14px;`}, e.short),
       el("div", {style:"flex:1"},
         el("div", {style:"font-size:14px; font-weight:600;"}, e.name),

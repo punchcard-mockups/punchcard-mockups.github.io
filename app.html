@@ -2628,7 +2628,7 @@
 <body class="theme-editorial">
 
 <div class="app-root">
-  <div class="version-tag" id="versionTag">v.2026-04-13.1610</div>
+  <div class="version-tag" id="versionTag">v.2026-04-13.1615</div>
   <div class="topbar" id="topbarRoot"></div>
   <div class="scroll" id="scrollRoot"></div>
   <div id="fabRoot"></div>
@@ -2649,7 +2649,7 @@
     // calendar
     calYear: 2026,
     calMonth: 3,
-    selectedDay: 10,
+    selectedDay: null,
     lastAnim: 0,
     // clock flow (employee)
     clock: "idle",
@@ -3067,7 +3067,7 @@
   function login(u) {
     state.currentUser = u;
     state.nav = [];
-    state.selectedDay = 10;
+    state.selectedDay = null;
     state.calYear = 2026; state.calMonth = 3;
     state.screen = u.role === "admin" || u.role === "readonly" ? "admin_home" : "employee_home";
     render();

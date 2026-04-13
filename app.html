@@ -589,26 +589,6 @@
     font-family: ui-monospace, Menlo, monospace;
   }
 
-  /* Accent picker (inline in topbar) */
-  .accent-picker {
-    display: inline-flex;
-    gap: 4px;
-    padding: 3px;
-    border-radius: 999px;
-    background: transparent;
-  }
-  .accent-dot {
-    width: 16px; height: 16px;
-    border-radius: 50%;
-    border: 1.5px solid transparent;
-    cursor: pointer;
-    padding: 0;
-    transition: transform 140ms ease, border-color 160ms ease;
-  }
-  .accent-dot:hover { transform: scale(1.1); }
-  .accent-dot.active {
-    border-color: var(--text-primary);
-  }
 
   .shift-summary {
     background: var(--surface-card);
@@ -2347,7 +2327,7 @@
   body.theme-editorial .fab {
     background: var(--accent-blue); color: var(--t-bg);
     border-radius: 50%;
-    box-shadow: 0 10px 24px var(--accent-shadow, oklch(48% 0.11 58 / .35));
+    box-shadow: 0 10px 24px oklch(48% 0.11 58 / .35);
   }
   /* Buttons — flat, sharp */
   body.theme-editorial .big-cta {
@@ -2632,7 +2612,7 @@
 <body class="theme-editorial">
 
 <div class="app-root">
-  <div class="version-tag" id="versionTag">v.2026-04-13.1730</div>
+  <div class="version-tag" id="versionTag">v.2026-04-13.1745</div>
   <div class="topbar" id="topbarRoot"></div>
   <div class="scroll" id="scrollRoot"></div>
   <div id="fabRoot"></div>
@@ -2662,8 +2642,6 @@
     clockInCoord: null,
     clockOutCoord: null,
     comment: "",
-    // appearance
-    accent: "caramel",
     // modals
     modal: null,        // "addEmployee" | "approvals" | "submitWeek"
     // flashing toast for banner animation
@@ -3412,55 +3390,6 @@
   // =============================================================
   // TOPBAR + FAB
   // =============================================================
-  // =============================================================
-  // ACCENT PICKER
-  // =============================================================
-  const ACCENTS = {
-    caramel:    { base: "oklch(48% 0.11 58)",   bright: "oklch(54% 0.13 58)",   label: "Caramel" },
-    terracotta: { base: "oklch(52% 0.14 42)",   bright: "oklch(57% 0.15 42)",   label: "Terracotta" },
-    espresso:   { base: "oklch(32% 0.06 50)",   bright: "oklch(38% 0.08 50)",   label: "Espresso" },
-    olive:      { base: "oklch(44% 0.065 120)", bright: "oklch(50% 0.075 120)", label: "Olive" },
-    navy:       { base: "oklch(32% 0.14 252)",  bright: "oklch(38% 0.16 252)",  label: "Navy" },
-    slate:      { base: "oklch(42% 0.035 248)", bright: "oklch(48% 0.045 248)", label: "Slate" },
-  };
-
-  function applyAccent(name) {
-    const a = ACCENTS[name] || ACCENTS.caramel;
-    document.body.style.setProperty("--accent-blue", a.base);
-    document.body.style.setProperty("--accent-blue-bright", a.bright);
-    // Derive a shadow color from the same base (35% alpha)
-    document.body.style.setProperty("--accent-shadow", a.base.replace(/\)$/, " / .35)"));
-    state.accent = name;
-    try { localStorage.setItem("pc_accent", name); } catch (_) {}
-  }
-
-  // Initialize accent from localStorage (runs immediately)
-  (function initAccent() {
-    let saved = "caramel";
-    try { saved = localStorage.getItem("pc_accent") || "caramel"; } catch (_) {}
-    if (!ACCENTS[saved]) saved = "caramel";
-    applyAccent(saved);
-  })();
-
-  function accentPicker() {
-    const picker = el("div", { class: "accent-picker", role: "radiogroup", "aria-label": "Accent color" });
-    for (const [name, a] of Object.entries(ACCENTS)) {
-      picker.appendChild(el("button", {
-        class: `accent-dot ${state.accent === name ? "active" : ""}`,
-        style: `background: ${a.base}`,
-        title: a.label,
-        "aria-label": a.label,
-        onclick: () => {
-          applyAccent(name);
-          // Update active ring on siblings without full render
-          picker.querySelectorAll(".accent-dot").forEach(d =>
-            d.classList.toggle("active", d.title === a.label));
-        },
-      }));
-    }
-    return picker;
-  }
-
   function renderTopbar() {
     const root = document.getElementById("topbarRoot");
     root.innerHTML = "";
@@ -3487,8 +3416,6 @@
 
     root.appendChild(el("div", { class:"spacer" }));
 
-    root.appendChild(accentPicker());
-    root.appendChild(el("div", { style:"width:6px" }));
     root.appendChild(langToggle());
 
     if (state.screen === "employee_home") {
@@ -3565,8 +3492,7 @@
       ));
     });
 
-    const langRow = el("div", {style:"display:flex; justify-content:flex-end; align-items:center; gap:10px; width:100%;"},
-      accentPicker(),
+    const langRow = el("div", {style:"display:flex; justify-content:flex-end; width:100%;"},
       langToggle()
     );
 

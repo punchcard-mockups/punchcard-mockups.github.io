@@ -519,6 +519,7 @@
     border-radius: 999px;
     letter-spacing: 0.3px;
   }
+  .demo-chip .tag.owner { background: rgba(139,92,246,.2); color: #c4b5fd; }
   .demo-chip .tag.admin { background: rgba(59,130,246,.2); color: var(--accent-blue-bright); }
   .demo-chip .tag.emp { background: rgba(16,185,129,.2); color: var(--accent-green-light); }
   .demo-chip .tag.readonly { background: rgba(245,158,11,.2); color: var(--accent-amber); }
@@ -2631,7 +2632,7 @@
 <body class="theme-editorial">
 
 <div class="app-root">
-  <div class="version-tag" id="versionTag">v.2026-04-13.1630</div>
+  <div class="version-tag" id="versionTag">v.2026-04-13.1655</div>
   <div class="topbar" id="topbarRoot"></div>
   <div class="scroll" id="scrollRoot"></div>
   <div id="fabRoot"></div>
@@ -2675,13 +2676,20 @@
   const users = [
     // Employee colors chosen to avoid overlap with semantic colors
     // (accent = action, green = approved/ok, red = warn, amber = pending).
-    // Each user gets a distinct hue in the jewel-tone palette.
-    { id: 1, username: "admin",  password: "admin", displayName: "Alejandra A.", role: "admin",    color: "var(--emp-3)"  }, // plum
-    { id: 2, username: "maria",  password: "1234",  displayName: "Maria R.",  role: "employee", color: "var(--emp-2)"  }, // dark teal
-    { id: 3, username: "jose",   password: "1234",  displayName: "Jose A.",   role: "employee", color: "var(--emp-1)"  }, // royal blue
-    { id: 4, username: "luis",   password: "1234",  displayName: "Luis F.",   role: "employee", color: "var(--emp-6)"  }, // magenta
-    { id: 5, username: "sofia",  password: "1234",  displayName: "Sofia P.",  role: "employee", color: "var(--emp-5)"  }, // deep violet
-    { id: 6, username: "viewer", password: "1234",  displayName: "Accountant", role: "readonly", color: "var(--emp-7)"  }, // deep cyan
+    // Roles: owner > admin > readonly > employee.
+    // Owner and admin can approve; readonly can view only; employees clock in/out.
+    // Owner (Alejandra)
+    { id: 1, username: "alee",   password: "1234",  displayName: "Alejandra A.", role: "owner",   color: "var(--emp-3)"  }, // plum
+    // Admins (backup approvers)
+    { id: 2, username: "admin2", password: "1234",  displayName: "Marisol G.",   role: "admin",   color: "var(--emp-5)"  }, // violet
+    { id: 3, username: "admin3", password: "1234",  displayName: "Carlos N.",    role: "admin",   color: "var(--emp-10)" }, // dark purple
+    // Read-only (accountants)
+    { id: 4, username: "acct1",  password: "1234",  displayName: "Accountant",   role: "readonly", color: "var(--emp-8)" }, // bronze
+    { id: 5, username: "acct2",  password: "1234",  displayName: "Bookkeeper",   role: "readonly", color: "var(--emp-9)" }, // teal-blue
+    // Employees (clock in/out)
+    { id: 6, username: "maria",  password: "1234",  displayName: "Maria R.",     role: "employee", color: "var(--emp-2)" }, // dark teal
+    { id: 7, username: "jose",   password: "1234",  displayName: "Jose A.",      role: "employee", color: "var(--emp-1)" }, // royal blue
+    { id: 8, username: "luis",   password: "1234",  displayName: "Luis F.",      role: "employee", color: "var(--emp-6)" }, // magenta
   ];
   const userById = Object.fromEntries(users.map(u => [u.id, u]));
   const employees = () => users.filter(u => u.role === "employee");
@@ -2793,18 +2801,40 @@
     [11, 3, "09:00","13:00", "School pickup — ran long"],
     [18, 3, "10:00","18:30"],
   ];
+  // Remap old seed IDs (Maria=2, Jose=3, Luis=4, Sofia=5) to new schema
+  // where employees start at id 6. Sofia is no longer a user; her shifts
+  // get reassigned round-robin to keep the month's activity level realistic.
+  const OLD_TO_NEW_EMP = { 2: 6, 3: 7, 4: 8 };
+  const SOFIA_FALLBACK = [6, 7, 8];
+  let sofiaIdx = 0;
   for (const [day, emp, start, end, comment] of aprilPattern) {
     const dateStr = `2026-04-${String(day).padStart(2,"0")}`;
-    addShift({empId: emp, date: dateStr, start, end, comment: comment || "", loc: nextLoc()});
+    const newEmp = OLD_TO_NEW_EMP[emp] ?? SOFIA_FALLBACK[sofiaIdx++ % SOFIA_FALLBACK.length];
+    addShift({empId: newEmp, date: dateStr, start, end, comment: comment || "", loc: nextLoc()});
   }
 
   // Week approvals: weekStart (Sunday date) + employeeId -> status
   // Maria has week 2026-04-05 pending, jose has 2026-04-12 submitted
   const weekApprovals = [
-    { empId: 2, weekStart: "2026-04-05", status: "approved" },
-    { empId: 2, weekStart: "2026-04-12", status: "pending" },
-    { empId: 3, weekStart: "2026-04-12", status: "pending" },
+    { empId: 6, weekStart: "2026-04-05", status: "approved" }, // Maria
+    { empId: 6, weekStart: "2026-04-12", status: "pending"  }, // Maria
+    { empId: 7, weekStart: "2026-04-12", status: "pending"  }, // Jose
   ];
+
+  // Role helpers
+  const isOwner      = (u) => u?.role === "owner";
+  const isAdmin      = (u) => u?.role === "admin";
+  const isReadonly   = (u) => u?.role === "readonly";
+  const isEmployee   = (u) => u?.role === "employee";
+  const canApprove   = (u) => isOwner(u) || isAdmin(u);          // approvals, edit approvals
+  const canManage    = (u) => isOwner(u) || isAdmin(u);           // add employees, manage
+  const isAdminLike  = (u) => isOwner(u) || isAdmin(u) || isReadonly(u); // sees admin home
+  const roleLabel    = (u) => {
+    if (isOwner(u))    return tr("owner");
+    if (isAdmin(u))    return tr("admin");
+    if (isReadonly(u)) return tr("readonly");
+    return "";
+  };
 
   function weekStatus(empId, weekStart) {
     const wa = weekApprovals.find(w => w.empId === empId && w.weekStart === weekStart);
@@ -2823,6 +2853,7 @@
       appName: "PunchCard",
       tagline: "Simple shift tracking",
       welcome: "Welcome,",
+      owner: "OWNER",
       admin: "ADMIN",
       readonly: "READ-ONLY",
       employees: "Employees",
@@ -2876,6 +2907,7 @@
       appName: "PunchCard",
       tagline: "Seguimiento simple de turnos",
       welcome: "Bienvenido,",
+      owner: "PROPIETARIA",
       admin: "ADMINISTRADOR",
       readonly: "SOLO LECTURA",
       employees: "Empleados",
@@ -3073,7 +3105,7 @@
     state.nav = [];
     state.selectedDay = null;
     state.calYear = 2026; state.calMonth = 3;
-    state.screen = u.role === "admin" || u.role === "readonly" ? "admin_home" : "employee_home";
+    state.screen = isAdminLike(u) ? "admin_home" : "employee_home";
     render();
   }
   function logout() {
@@ -3301,7 +3333,7 @@
         el("div", {class:"row"},
           stat("plain", st.totalHours.toFixed(1), tr("hours")),
           stat("plain", String(st.activeDays), tr("days")),
-          stat("plain", st.avgPerDay.toFixed(1), tr("avgDay")),
+          stat("plain", String(st.totalShifts), tr("shifts")),
         )
       );
     }
@@ -3438,7 +3470,7 @@
   function renderFab() {
     const root = document.getElementById("fabRoot");
     root.innerHTML = "";
-    if (state.screen === "admin_home" && state.currentUser?.role === "admin") {
+    if (state.screen === "admin_home" && canManage(state.currentUser)) {
       root.appendChild(el("button", {
         class:"fab", title: tr("addEmployee"),
         onclick: () => { state.modal = "addEmployee"; render(); },
@@ -3482,10 +3514,11 @@
       el("div", {class:"demo-title"}, state.lang === "es" ? "Cuentas de demostración" : "Demo accounts"),
     );
     [
-      { u:"admin", p:"admin", label: s.admin, kind:"admin" },
-      { u:"maria", p:"1234",  label: "Maria R.", kind:"emp" },
-      { u:"jose",  p:"1234",  label: "Jose A.",  kind:"emp" },
-      { u:"viewer", p:"1234", label: s.readonly, kind:"readonly" },
+      { u:"alee",   p:"1234", label: s.owner,    kind:"owner" },
+      { u:"admin2", p:"1234", label: s.admin,    kind:"admin" },
+      { u:"acct1",  p:"1234", label: s.readonly, kind:"readonly" },
+      { u:"maria",  p:"1234", label: "Maria R.", kind:"emp" },
+      { u:"jose",   p:"1234", label: "Jose A.",  kind:"emp" },
     ].forEach(({u,p,label,kind}) => {
       demo.appendChild(el("button", {
         class:"demo-chip",
@@ -3708,12 +3741,12 @@
     const u = state.currentUser;
     const root = document.getElementById("scrollRoot");
     root.innerHTML = "";
-    const readonly = u.role === "readonly";
+    const readonly = isReadonly(u);
 
     root.appendChild(el("div", {class:"greeting"},
       el("div", {class:"hello"}, tr("welcome")),
       el("div", {class:"name"}, u.displayName),
-      el("div", {class:`role ${readonly ? "readonly":""}`}, readonly ? tr("readonly") : tr("admin")),
+      el("div", {class:`role ${readonly ? "readonly":""}`}, roleLabel(u)),
       readonly ? el("div", {class:"readonly-banner"}, ICON("eye", 14), el("span", {}, tr("readonlyBanner"))) : null,
     ));
 
@@ -3962,9 +3995,7 @@
     const label = document.querySelector(".cal-month-label");
     if (!oldBlock || !label) { render(); return; }
 
-    const isAdminLike = state.currentUser &&
-      (state.currentUser.role === "admin" || state.currentUser.role === "readonly");
-    const scopeEmpId = isAdminLike ? null : state.currentUser.id;
+    const scopeEmpId = isAdminLike(state.currentUser) ? null : state.currentUser.id;
 
     label.textContent = monthLabelText();
 
@@ -4048,7 +4079,7 @@
             ),
             el("div", {class:"week"}, `${fmtDateShort(w.weekStart)} – ${fmtDateShort(weekEndOf(w.weekStart))} · ${wkShifts.length} ${tr("shifts").toLowerCase()}`),
           );
-          if (state.currentUser?.role === "admin") {
+          if (canApprove(state.currentUser)) {
             row.appendChild(el("div", {class:"actions"},
               el("button", {
                 class:"reject",

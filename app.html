@@ -2607,7 +2607,7 @@
 <body class="theme-editorial">
 
 <div class="app-root">
-  <div class="version-tag" id="versionTag">v.2026-04-13.1530</div>
+  <div class="version-tag" id="versionTag">v.2026-04-13.1536</div>
   <div class="topbar" id="topbarRoot"></div>
   <div class="scroll" id="scrollRoot"></div>
   <div id="fabRoot"></div>
@@ -2675,8 +2675,8 @@
     });
   }
 
-  // Fake business near 37.775, -122.419 (SF)
-  const BIZ = { lat: 37.7751, lng: -122.4189 };
+  // Fake business next to the Pentagon (Arlington, VA)
+  const BIZ = { lat: 38.87185, lng: -77.0563 };
   function gpsNoteText(coord) {
     if (!coord) return "Locating…";
     return `📍 ${coord.lat.toFixed(5)}, ${coord.lng.toFixed(5)}`;
@@ -2710,12 +2710,12 @@
   }
   // Seed a few deterministic locations so map isn't flickery
   const FIXED_LOCS = [
-    { in:{lat:37.77518, lng:-122.41878}, out:{lat:37.77530, lng:-122.41902} },
-    { in:{lat:37.77505, lng:-122.41915}, out:{lat:37.77495, lng:-122.41882} },
-    { in:{lat:37.77521, lng:-122.41872}, out:{lat:37.77508, lng:-122.41935} },
-    { in:{lat:37.77497, lng:-122.41901}, out:{lat:37.77534, lng:-122.41889} },
-    { in:{lat:37.77540, lng:-122.41920}, out:{lat:37.77510, lng:-122.41875} },
-    { in:{lat:37.77486, lng:-122.41868}, out:{lat:37.77529, lng:-122.41910} },
+    { in:{lat:38.87195, lng:-77.05618}, out:{lat:38.87173, lng:-77.05642} },
+    { in:{lat:38.87168, lng:-77.05655}, out:{lat:38.87190, lng:-77.05612} },
+    { in:{lat:38.87201, lng:-77.05602}, out:{lat:38.87178, lng:-77.05675} },
+    { in:{lat:38.87160, lng:-77.05631}, out:{lat:38.87205, lng:-77.05608} },
+    { in:{lat:38.87218, lng:-77.05660}, out:{lat:38.87182, lng:-77.05599} },
+    { in:{lat:38.87155, lng:-77.05592}, out:{lat:38.87198, lng:-77.05650} },
   ];
   let locIdx = 0;
   const nextLoc = () => FIXED_LOCS[(locIdx++) % FIXED_LOCS.length];

@@ -2632,7 +2632,7 @@
 <body class="theme-editorial">
 
 <div class="app-root">
-  <div class="version-tag" id="versionTag">v.2026-04-13.1655</div>
+  <div class="version-tag" id="versionTag">v.2026-04-13.1730</div>
   <div class="topbar" id="topbarRoot"></div>
   <div class="scroll" id="scrollRoot"></div>
   <div id="fabRoot"></div>
@@ -2900,6 +2900,23 @@
       weekRejectedToast: "Week sent back for edits",
       viewHistory: "View history",
       totalHrs: "Total hours",
+      shiftDetailTitle: "Shift detail",
+      requestEdit: "Request edit",
+      editShiftTitle: "Edit shift",
+      editComment: "Why are you requesting this edit?",
+      editCommentRequired: "A comment explaining the edit is required",
+      editSubmitted: "Edit request sent for approval",
+      editPending: "Edit request pending",
+      editApproved: "Edit approved",
+      editRejected: "Edit rejected",
+      editRequests: "Edit requests",
+      approveEdit: "Approve edit",
+      rejectEdit: "Reject edit",
+      noEditRequests: "No pending edit requests",
+      requestedChange: "Requested change",
+      originalValue: "Original",
+      locationCaptured: "Location captured",
+      noLocation: "No location recorded",
       untilNineHours: (rem) => `Need ${rem} more or leave a note`,
       signOutConfirm: "Sign out?",
     },
@@ -2954,6 +2971,23 @@
       weekRejectedToast: "Semana devuelta para editar",
       viewHistory: "Ver historial",
       totalHrs: "Horas totales",
+      shiftDetailTitle: "Detalle del turno",
+      requestEdit: "Solicitar edición",
+      editShiftTitle: "Editar turno",
+      editComment: "¿Por qué solicitas esta edición?",
+      editCommentRequired: "Se requiere un comentario explicando la edición",
+      editSubmitted: "Solicitud de edición enviada",
+      editPending: "Edición pendiente",
+      editApproved: "Edición aprobada",
+      editRejected: "Edición rechazada",
+      editRequests: "Solicitudes de edición",
+      approveEdit: "Aprobar",
+      rejectEdit: "Rechazar",
+      noEditRequests: "No hay solicitudes de edición",
+      requestedChange: "Cambio solicitado",
+      originalValue: "Original",
+      locationCaptured: "Ubicación registrada",
+      noLocation: "Sin ubicación registrada",
       untilNineHours: (rem) => `Faltan ${rem} más o deja una nota`,
       signOutConfirm: "¿Cerrar sesión?",
     },
@@ -3445,6 +3479,8 @@
     } else if (state.screen === "admin_employee") {
       const emp = userById[state.viewingEmployeeId];
       root.appendChild(el("div", {class:"title"}, emp?.displayName || ""));
+    } else if (state.screen === "shift_detail") {
+      root.appendChild(el("div", {class:"title"}, tr("shiftDetailTitle")));
     } else {
       root.appendChild(el("div", {class:"title"}, ""));
     }
@@ -3758,9 +3794,9 @@
     block.appendChild(summaryCard(null));
     root.appendChild(block);
 
-    // Approvals banner
-    const pending = pendingApprovals();
-    if (pending.length > 0) {
+    // Approvals banner (weeks + edit requests)
+    const totalPending = pendingApprovals().length + pendingEditRequests().length;
+    if (totalPending > 0) {
       root.appendChild(el("div", {
         class:"approvals-banner",
         onclick: () => { state.modal = "approvals"; render(); },
@@ -3768,7 +3804,7 @@
         el("div", {class:"icon"}, ICON("inbox")),
         el("div", {class:"body"},
           el("div", {class:"title"}, tr("pendingApprovals")),
-          el("div", {class:"meta"}, tr("nPending", pending.length)),
+          el("div", {class:"meta"}, tr("nPending", totalPending)),
         ),
         el("div", {}, ICON("chevRight")),
       ));
@@ -3867,12 +3903,145 @@
     root.appendChild(el("div", {style:"height:40px"}));
   }
 
-  function renderShiftCard(sh) {
+  // --- Edit request store ---
+  // Each request: { id, shiftId, empId, start, end, comment, status: pending|approved|rejected, submittedAt }
+  const editRequests = [];
+  let nextEditReqId = 1;
+  function pendingEditRequestFor(shiftId) {
+    return editRequests.find(r => r.shiftId === shiftId && r.status === "pending");
+  }
+  function pendingEditRequests() {
+    return editRequests.filter(r => r.status === "pending");
+  }
+
+  // --- Shift detail screen ---
+  function renderShiftDetail() {
+    const root = document.getElementById("scrollRoot");
+    root.innerHTML = "";
+    const sh = shifts.find(s => s.id === state.viewingShiftId);
+    if (!sh) {
+      root.appendChild(el("div", {style:"text-align:center; padding:40px; color:var(--text-muted);"}, "Shift not found"));
+      return;
+    }
     const emp = userById[sh.empId];
+    const ok = sh.hours >= 9;
+    const u = state.currentUser;
+    const editReq = pendingEditRequestFor(sh.id);
+
+    // Header: employee + date
+    root.appendChild(el("div", {
+      style:"display:flex; align-items:center; gap:12px; padding: 10px 0 6px;"
+    },
+      el("div", {
+        style:`width:40px;height:40px;border-radius:50%;background:color-mix(in oklab, ${emp.color} 22%, transparent);color:${emp.color};display:grid;place-items:center;font-weight:700;font-size:15px;`
+      }, emp.displayName.charAt(0)),
+      el("div", {style:"flex:1; min-width:0"},
+        el("div", {style:"font-size:16px; font-weight:600;"}, emp.displayName),
+        el("div", {style:"font-size:12px; color:var(--text-secondary)"}, fmtDateLong(sh.date)),
+      ),
+      el("div", {class:`hrs ${ok ? "ok":"warn"}`, style:"font-size:24px; font-weight:700; font-variant-numeric:tabular-nums;"}, `${sh.hours.toFixed(1)}${tr("hoursShort")}`),
+    ));
+
+    // Time chips
+    root.appendChild(el("div", {class:"info-card", style:"margin-top:14px"},
+      el("div", {class:"row"},
+        stat("plain", fmt12(sh.start), tr("start")),
+        stat("plain", fmt12(sh.end), tr("end")),
+        stat("plain", `${sh.hours.toFixed(1)}${tr("hoursShort")}`, tr("hours")),
+      ),
+    ));
+
+    // Comment
+    if (sh.comment) {
+      root.appendChild(el("div", {
+        style:"margin-top:14px; padding:12px 14px; border:1px solid var(--outline-soft); border-radius:12px; font-size:13px; font-style:italic; color:var(--text-secondary);"
+      }, `"${sh.comment}"`));
+    }
+
+    // Map for just this shift
+    const locShifts = [];
+    if (sh.clockIn || sh.clockOut) locShifts.push(sh);
+    if (locShifts.length > 0) {
+      root.appendChild(el("div", {
+        style:"font-size:11px; color:var(--text-muted); letter-spacing:0.4px; text-transform:uppercase; font-weight:700; margin-top:18px; margin-bottom:4px;"
+      }, tr("locationCaptured")));
+      root.appendChild(miniMap(locShifts));
+    } else {
+      root.appendChild(el("div", {
+        style:"margin-top:14px; padding:12px 14px; border:1px dashed var(--outline-soft); border-radius:10px; font-size:12px; color:var(--text-muted); text-align:center;"
+      }, tr("noLocation")));
+    }
+
+    // Pending edit request banner
+    if (editReq) {
+      root.appendChild(el("div", {
+        class:"approvals-banner", style:"margin-top:14px; cursor:default;"
+      },
+        el("div", {class:"icon"}, ICON("clock")),
+        el("div", {class:"body"},
+          el("div", {class:"title"}, tr("editPending")),
+          el("div", {class:"meta", style:"margin-top:3px; font-style:italic;"}, `"${editReq.comment}"`),
+          el("div", {class:"meta"}, `${fmt12(editReq.start)} – ${fmt12(editReq.end)}`),
+        ),
+      ));
+    }
+
+    // Actions: owner/admin (not readonly) can approve/reject; employees on their own shift can request edit
+    if (editReq && canApprove(u)) {
+      root.appendChild(el("div", {style:"display:flex; gap:10px; margin-top:14px;"},
+        el("button", {
+          class:"week-submit",
+          style:"flex:1; background:var(--accent-green); color:#fff; border:0; padding:12px; border-radius:10px; font-weight:700; font-family:inherit; cursor:pointer; letter-spacing:0.3px;",
+          onclick: () => approveEditRequest(editReq.id),
+        }, tr("approveEdit")),
+        el("button", {
+          class:"week-submit",
+          style:"flex:1; background:transparent; color:var(--accent-red); border:1px solid var(--accent-red); padding:12px; border-radius:10px; font-weight:700; font-family:inherit; cursor:pointer; letter-spacing:0.3px;",
+          onclick: () => rejectEditRequest(editReq.id),
+        }, tr("rejectEdit")),
+      ));
+    } else if (!editReq && isEmployee(u) && u.id === sh.empId) {
+      root.appendChild(el("button", {
+        style:"margin-top:18px; width:100%; background:var(--accent-blue); color:#fff; border:0; padding:14px; border-radius:10px; font-weight:700; font-family:inherit; cursor:pointer; letter-spacing:0.3px; font-size:14px;",
+        onclick: () => { state.modal = "editShift"; render(); },
+      }, tr("requestEdit")));
+    }
+
+    root.appendChild(el("div", {style:"height:40px"}));
+  }
+
+  function approveEditRequest(reqId) {
+    const req = editRequests.find(r => r.id === reqId);
+    if (!req) return;
+    const sh = shifts.find(s => s.id === req.shiftId);
+    if (!sh) return;
+    // Apply the changes
+    sh.start = req.start;
+    sh.end = req.end;
+    const [sh_h, sh_m] = req.start.split(":").map(Number);
+    const [eh, em] = req.end.split(":").map(Number);
+    sh.hours = ((eh*60+em) - (sh_h*60+sh_m)) / 60;
+    req.status = "approved";
+    toast(tr("editApproved"), { kind:"success", pill:"✓" });
+    render();
+  }
+  function rejectEditRequest(reqId) {
+    const req = editRequests.find(r => r.id === reqId);
+    if (!req) return;
+    req.status = "rejected";
+    toast(tr("editRejected"), { kind:"warn", pill:"↺" });
+    render();
+  }
+
+  function renderShiftCard(sh) {
     const ok = sh.hours >= 9;
     const wkStart = weekStartOf(sh.date);
     const status = weekStatus(sh.empId, wkStart);
-    return el("div", {class:"hist-shift-card"},
+    return el("div", {
+      class:"hist-shift-card",
+      style:"cursor:pointer",
+      onclick: () => navTo("shift_detail", { viewingShiftId: sh.id }),
+    },
       el("div", {class:"top"},
         el("div", {class:"left"},
           el("div", {class:`status-dot ${ok ? "ok":"warn"}`}),
@@ -4065,9 +4234,10 @@
     } else if (state.modal === "approvals") {
       card.appendChild(el("h3", {}, tr("approvalsTitle")));
       const pending = pendingApprovals();
-      if (!pending.length) {
+      const pendingEdits = pendingEditRequests();
+      if (!pending.length && !pendingEdits.length) {
         card.appendChild(el("p", {}, tr("noPending")));
-      } else {
+      } else if (pending.length) {
         for (const w of pending) {
           const emp = userById[w.empId];
           const wkShifts = shiftsForWeek(w.empId, w.weekStart);
@@ -4104,8 +4274,86 @@
           card.appendChild(row);
         }
       }
+      // Show pending edit requests inline
+      if (pendingEdits.length > 0) {
+        card.appendChild(el("div", {
+          style:"margin-top:18px; padding-top:12px; border-top:1px solid var(--outline-soft); font-size:11px; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-muted); font-weight:700;"
+        }, tr("editRequests")));
+        for (const r of pendingEdits) {
+          const emp = userById[r.empId];
+          const sh = shifts.find(s => s.id === r.shiftId);
+          const row = el("div", {class:"approval-row", style:"margin-top:8px;"},
+            el("div", {class:"top"},
+              el("div", {class:"who", style:`color:${emp.color}`}, emp.displayName),
+              el("div", {class:"total"}, fmtDateShort(sh?.date || "")),
+            ),
+            el("div", {class:"week", style:"margin-top:4px;"},
+              el("span", {style:"color:var(--text-muted); text-decoration:line-through"},
+                `${fmt12(sh?.start || "00:00")} – ${fmt12(sh?.end || "00:00")}`),
+              el("span", {style:"margin: 0 6px;"}, "→"),
+              el("span", {style:"color:var(--text-primary); font-weight:600;"},
+                `${fmt12(r.start)} – ${fmt12(r.end)}`),
+            ),
+            el("div", {class:"week", style:"margin-top:6px; font-style:italic;"}, `"${r.comment}"`),
+          );
+          if (canApprove(state.currentUser)) {
+            row.appendChild(el("div", {class:"actions"},
+              el("button", {class:"reject", onclick: () => { rejectEditRequest(r.id); close(); }}, tr("rejectEdit")),
+              el("button", {class:"approve", onclick: () => { approveEditRequest(r.id); close(); }}, tr("approveEdit")),
+            ));
+          }
+          card.appendChild(row);
+        }
+      }
       card.appendChild(el("div", {class:"actions"},
         el("button", {class:"btn", onclick: close}, state.lang === "es" ? "Cerrar" : "Close"),
+      ));
+    } else if (state.modal === "editShift") {
+      const sh = shifts.find(s => s.id === state.viewingShiftId);
+      if (!sh) { close(); return; }
+      const startIn = el("input", { type:"time", value: sh.start });
+      const endIn   = el("input", { type:"time", value: sh.end });
+      const noteIn  = el("textarea", { rows: 3, placeholder: tr("editComment") });
+      const err = el("div", {class:"err", style:"display:none"});
+      card.appendChild(el("h3", {}, tr("editShiftTitle")));
+      card.appendChild(el("p", {}, fmtDateLong(sh.date)));
+      card.appendChild(el("label", {style:"font-size:11px; color:var(--text-muted); letter-spacing:0.4px; text-transform:uppercase; font-weight:700; display:block; margin-bottom:4px;"}, tr("start")));
+      card.appendChild(startIn);
+      card.appendChild(el("label", {style:"font-size:11px; color:var(--text-muted); letter-spacing:0.4px; text-transform:uppercase; font-weight:700; display:block; margin-bottom:4px;"}, tr("end")));
+      card.appendChild(endIn);
+      card.appendChild(el("label", {style:"font-size:11px; color:var(--text-muted); letter-spacing:0.4px; text-transform:uppercase; font-weight:700; display:block; margin-bottom:4px;"}, tr("commentLabel")));
+      card.appendChild(noteIn);
+      card.appendChild(err);
+      card.appendChild(el("div", {class:"actions"},
+        el("button", {class:"btn", onclick: close}, tr("cancel")),
+        el("button", {class:"btn primary", onclick: () => {
+          const start = startIn.value;
+          const end = endIn.value;
+          const comment = noteIn.value.trim();
+          if (!comment) {
+            err.textContent = tr("editCommentRequired");
+            err.style.display = "block";
+            noteIn.focus();
+            return;
+          }
+          if (!start || !end) {
+            err.textContent = state.lang === "es"
+              ? "Las horas de inicio y fin son obligatorias"
+              : "Start and end times are required";
+            err.style.display = "block";
+            return;
+          }
+          editRequests.push({
+            id: nextEditReqId++,
+            shiftId: sh.id,
+            empId: sh.empId,
+            start, end, comment,
+            status: "pending",
+            submittedAt: new Date().toISOString(),
+          });
+          toast(tr("editSubmitted"), {kind:"success", pill:"✓"});
+          close();
+        }}, tr("save")),
       ));
     }
 
@@ -4134,6 +4382,8 @@
       renderAdminHome();
     } else if (state.screen === "admin_employee") {
       renderAdminEmployee();
+    } else if (state.screen === "shift_detail") {
+      renderShiftDetail();
     }
 
     renderModal();

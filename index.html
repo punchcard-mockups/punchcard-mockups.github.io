@@ -1515,6 +1515,9 @@
       : ["S","M","T","W","T","F","S"];
     const dows = el("div", {class:"dows"}, ...dowKey.map(d => el("span", {}, d)));
     const grid = el("div", {class:"grid"});
+    grid.dataset.scope = scopeEmpId == null ? "" : String(scopeEmpId);
+    grid.dataset.year = String(state.calYear);
+    grid.dataset.month = String(state.calMonth);
     const maxHrs = Math.max(0, ...Object.values(data).map(arr => arr.reduce((s,x)=>s+x.hours,0)));
     const totalCells = startOffset + daysInMonth;
     const rows = Math.ceil(totalCells / 7);
@@ -1569,7 +1572,9 @@
 
         const cell = el("div", {
           class: `cell ${hasShifts ? "has-shifts" : ""} ${isToday ? "today" : ""} ${isSelected ? "selected" : ""} ${heatClass}`,
-          onclick: () => { state.selectedDay = (state.selectedDay === dayNum) ? null : dayNum; render(); },
+          "data-day": String(dayNum),
+          "data-row": String(r),
+          onclick: () => selectDay(dayNum),
         });
         cell.appendChild(inner);
         grid.appendChild(cell);
@@ -1578,12 +1583,55 @@
       if (state.selectedDay != null) {
         const row = Math.floor((state.selectedDay - 1 + startOffset) / 7);
         if (row === r) {
-          grid.appendChild(el("div", {style:"grid-column: span 7;"},
+          grid.appendChild(el("div", {class:"day-detail-slot", style:"grid-column: span 7;"},
             renderDayDetail(state.selectedDay, scopeEmpId)));
         }
       }
     }
     return el("div", {class:"cal"}, dows, grid);
+  }
+
+  // Targeted day selection — no full re-render
+  function selectDay(dayNum) {
+    const grid = document.querySelector(".cal .grid");
+    if (!grid) { state.selectedDay = dayNum; render(); return; }
+
+    const scopeRaw = grid.dataset.scope;
+    const scopeEmpId = scopeRaw ? Number(scopeRaw) : null;
+    const year = Number(grid.dataset.year);
+    const month = Number(grid.dataset.month);
+
+    const prev = state.selectedDay;
+    const next = (prev === dayNum) ? null : dayNum;
+    state.selectedDay = next;
+
+    // Toggle selected class on cells
+    if (prev != null) {
+      grid.querySelector(`.cell[data-day="${prev}"]`)?.classList.remove("selected");
+    }
+    if (next != null) {
+      grid.querySelector(`.cell[data-day="${next}"]`)?.classList.add("selected");
+    }
+
+    // Remove any existing detail slot
+    grid.querySelector(".day-detail-slot")?.remove();
+
+    // Insert new detail slot at end of the selected row
+    if (next != null) {
+      const startOffset = new Date(year, month, 1).getDay();
+      const row = Math.floor((next - 1 + startOffset) / 7);
+      // Last cell in that row — scan from row*7+6 downward until we find one
+      let anchor = null;
+      for (let c = 6; c >= 0; c--) {
+        const cell = grid.children[row*7 + c];
+        if (cell && cell.classList.contains("cell")) { anchor = cell; break; }
+      }
+      if (anchor) {
+        const slot = el("div", {class:"day-detail-slot", style:"grid-column: span 7;"},
+          renderDayDetail(next, scopeEmpId));
+        anchor.insertAdjacentElement("afterend", slot);
+      }
+    }
   }
 
   function renderDayDetail(dayNum, scopeEmpId=null) {

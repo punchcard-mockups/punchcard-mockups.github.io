@@ -2612,7 +2612,7 @@
 <body class="theme-editorial">
 
 <div class="app-root">
-  <div class="version-tag" id="versionTag">v.2026-04-13.1745</div>
+  <div class="version-tag" id="versionTag">v.2026-04-13.1805</div>
   <div class="topbar" id="topbarRoot"></div>
   <div class="scroll" id="scrollRoot"></div>
   <div id="fabRoot"></div>
@@ -3345,7 +3345,6 @@
         el("div", {class:"row"},
           stat("plain", st.totalHours.toFixed(1), tr("hours")),
           stat("plain", String(st.activeDays), tr("days")),
-          stat("plain", String(st.totalShifts), tr("shifts")),
         )
       );
     }
@@ -3353,8 +3352,6 @@
     card.appendChild(el("div", {class:"row"},
       stat("blue",  st.totalHours.toFixed(0), tr("hours")),
       stat("green", String(st.activeDays), tr("days")),
-      stat("amber", String(st.totalShifts), tr("shifts")),
-      stat("plain", String(st.employees), tr("staff")),
     ));
     const sorted = Object.entries(st.empHours).sort((a,b)=>b[1]-a[1]);
     const maxH = Math.max(...sorted.map(([,h])=>h), 1);

@@ -589,6 +589,22 @@
     vertical-align: middle;
     font-variant-numeric: tabular-nums;
   }
+  /* Compact inline tz suffix used wherever a time or time-range is shown — lives
+     beside the time itself ("7:30 AM EDT") rather than on its own line. */
+  .tz-inline {
+    display: inline-block;
+    font-size: 0.75em;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    margin-left: 5px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: var(--surface-dark);
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    vertical-align: 1px;
+  }
+  .twtz { white-space: nowrap; }
   .gps-note {
     font-size: 10px;
     color: var(--text-muted);
@@ -2987,7 +3003,7 @@
 <body class="theme-editorial">
 
 <div class="app-root">
-  <div class="version-tag" id="versionTag">v.2026-04-14.0055</div>
+  <div class="version-tag" id="versionTag">v.2026-04-14.0110</div>
   <div class="topbar" id="topbarRoot"></div>
   <div class="scroll" id="scrollRoot"></div>
   <div id="fabRoot"></div>
@@ -3251,7 +3267,12 @@
   for (const [day, emp, start, end, comment] of aprilPattern) {
     const dateStr = `2026-04-${String(day).padStart(2,"0")}`;
     const newEmp = OLD_TO_NEW_EMP[emp] ?? SOFIA_FALLBACK[sofiaIdx++ % SOFIA_FALLBACK.length];
-    addShift({empId: newEmp, date: dateStr, start, end, comment: comment || "", loc: nextLoc()});
+    addShift({
+      empId: newEmp, date: dateStr, start, end,
+      comment: comment || "",
+      loc: nextLoc(),
+      tz: { in: "America/New_York", out: "America/New_York" },
+    });
   }
 
   // Week approvals: weekStart (Monday date, Mon–Sun week) + employeeId -> status.
@@ -3513,6 +3534,34 @@
   }
   function fmtTimeDate(d) {
     return d.toLocaleTimeString(locale(), { hour: "numeric", minute: "2-digit" });
+  }
+
+  // Render a single time-of-day followed by its tz tag (if any) as a span.
+  function timeWithTz(timeStr, tz, dateHint) {
+    const short = tz ? tzShort(tz, dateHint) : "";
+    return el("span", {class:"twtz"},
+      fmt12(timeStr),
+      short ? el("span", {class:"tz-inline"}, short) : null,
+    );
+  }
+
+  // Render a "start – end" range with tz suffix. If both ends are in the same
+  // tz, append it once at the end; if they differ, tag each end separately.
+  function timeRangeWithTz(startStr, endStr, startTz, endTz, dateHint) {
+    const s = startTz ? tzShort(startTz, dateHint) : "";
+    const e = endTz   ? tzShort(endTz,   dateHint) : "";
+    if (s && e && s === e) {
+      return el("span", {class:"twtz"},
+        `${fmt12(startStr)} – ${fmt12(endStr)}`,
+        el("span", {class:"tz-inline"}, s),
+      );
+    }
+    const parts = [fmt12(startStr)];
+    if (s) parts.push(el("span", {class:"tz-inline"}, s));
+    parts.push(" – ");
+    parts.push(fmt12(endStr));
+    if (e) parts.push(el("span", {class:"tz-inline"}, e));
+    return el("span", {class:"twtz"}, ...parts);
   }
   function fmtDateLong(dateStr) {
     const d = new Date(dateStr + "T00:00:00");
@@ -3825,7 +3874,9 @@
             el("span", {class:"sw", style:`background:${emp.color}`}),
             el("span", {}, emp.displayName),
           ),
-          el("span", {class:"tm"}, `${fmt12(sh.start)} – ${fmt12(sh.end)}`),
+          el("span", {class:"tm"},
+            timeRangeWithTz(sh.start, sh.end, sh.clockInTz, sh.clockOutTz, new Date(sh.date + "T00:00:00")),
+          ),
           el("span", {class:"hrs", style:`color:${emp.color}`}, sh.hours.toFixed(1)),
         ));
         if (sh.comment) t.appendChild(el("div", {class:"cmt"}, `"${sh.comment}"`));
@@ -4072,9 +4123,12 @@
     const sorted = [...wkShifts].sort((a,b) =>
       a.date.localeCompare(b.date) || a.start.localeCompare(b.start));
     for (const sh of sorted) {
+      const shDate = new Date(sh.date + "T00:00:00");
       const drow = el("div", {class:"drow"},
         el("div", {class:"d"}, fmtDateShort(sh.date)),
-        el("div", {class:"t"}, `${fmt12(sh.start)} – ${fmt12(sh.end)}`),
+        el("div", {class:"t"},
+          timeRangeWithTz(sh.start, sh.end, sh.clockInTz, sh.clockOutTz, shDate),
+        ),
         el("div", {class:"h"}, `${sh.hours.toFixed(1)}${tr("hoursShort")}`),
       );
       if (sh.comment) {
@@ -4533,10 +4587,10 @@
       root.appendChild(el("div", {class:"sd-edit-req"},
         el("div", {class:"sd-edit-times"},
           el("span", {style:"color:var(--text-muted); text-decoration:line-through; font-variant-numeric:tabular-nums;"},
-            `${fmt12(sh.start)} – ${fmt12(sh.end)}`),
+            timeRangeWithTz(sh.start, sh.end, sh.clockInTz, sh.clockOutTz, shDate)),
           el("span", {style:"margin: 0 8px; color:var(--text-muted);"}, "→"),
           el("span", {style:"font-weight:700; font-variant-numeric:tabular-nums;"},
-            `${fmt12(editReq.start)} – ${fmt12(editReq.end)}`),
+            timeRangeWithTz(editReq.start, editReq.end, sh.clockInTz, sh.clockOutTz, shDate)),
         ),
         el("div", {class:"sd-edit-comment"}, `"${editReq.comment}"`),
       ));
@@ -4589,6 +4643,9 @@
 
   function renderShiftCard(sh) {
     const ok = sh.hours >= 9;
+    const shDate = new Date(sh.date + "T00:00:00");
+    const inTz  = sh.clockInTz  ? tzShort(sh.clockInTz,  shDate) : "";
+    const outTz = sh.clockOutTz ? tzShort(sh.clockOutTz, shDate) : "";
     return el("div", {
       class:"hist-shift-card",
       style:"cursor:pointer",
@@ -4602,8 +4659,16 @@
         el("div", {class:`hrs ${ok ? "ok":"warn"}`}, `${sh.hours.toFixed(1)}${tr("hoursShort")}`),
       ),
       el("div", {class:"chips"},
-        el("span", {class:"chip"}, ICON("clock", 11), el("span", {}, `${tr("start")} ${fmt12(sh.start)}`)),
-        el("span", {class:"chip"}, ICON("clock", 11), el("span", {}, `${tr("end")} ${fmt12(sh.end)}`)),
+        el("span", {class:"chip"},
+          ICON("clock", 11),
+          el("span", {}, `${tr("start")} ${fmt12(sh.start)}`),
+          inTz ? el("span", {class:"tz-inline"}, inTz) : null,
+        ),
+        el("span", {class:"chip"},
+          ICON("clock", 11),
+          el("span", {}, `${tr("end")} ${fmt12(sh.end)}`),
+          outTz ? el("span", {class:"tz-inline"}, outTz) : null,
+        ),
       ),
       sh.comment ? el("div", {class:"comment"}, `"${sh.comment}"`) : null,
     );
@@ -4933,6 +4998,7 @@
         for (const r of pendingEdits) {
           const emp = userById[r.empId];
           const sh = shifts.find(s => s.id === r.shiftId);
+          const shDate = sh ? new Date(sh.date + "T00:00:00") : null;
           const row = el("div", {class:"approval-row", style:"margin-top:8px;"},
             el("div", {class:"top"},
               el("div", {class:"who", style:`color:${emp.color}`}, emp.displayName),
@@ -4940,10 +5006,10 @@
             ),
             el("div", {class:"week", style:"margin-top:4px;"},
               el("span", {style:"color:var(--text-muted); text-decoration:line-through"},
-                `${fmt12(sh?.start || "00:00")} – ${fmt12(sh?.end || "00:00")}`),
+                timeRangeWithTz(sh?.start || "00:00", sh?.end || "00:00", sh?.clockInTz, sh?.clockOutTz, shDate)),
               el("span", {style:"margin: 0 6px;"}, "→"),
               el("span", {style:"color:var(--text-primary); font-weight:600;"},
-                `${fmt12(r.start)} – ${fmt12(r.end)}`),
+                timeRangeWithTz(r.start, r.end, sh?.clockInTz, sh?.clockOutTz, shDate)),
             ),
             el("div", {class:"week", style:"margin-top:6px; font-style:italic;"}, `"${r.comment}"`),
           );

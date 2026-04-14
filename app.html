@@ -976,7 +976,7 @@
   /* History grouping */
   .hist-month-head {
     display: flex; align-items: baseline; justify-content: space-between;
-    margin: 22px 4px 2px;
+    margin: 28px 4px 2px;
     padding-bottom: 6px;
     border-bottom: 1px solid var(--outline-soft);
   }
@@ -991,24 +991,36 @@
     font-variant-numeric: tabular-nums;
     font-weight: 600;
   }
+  /* Each week is wrapped in .week-group — this is what gives weeks their visual
+     container: left accent rail, indented shift cards. */
+  .week-group {
+    margin-top: 18px;
+    border-left: 3px solid var(--outline-soft);
+    padding-left: 14px;
+  }
+  .week-group.pending { border-left-color: var(--accent-amber); }
+  .week-group.approved { border-left-color: var(--accent-green); }
   .hist-week-head {
     display: flex; align-items: center; justify-content: space-between;
-    margin: 14px 4px 0;
     gap: 8px;
+    padding: 8px 10px;
+    margin-left: -14px;      /* bleed over the rail so the header sits flush */
+    background: var(--surface-dark);
+    border-radius: 0 10px 10px 0;
   }
   .hist-week-head .w-title {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.4px;
     text-transform: uppercase;
-    color: var(--text-muted);
+    color: var(--text-primary);
     font-variant-numeric: tabular-nums;
   }
   .hist-week-head .w-right {
     display: flex; align-items: center; gap: 8px;
   }
   .hist-week-head .w-hrs {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--accent-blue-bright);
     font-variant-numeric: tabular-nums;
@@ -1019,6 +1031,9 @@
   }
   .hist-week-head .w-status.pending { background: rgba(245,158,11,.2); color: var(--accent-amber); }
   .hist-week-head .w-status.approved { background: rgba(16,185,129,.2); color: var(--accent-green-light); }
+  /* Shift cards inside an expanded week sit slightly inset from the rail */
+  .week-group .hist-shift-card { margin-top: 8px; }
+  .week-group .hist-shift-card:first-of-type { margin-top: 10px; }
 
   /* Map */
   .mini-map {
@@ -1175,8 +1190,8 @@
     font-variant-numeric: tabular-nums;
   }
   .past-weeks .prow .btn {
-    background: var(--accent-amber);
-    color: #1a1a1a;
+    background: var(--accent-blue);
+    color: #fff;
     border: 0;
     font-family: inherit;
     font-size: 11px; font-weight: 700;
@@ -1186,7 +1201,7 @@
     letter-spacing: 0.2px;
     transition: filter 150ms ease;
   }
-  .past-weeks .prow .btn:hover { filter: brightness(1.05); }
+  .past-weeks .prow .btn:hover { filter: brightness(1.1); }
   .past-weeks .empty {
     font-size: 11px;
     color: var(--text-muted);
@@ -2932,7 +2947,7 @@
 <body class="theme-editorial">
 
 <div class="app-root">
-  <div class="version-tag" id="versionTag">v.2026-04-13.2315</div>
+  <div class="version-tag" id="versionTag">v.2026-04-13.2345</div>
   <div class="topbar" id="topbarRoot"></div>
   <div class="scroll" id="scrollRoot"></div>
   <div id="fabRoot"></div>
@@ -3115,12 +3130,14 @@
     addShift({empId: newEmp, date: dateStr, start, end, comment: comment || "", loc: nextLoc()});
   }
 
-  // Week approvals: weekStart (Sunday date) + employeeId -> status
-  // Maria has week 2026-04-05 pending, jose has 2026-04-12 submitted
+  // Week approvals: weekStart (Monday date, Mon–Sun week) + employeeId -> status.
+  // "Today" in the demo is Mon Apr 13 2026 — so Apr 6–12 is last week.
+  // Maria & Jose both submitted last week and are awaiting approval.
+  // Everyone's older week (Mar 30–Apr 5) has no record yet → surfaces in their
+  // "past weeks to submit" list.
   const weekApprovals = [
-    { empId: 6, weekStart: "2026-04-05", status: "approved" }, // Maria
-    { empId: 6, weekStart: "2026-04-12", status: "pending"  }, // Maria
-    { empId: 7, weekStart: "2026-04-12", status: "pending"  }, // Jose
+    { empId: 6, weekStart: "2026-04-06", status: "pending" }, // Maria
+    { empId: 7, weekStart: "2026-04-06", status: "pending" }, // Jose
   ];
 
   // Role helpers
@@ -3184,14 +3201,14 @@
       commentLabel: "Note",
       mapLegendIn: "Clock-in",
       mapLegendOut: "Clock-out",
-      submitWeek: "Sign off",
-      weekSubmitted: "Week signed off",
+      submitWeek: "Submit",
+      weekSubmitted: "Week submitted",
       weekPending: "Pending review",
       weekApproved: "Approved",
-      weeklySignoff: "Weekly sign-off",
-      signoffAttest: "By signing off you confirm these hours are accurate.",
-      pastWeeksSignoffTitle: "Past weeks awaiting sign-off",
-      noPastWeeks: "All past weeks signed off.",
+      weeklySignoff: "Weekly submission",
+      signoffAttest: "By submitting you confirm these hours are accurate.",
+      pastWeeksSignoffTitle: "Past weeks to submit",
+      noPastWeeks: "All past weeks submitted.",
       pendingApprovals: "Pending approvals",
       nPending: (n) => `${n} ${n===1?"week":"weeks"} awaiting your review`,
       approve: "Approve", reject: "Reject",
@@ -3259,14 +3276,14 @@
       commentLabel: "Nota",
       mapLegendIn: "Entrada",
       mapLegendOut: "Salida",
-      submitWeek: "Firmar",
-      weekSubmitted: "Semana firmada",
+      submitWeek: "Enviar",
+      weekSubmitted: "Semana enviada",
       weekPending: "Pendiente de revisión",
       weekApproved: "Aprobada",
-      weeklySignoff: "Firma semanal",
-      signoffAttest: "Al firmar confirmas que estas horas son correctas.",
-      pastWeeksSignoffTitle: "Semanas anteriores sin firmar",
-      noPastWeeks: "Todas las semanas anteriores están firmadas.",
+      weeklySignoff: "Envío semanal",
+      signoffAttest: "Al enviar confirmas que estas horas son correctas.",
+      pastWeeksSignoffTitle: "Semanas anteriores sin enviar",
+      noPastWeeks: "Todas las semanas anteriores están enviadas.",
       pendingApprovals: "Aprobaciones pendientes",
       nPending: (n) => `${n} ${n===1?"semana":"semanas"} esperando tu revisión`,
       approve: "Aprobar", reject: "Rechazar",
@@ -3382,16 +3399,17 @@
     const d = new Date(dateStr + "T00:00:00");
     return d.toLocaleDateString(locale(), { month:"short", day:"numeric" });
   }
+  // Weeks run Monday–Sunday (payroll alignment).
   function weekStartOf(dateStr) {
     const d = new Date(dateStr + "T00:00:00");
-    const dow = d.getDay();
-    d.setDate(d.getDate() - dow); // Sunday
+    const dow = d.getDay();                 // 0=Sun..6=Sat
+    const backToMon = (dow + 6) % 7;        // 0=Mon..6=Sun
+    d.setDate(d.getDate() - backToMon);
     return d.toISOString().slice(0, 10);
   }
   function weekEndOf(dateStr) {
-    const d = new Date(dateStr + "T00:00:00");
-    const dow = d.getDay();
-    d.setDate(d.getDate() + (6 - dow));
+    const d = new Date(weekStartOf(dateStr) + "T00:00:00");
+    d.setDate(d.getDate() + 6);             // Monday + 6 = Sunday
     return d.toISOString().slice(0, 10);
   }
   function thisWeekStart() {
@@ -3480,13 +3498,14 @@
   function renderCalendar(scopeEmpId=null) {
     const firstOfMonth = new Date(state.calYear, state.calMonth, 1);
     const daysInMonth = new Date(state.calYear, state.calMonth+1, 0).getDate();
-    const startOffset = firstOfMonth.getDay();
+    // Calendar runs Mon–Sun: shift getDay() so Monday = 0, Sunday = 6.
+    const startOffset = (firstOfMonth.getDay() + 6) % 7;
     const data = dataByDay(state.calYear, state.calMonth, scopeEmpId);
     const today = new Date(2026, 3, 13); // fixed "today" for demo
 
     const dowKey = state.lang === "es"
-      ? ["D","L","M","M","J","V","S"]
-      : ["S","M","T","W","T","F","S"];
+      ? ["L","M","M","J","V","S","D"]
+      : ["M","T","W","T","F","S","S"];
     const dows = el("div", {class:"dows"}, ...dowKey.map(d => el("span", {}, d)));
     const grid = el("div", {class:"grid"});
     grid.dataset.scope = scopeEmpId == null ? "" : String(scopeEmpId);
@@ -4413,6 +4432,7 @@
       const [y, m] = mKey.split("-").map(Number);
       const monthLabel = new Date(y, m-1, 1)
         .toLocaleDateString(locale(), {month:"long", year:"numeric"})
+        .replace(/ de /, " ")
         .replace(/^./, c => c.toUpperCase());
 
       root.appendChild(el("div", {class:"hist-month-head"},
@@ -4443,7 +4463,8 @@
         }
         right.appendChild(el("span", {class: `chevron ${isOpen ? "up" : ""}`}, "▾"));
 
-        root.appendChild(el("div", {
+        const group = el("div", {class: `week-group ${status || ""}`});
+        group.appendChild(el("div", {
           class:"hist-week-head expandable",
           onclick: () => {
             if (isOpen) expanded.delete(wkStart);
@@ -4455,12 +4476,12 @@
             `${fmtDateShort(wkStart)} – ${fmtDateShort(weekEndOf(wkStart))}`),
           right,
         ));
-
         if (isOpen) {
           for (const sh of wShifts) {
-            root.appendChild(renderShiftCard(sh));
+            group.appendChild(renderShiftCard(sh));
           }
         }
+        root.appendChild(group);
       }
     }
   }
@@ -4547,6 +4568,7 @@
   function monthLabelText() {
     return new Date(state.calYear, state.calMonth, 1)
       .toLocaleDateString(locale(), { month:"long", year:"numeric" })
+      .replace(/ de /, " ")   // "abril de 2026" → "abril 2026" in Spanish
       .replace(/^./, c => c.toUpperCase());
   }
 

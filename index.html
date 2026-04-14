@@ -3364,7 +3364,7 @@
 <body class="theme-editorial">
 
 <div class="app-root">
-  <div class="version-tag" id="versionTag">v.2026-04-14.1237</div>
+  <div class="version-tag" id="versionTag">v.2026-04-14.1353</div>
   <div class="topbar" id="topbarRoot"></div>
   <div class="scroll" id="scrollRoot"></div>
   <div id="fabRoot"></div>
@@ -3671,6 +3671,95 @@
       targetShift.hours = ((15*60) - (sh*60+sm)) / 60;
     }
   }
+
+  // Seed ~6 months of historical shifts (Mon Oct 13 2025 → Sun Mar 29 2026)
+  // for Maria (6), Jose (7), Luis (8). Mostly 8–9 hr weekday shifts with ~8%
+  // short days that carry a comment. Every historical week gets approved so
+  // the big history view feels lived-in. Deterministic LCG so the data is
+  // stable across reloads. Curated Apr 2026 data above stays as-is.
+  (function seedHistorical() {
+    const COMMENTS = [
+      "Left early for dentist","Dr. appointment","Kid home sick",
+      "Car trouble — late start","Holiday cover — short day",
+      "School pickup — ran long","Half day — appointment",
+    ];
+    let seed = 20261013;
+    const rand = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+    const pick = (arr) => arr[Math.floor(rand() * arr.length)];
+    const toYMD = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+    const employeeIds = [6, 7, 8];
+    const week = new Date(2025, 9, 13);    // Mon Oct 13 2025
+    const lastWeek = new Date(2026, 2, 23); // Mon Mar 23 2026 (last week to seed)
+    const historicalShiftIds = [];
+
+    while (week <= lastWeek) {
+      const weekStart = toYMD(week);
+      for (const empId of employeeIds) {
+        const skipDay = rand() < 0.35 ? Math.floor(rand() * 5) : -1;
+        for (let day = 0; day < 5; day++) {
+          if (day === skipDay) continue;
+          const shiftDate = new Date(week);
+          shiftDate.setDate(week.getDate() + day);
+          const dateStr = toYMD(shiftDate);
+
+          const startH = 7 + Math.floor(rand() * 2);  // 7 or 8
+          const startM = Math.floor(rand() * 4) * 15; // 0,15,30,45
+          const short = rand() < 0.08;
+          const durHrs = short ? 4 + rand() * 3 : 8 + rand() * 1.25;
+          const endTotalMin = startH * 60 + startM + Math.round(durHrs * 60 / 15) * 15;
+          const endH = Math.floor(endTotalMin / 60);
+          const endM = endTotalMin % 60;
+
+          const idBefore = nextShiftId;
+          addShift({
+            empId, date: dateStr,
+            start: `${String(startH).padStart(2,'0')}:${String(startM).padStart(2,'0')}`,
+            end:   `${String(endH).padStart(2,'0')}:${String(endM).padStart(2,'0')}`,
+            comment: short ? pick(COMMENTS) : "",
+            loc: nextLoc(),
+            tz: { in: "America/New_York", out: "America/New_York" },
+          });
+          historicalShiftIds.push(idBefore);
+        }
+        weekApprovals.push({ empId, weekStart, status: "approved" });
+      }
+      week.setDate(week.getDate() + 7);
+    }
+
+    // Two historical admin edits so the audit log appears outside the one
+    // Apr-1 demo shift.
+    const applyEdit = (shiftIdx, editor, at, trimMinutesOff, comment) => {
+      const sh = shifts.find(s => s.id === historicalShiftIds[shiftIdx]);
+      if (!sh) return;
+      const [sH, sM] = sh.start.split(":").map(Number);
+      const [eH, eM] = sh.end.split(":").map(Number);
+      const newEndMin = (eH * 60 + eM) - trimMinutesOff;
+      const newEnd = `${String(Math.floor(newEndMin/60)).padStart(2,'0')}:${String(newEndMin%60).padStart(2,'0')}`;
+      sh.adminEdits = sh.adminEdits || [];
+      sh.adminEdits.push({
+        by: editor,
+        at: new Date(at).toISOString(),
+        oldStart: sh.start, oldEnd: sh.end,
+        newStart: sh.start, newEnd,
+        comment,
+      });
+      sh.end = newEnd;
+      sh.hours = (newEndMin - (sH*60+sM)) / 60;
+    };
+    if (historicalShiftIds.length > 20) {
+      applyEdit(
+        Math.floor(historicalShiftIds.length * 0.25), 1,
+        "2026-01-10T16:20:00", 15,
+        "Clock-out ran 15 min past actual — trimmed."
+      );
+      applyEdit(
+        Math.floor(historicalShiftIds.length * 0.55), 2,
+        "2026-02-14T10:05:00", 30,
+        "End time corrected — cameras show they left 30 min earlier."
+      );
+    }
+  })();
 
   // Role helpers
   const isOwner      = (u) => u?.role === "owner";
@@ -5026,6 +5115,26 @@
   // Each request: { id, shiftId, empId, start, end, comment, status: pending|approved|rejected, submittedAt }
   const editRequests = [];
   let nextEditReqId = 1;
+  // Seed one pending edit request so the admin surface for these isn't empty.
+  (function seedEditRequest() {
+    const candidate = shifts
+      .filter(s => s.empId === 6 && s.date >= "2026-03-16" && s.date <= "2026-03-27")
+      .pop();
+    if (!candidate) return;
+    const [sH, sM] = candidate.start.split(":").map(Number);
+    const newStartMin = Math.max(0, sH * 60 + sM - 30);
+    const newStart = `${String(Math.floor(newStartMin/60)).padStart(2,'0')}:${String(newStartMin%60).padStart(2,'0')}`;
+    editRequests.push({
+      id: nextEditReqId++,
+      shiftId: candidate.id,
+      empId: 6,
+      start: newStart,
+      end: candidate.end,
+      comment: "I forgot to clock in when I arrived — actual start was ~30 min earlier.",
+      status: "pending",
+      submittedAt: new Date("2026-04-09T18:30:00").toISOString(),
+    });
+  })();
   function pendingEditRequestFor(shiftId) {
     return editRequests.find(r => r.shiftId === shiftId && r.status === "pending");
   }

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="viewport" content="width=device-width,initial-scale=1,interactive-widget=resizes-content" />
 <title>PunchCard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1047,17 +1047,23 @@
 
   /* Bottom-sheet modal on narrow viewports (phones). On tablet/desktop the
      modal stays centered. Bottom sheet is the native pattern on both Android
-     (Material) and iOS, and it keeps the confirm button in thumb reach above
-     the keyboard when a field inside is focused. */
+     (Material) and iOS, and it keeps the confirm button in thumb reach.
+
+     The --kb-inset variable is updated live by the VisualViewport JS below
+     so the sheet lifts above the soft keyboard when a field inside it is
+     focused. Without this, the keyboard overlays the sheet and hides the
+     textarea + confirm button. */
   @media (max-width: 640px) {
     .modal-scrim {
       place-items: end stretch;
       padding: 0;
+      padding-bottom: var(--kb-inset, 0px);
+      transition: padding-bottom 180ms ease;
     }
     .modal-card {
       width: 100%;
       max-width: 100%;
-      max-height: 88vh;
+      max-height: calc(88vh - var(--kb-inset, 0px));
       border-radius: 22px 22px 0 0;
       padding-bottom: max(22px, calc(env(safe-area-inset-bottom) + 12px));
       animation: sheet-in 260ms cubic-bezier(.2,.8,.2,1) both;
@@ -3345,7 +3351,7 @@
 <body class="theme-editorial">
 
 <div class="app-root">
-  <div class="version-tag" id="versionTag">v.2026-04-14.1211</div>
+  <div class="version-tag" id="versionTag">v.2026-04-14.1218</div>
   <div class="topbar" id="topbarRoot"></div>
   <div class="scroll" id="scrollRoot"></div>
   <div id="fabRoot"></div>
@@ -5771,6 +5777,24 @@
       render();
     }
   });
+
+  // Keyboard-aware viewport: lift the bottom sheet (and anything that reads
+  // --kb-inset) above the soft keyboard when it opens. iOS/Android both
+  // overlay the keyboard on top of the layout viewport by default, so
+  // elements anchored to the bottom end up hidden behind it. The
+  // VisualViewport API reports the *visible* portion of the viewport; the
+  // difference is the keyboard height.
+  (function trackKeyboard() {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => {
+      const inset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      document.documentElement.style.setProperty("--kb-inset", inset + "px");
+    };
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    update();
+  })();
 
   render();
 </script>

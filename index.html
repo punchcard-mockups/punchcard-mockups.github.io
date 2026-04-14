@@ -1386,6 +1386,45 @@
     letter-spacing: 0.1px;
     line-height: 1.35;
   }
+  /* Urgency banner: shows at top of employee home when there are unsubmitted
+     past weeks. Taps scroll to the past-weeks section below. */
+  .urgency-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: linear-gradient(180deg, rgba(245,158,11,.18), rgba(245,158,11,.10));
+    border: 1px solid rgba(245,158,11,.35);
+    border-radius: 12px;
+    color: var(--text-primary);
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: filter 120ms ease;
+  }
+  .urgency-banner:active { filter: brightness(.95); }
+  .urgency-banner .urgency-icon {
+    width: 28px; height: 28px;
+    border-radius: 999px;
+    display: grid; place-items: center;
+    background: rgba(245,158,11,.3);
+    color: var(--accent-amber);
+    font-size: 14px; font-weight: 800;
+    flex: 0 0 auto;
+  }
+  .urgency-banner .urgency-body {
+    flex: 1; min-width: 0;
+    font-size: 13px; font-weight: 600;
+  }
+  .urgency-banner .urgency-chev { color: var(--text-secondary); flex: 0 0 auto; }
+
+  .signoff-label--urgent { color: var(--accent-amber) !important; }
+  .past-weeks--urgent {
+    border: 1px solid rgba(245,158,11,.35);
+    border-left-width: 3px;
+    border-left-color: var(--accent-amber);
+  }
+
   .signoff-label {
     font-size: 10px;
     font-weight: 700;
@@ -3448,7 +3487,7 @@
 <body class="theme-editorial">
 
 <div class="app-root">
-  <div class="version-tag" id="versionTag">v.2026-04-14.1407</div>
+  <div class="version-tag" id="versionTag">v.2026-04-14.1411</div>
   <div class="topbar" id="topbarRoot"></div>
   <div class="scroll" id="scrollRoot"></div>
   <div id="bottomBarRoot"></div>
@@ -3993,6 +4032,8 @@
       addUser: "Add user",
       role: "Role",
       employee: "Employee",
+      needsAttention: "Needs your attention",
+      unsubmittedBanner: (n) => `${n} unsubmitted week${n > 1 ? "s" : ""} — tap to submit`,
     },
     es: {
       appName: "PunchCard",
@@ -4089,6 +4130,8 @@
       addUser: "Agregar usuario",
       role: "Rol",
       employee: "Empleado",
+      needsAttention: "Necesita tu atención",
+      unsubmittedBanner: (n) => `${n} semana${n > 1 ? "s" : ""} sin enviar — toca para enviar`,
     },
   };
   function tr(k, ...args) {
@@ -4820,6 +4863,23 @@
       el("div", {class:"name"}, u.displayName),
     ));
 
+    // Urgency banner when the employee has unsubmitted past weeks. Taps
+    // scroll the past-weeks section into view.
+    const unsignedCount = unsignedPastWeeks(u.id).length;
+    if (unsignedCount > 0) {
+      root.appendChild(el("div", {
+        class: "urgency-banner",
+        onclick: () => {
+          const target = document.getElementById("past-weeks-section");
+          if (target) target.scrollIntoView({behavior: "smooth", block: "start"});
+        },
+      },
+        el("div", {class: "urgency-icon"}, "⚠"),
+        el("div", {class: "urgency-body"}, tr("unsubmittedBanner", unsignedCount)),
+        el("div", {class: "urgency-chev"}, ICON("chevRight")),
+      ));
+    }
+
     // Today's date + Clock-in (primary action, at the top)
     const todayLabel = new Date(2026, 3, 13).toLocaleDateString(locale(),
       { weekday:"long", month:"long", day:"numeric" }).replace(/^./, c => c.toUpperCase());
@@ -4949,8 +5009,11 @@
     const past = unsignedPastWeeks(u.id);
     if (!past.length) return null;
     const wrap = document.createDocumentFragment();
-    wrap.appendChild(el("div", {class:"signoff-label"}, tr("pastWeeksSignoffTitle")));
-    const list = el("div", {class:"past-weeks"});
+    wrap.appendChild(el("div", {
+      id: "past-weeks-section",
+      class: "signoff-label signoff-label--urgent",
+    }, tr("needsAttention")));
+    const list = el("div", {class:"past-weeks past-weeks--urgent"});
     for (const w of past) {
       const wkShifts = shiftsForWeek(u.id, w.wkStart);
       const btnLabel = w.rejectionComment ? tr("resubmit") : tr("submitWeek");

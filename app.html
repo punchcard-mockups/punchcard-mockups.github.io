@@ -869,6 +869,18 @@
     from { opacity: 0; transform: translateY(12px) scale(.98); }
     to   { opacity: 1; transform: translateY(0) scale(1); }
   }
+  /* Status pill entrance — applied as a one-shot class (.pop-in) after a
+     button→pill swap so the newly-rendered pill scales in from zero. */
+  @keyframes pillPop {
+    0%   { opacity: 0; transform: scale(.55); }
+    60%  { opacity: 1; transform: scale(1.12); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  .status-pill.pop-in,
+  .w-status.pop-in {
+    animation: pillPop 360ms cubic-bezier(.34, 1.56, .64, 1);
+    transform-origin: center;
+  }
   .modal-card h3 {
     margin: 0 0 6px;
     font-size: 18px; font-weight: 700;
@@ -2941,7 +2953,7 @@
 <body class="theme-editorial">
 
 <div class="app-root">
-  <div class="version-tag" id="versionTag">v.2026-04-13.2355</div>
+  <div class="version-tag" id="versionTag">v.2026-04-14.0025</div>
   <div class="topbar" id="topbarRoot"></div>
   <div class="scroll" id="scrollRoot"></div>
   <div id="fabRoot"></div>
@@ -3028,32 +3040,50 @@
     return `📍 ${coord.lat.toFixed(5)}, ${coord.lng.toFixed(5)}`;
   }
 
-  // Real-GPS capture with a mocked fallback so the demo always works.
-  // Returns a promise that resolves to { lat, lng, real: bool }.
+  // Real-GPS capture. Returns a promise that resolves to:
+  //   { lat, lng, real: true }               — user granted permission
+  //   { real: false, reason: "denied" }      — user denied the prompt
+  //   { real: false, reason: "unavailable" } — position unavailable (hardware/OS)
+  //   { real: false, reason: "timeout" }     — browser timed out acquiring GPS
+  //   { real: false, reason: "unsupported" } — no geolocation API
+  // We deliberately do NOT time the prompt out from our side — on mobile the
+  // system permission sheet can take 10+ seconds to appear/be answered, and
+  // racing it would silently swallow the user's response.
   function getCurrentCoord() {
     return new Promise((resolve) => {
       if (!navigator.geolocation) {
-        resolve({ ...jitterLoc(), real: false });
+        resolve({ real: false, reason: "unsupported" });
         return;
       }
-      const timeout = setTimeout(() => resolve({ ...jitterLoc(), real: false }), 9000);
       navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          clearTimeout(timeout);
-          resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude, real: true });
-        },
-        () => {
-          clearTimeout(timeout);
-          resolve({ ...jitterLoc(), real: false });
-        },
-        { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 }
+        (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude, real: true }),
+        (err) => resolve({
+          real: false,
+          reason: err.code === 1 ? "denied"
+                : err.code === 2 ? "unavailable"
+                : err.code === 3 ? "timeout"
+                : "unknown",
+        }),
+        { enableHighAccuracy: true, timeout: 20000, maximumAge: 30000 }
       );
     });
   }
 
-  function jitterLoc(r = 0.0004) {
-    return { lat: BIZ.lat + (Math.random()-0.5)*r, lng: BIZ.lng + (Math.random()-0.5)*r };
+  // Map a getCurrentCoord() result to a user-facing toast string.
+  function gpsToast(result, action) {
+    if (result.real) {
+      return { msg: `${action} location captured`, kind: "success", pill: "📍" };
+    }
+    const reasons = {
+      denied:      "Location permission denied",
+      unavailable: "Location unavailable",
+      timeout:     "Location timed out",
+      unsupported: "Location not supported by browser",
+      unknown:     "Location not captured",
+    };
+    return { msg: reasons[result.reason] || reasons.unknown, kind: "warn", pill: "⚠" };
   }
+
   // Seed a few deterministic locations so map isn't flickery
   const FIXED_LOCS = [
     { in:{lat:38.87195, lng:-77.05618}, out:{lat:38.87173, lng:-77.05642} },
@@ -3251,7 +3281,7 @@
       clockIn: "Entrar", clockOut: "Salir",
       submit: "Enviar turno",
       clockedInAt: "Entrada a las",
-      start: "Inicio", end: "Fin",
+      start: "Entrada", end: "Salida",
       today: "Hoy",
       noShifts: "Sin turnos",
       history: "Historial",
@@ -3270,14 +3300,14 @@
       commentLabel: "Nota",
       mapLegendIn: "Entrada",
       mapLegendOut: "Salida",
-      submitWeek: "Enviar",
-      weekSubmitted: "Semana enviada",
+      submitWeek: "Entregar",
+      weekSubmitted: "Semana entregada",
       weekPending: "Pendiente de revisión",
-      weekApproved: "Aprobada",
-      weeklySignoff: "Envío semanal",
-      signoffAttest: "Al enviar confirmas que estas horas son correctas.",
-      pastWeeksSignoffTitle: "Semanas anteriores sin enviar",
-      noPastWeeks: "Todas las semanas anteriores están enviadas.",
+      weekApproved: "Aprobado",
+      weeklySignoff: "Entrega semanal",
+      signoffAttest: "Al entregar confirmas que estas horas son correctas.",
+      pastWeeksSignoffTitle: "Semanas anteriores sin entregar",
+      noPastWeeks: "Todas las semanas anteriores están entregadas.",
       pendingApprovals: "Aprobaciones pendientes",
       nPending: (n) => `${n} ${n===1?"semana":"semanas"} esperando tu revisión`,
       approve: "Aprobar", reject: "Rechazar",
@@ -3435,6 +3465,53 @@
       node.classList.add("leave");
       node.addEventListener("animationend", () => node.remove(), { once: true });
     }, 2400);
+  }
+
+  // Collapse + fade a node out (height + opacity + sideways nudge), then call
+  // `next`. Used for rows that disappear from a list — approvals, past-weeks —
+  // so the user sees the thing they acted on leave, instead of the whole
+  // surface blinking via the global re-render.
+  function animateOutAndThen(node, next, opts) {
+    const ms = (opts && opts.ms) || 280;
+    if (!node || typeof node.getBoundingClientRect !== "function") {
+      next();
+      return;
+    }
+    const h = node.getBoundingClientRect().height;
+    node.style.maxHeight = h + "px";
+    node.style.overflow = "hidden";
+    node.style.pointerEvents = "none";
+    void node.offsetHeight; // force reflow so initial max-height applies
+    node.style.transition =
+      `opacity ${ms}ms ease, ` +
+      `transform ${ms}ms cubic-bezier(.4,0,.2,1), ` +
+      `max-height ${ms}ms cubic-bezier(.4,0,.2,1), ` +
+      `margin ${ms}ms ease, padding ${ms}ms ease`;
+    requestAnimationFrame(() => {
+      node.style.opacity = "0";
+      node.style.transform = "translateX(14px)";
+      node.style.maxHeight = "0";
+      node.style.marginTop = "0";
+      node.style.marginBottom = "0";
+      node.style.paddingTop = "0";
+      node.style.paddingBottom = "0";
+    });
+    setTimeout(next, ms);
+  }
+
+  // Shrink+fade a button in place, then call `next`. After next() runs render(),
+  // caller can find the freshly-rendered status pill and add `.pop-in` so it
+  // scales in where the button was — a button→pill crossfade.
+  function animateShrinkAndThen(node, next, opts) {
+    const ms = (opts && opts.ms) || 220;
+    if (!node) { next(); return; }
+    node.style.pointerEvents = "none";
+    node.style.transition = `opacity ${ms}ms ease, transform ${ms}ms cubic-bezier(.4,0,.2,1)`;
+    requestAnimationFrame(() => {
+      node.style.opacity = "0";
+      node.style.transform = "scale(.85)";
+    });
+    setTimeout(next, ms);
   }
 
   // =============================================================
@@ -3857,7 +3934,15 @@
       el("div", {class:"name"}, u.displayName),
     ));
 
+    // Today's date + Clock-in (primary action, at the top)
+    const todayLabel = new Date(2026, 3, 13).toLocaleDateString(locale(),
+      { weekday:"long", month:"long", day:"numeric" }).replace(/^./, c => c.toUpperCase());
+    root.appendChild(el("div", {style:"text-align:center; font-size:12px; color:var(--text-secondary); letter-spacing:.4px; text-transform:uppercase; font-weight:700; margin-top:4px;"}, `${tr("today")} · ${todayLabel}`));
+    root.appendChild(el("div", {style:"height:12px"}));
+    root.appendChild(clockSection());
+
     // Month nav
+    root.appendChild(el("div", {style:"height:18px"}));
     root.appendChild(monthNav());
 
     // Calendar block
@@ -3867,19 +3952,12 @@
     block.appendChild(summaryCard(u.id));
     root.appendChild(block);
 
-    // Weekly sign-off
+    // Weekly submission
     root.appendChild(el("div", {class:"signoff-label", style:"margin-top:14px"}, tr("weeklySignoff")));
     root.appendChild(weekSignoffCard());
     const pastSection = pastWeeksSignoffSection();
     if (pastSection) root.appendChild(pastSection);
 
-    // Today / Clock-in
-    const todayLabel = new Date(2026, 3, 13).toLocaleDateString(locale(),
-      { weekday:"long", month:"long", day:"numeric" }).replace(/^./, c => c.toUpperCase());
-    root.appendChild(el("div", {style:"height:12px"}));
-    root.appendChild(el("div", {style:"text-align:center; font-size:12px; color:var(--text-secondary); letter-spacing:.4px; text-transform:uppercase; font-weight:700;"}, `${tr("today")} · ${todayLabel}`));
-    root.appendChild(el("div", {style:"height:14px"}));
-    root.appendChild(clockSection());
     root.appendChild(el("div", {style:"height:40px"}));
   }
 
@@ -3931,11 +4009,15 @@
     } else {
       head.appendChild(el("button", {
         class:"btn",
-        onclick: () => {
-          setWeekStatus(u.id, wkStart, "pending");
-          toast(tr("weekSubmitted"), {kind:"success", pill:"✓"});
-          render();
-        }
+        onclick: (ev) => {
+          animateShrinkAndThen(ev.currentTarget, () => {
+            setWeekStatus(u.id, wkStart, "pending");
+            toast(tr("weekSubmitted"), {kind:"success", pill:"✓"});
+            render();
+            const pill = document.querySelector(".week-submit .status-pill.pending");
+            if (pill) pill.classList.add("pop-in");
+          });
+        },
       }, tr("submitWeek")));
     }
 
@@ -3981,10 +4063,13 @@
           ),
           el("button", {
             class:"btn",
-            onclick: () => {
-              setWeekStatus(u.id, w.wkStart, "pending");
-              toast(tr("weekSubmitted"), {kind:"success", pill:"✓"});
-              render();
+            onclick: (ev) => {
+              const rowNode = ev.currentTarget.closest(".prow");
+              animateOutAndThen(rowNode, () => {
+                setWeekStatus(u.id, w.wkStart, "pending");
+                toast(tr("weekSubmitted"), {kind:"success", pill:"✓"});
+                render();
+              });
             },
           }, tr("submitWeek")),
         ),
@@ -4007,13 +4092,9 @@
           state.clockInCoord = null;
           render();
           const c = await getCurrentCoord();
-          state.clockInCoord = { lat: c.lat, lng: c.lng };
-          toast(
-            c.real ? "Clock-in location captured"
-                   : "No GPS — using demo location",
-            { kind: c.real ? "success" : "warn", pill: c.real ? "GPS" : "MOCK" }
-          );
-          // Show the coord in the clock-card
+          state.clockInCoord = c.real ? { lat: c.lat, lng: c.lng } : null;
+          const t = gpsToast(c, "Clock-in");
+          toast(t.msg, { kind: t.kind, pill: t.pill });
           const lbl = document.querySelector(".gps-note");
           if (lbl) lbl.textContent = gpsNoteText(state.clockInCoord);
         }
@@ -4038,12 +4119,9 @@
           state.clockOutCoord = null;
           render();
           const c = await getCurrentCoord();
-          state.clockOutCoord = { lat: c.lat, lng: c.lng };
-          toast(
-            c.real ? "Clock-out location captured"
-                   : "No GPS — using demo location",
-            { kind: c.real ? "success" : "warn", pill: c.real ? "GPS" : "MOCK" }
-          );
+          state.clockOutCoord = c.real ? { lat: c.lat, lng: c.lng } : null;
+          const t = gpsToast(c, "Clock-out");
+          toast(t.msg, { kind: t.kind, pill: t.pill });
           const lbl = document.querySelector(".gps-note-out");
           if (lbl) lbl.textContent = gpsNoteText(state.clockOutCoord);
         }
@@ -4690,23 +4768,29 @@
             row.appendChild(el("div", {class:"actions"},
               el("button", {
                 class:"reject",
-                onclick: () => {
-                  w.status = null;
-                  const idx = weekApprovals.findIndex(x => x === w);
-                  if (idx >= 0) weekApprovals.splice(idx, 1);
-                  state.expandedApproval = null;
-                  toast(tr("weekRejectedToast"), {kind:"warn", pill:"↺"});
-                  render();
-                }
+                onclick: (ev) => {
+                  const rowNode = ev.currentTarget.closest(".approval-row");
+                  animateOutAndThen(rowNode, () => {
+                    w.status = null;
+                    const idx = weekApprovals.findIndex(x => x === w);
+                    if (idx >= 0) weekApprovals.splice(idx, 1);
+                    state.expandedApproval = null;
+                    toast(tr("weekRejectedToast"), {kind:"warn", pill:"↺"});
+                    render();
+                  });
+                },
               }, tr("reject")),
               el("button", {
                 class:"approve",
-                onclick: () => {
-                  w.status = "approved";
-                  state.expandedApproval = null;
-                  toast(tr("weekApprovedToast"), {kind:"success", pill:"✓"});
-                  render();
-                }
+                onclick: (ev) => {
+                  const rowNode = ev.currentTarget.closest(".approval-row");
+                  animateOutAndThen(rowNode, () => {
+                    w.status = "approved";
+                    state.expandedApproval = null;
+                    toast(tr("weekApprovedToast"), {kind:"success", pill:"✓"});
+                    render();
+                  });
+                },
               }, tr("approve")),
             ));
           }
@@ -4737,8 +4821,20 @@
           );
           if (canApprove(state.currentUser)) {
             row.appendChild(el("div", {class:"actions"},
-              el("button", {class:"reject", onclick: () => { rejectEditRequest(r.id); close(); }}, tr("rejectEdit")),
-              el("button", {class:"approve", onclick: () => { approveEditRequest(r.id); close(); }}, tr("approveEdit")),
+              el("button", {
+                class:"reject",
+                onclick: (ev) => {
+                  const rowNode = ev.currentTarget.closest(".approval-row");
+                  animateOutAndThen(rowNode, () => { rejectEditRequest(r.id); close(); });
+                },
+              }, tr("rejectEdit")),
+              el("button", {
+                class:"approve",
+                onclick: (ev) => {
+                  const rowNode = ev.currentTarget.closest(".approval-row");
+                  animateOutAndThen(rowNode, () => { approveEditRequest(r.id); close(); });
+                },
+              }, tr("approveEdit")),
             ));
           }
           card.appendChild(row);

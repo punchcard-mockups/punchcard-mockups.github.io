@@ -233,7 +233,8 @@
     background: var(--surface-dark);
     color: var(--text-secondary);
   }
-  .user-menu-signout {
+  .user-menu-signout,
+  .user-menu-add {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -242,7 +243,6 @@
     padding: 0 12px;
     background: transparent;
     border: 0;
-    color: var(--accent-red-light);
     font-size: 14px;
     font-weight: 600;
     font-family: inherit;
@@ -252,9 +252,13 @@
     touch-action: manipulation;
     transition: background 120ms ease;
   }
-  .user-menu-signout:active { background: var(--surface-dark); }
+  .user-menu-signout { color: var(--accent-red-light); }
+  .user-menu-add     { color: var(--text-primary); }
+  .user-menu-signout:active,
+  .user-menu-add:active { background: var(--surface-dark); }
   @media (hover: hover) {
-    .user-menu-signout:hover { background: var(--surface-dark); }
+    .user-menu-signout:hover,
+    .user-menu-add:hover { background: var(--surface-dark); }
   }
 
   /* Greeting */
@@ -3444,7 +3448,7 @@
 <body class="theme-editorial">
 
 <div class="app-root">
-  <div class="version-tag" id="versionTag">v.2026-04-14.1404</div>
+  <div class="version-tag" id="versionTag">v.2026-04-14.1407</div>
   <div class="topbar" id="topbarRoot"></div>
   <div class="scroll" id="scrollRoot"></div>
   <div id="bottomBarRoot"></div>
@@ -3986,6 +3990,9 @@
       signOutConfirm: "Sign out?",
       account: "Account",
       signedInAs: "Signed in as",
+      addUser: "Add user",
+      role: "Role",
+      employee: "Employee",
     },
     es: {
       appName: "PunchCard",
@@ -4079,6 +4086,9 @@
       signOutConfirm: "¿Cerrar sesión?",
       account: "Cuenta",
       signedInAs: "Sesión iniciada como",
+      addUser: "Agregar usuario",
+      role: "Rol",
+      employee: "Empleado",
     },
   };
   function tr(k, ...args) {
@@ -4651,6 +4661,19 @@
             ? el("div", {class: "user-menu-role"}, tr(roleKey))
             : null,
         ),
+        canManage(u)
+          ? el("button", {
+              class: "user-menu-add",
+              onclick: () => {
+                state.userMenuOpen = false;
+                state.modal = "addEmployee";
+                render();
+              },
+            },
+              ICON("addUser", 14),
+              el("span", {}, tr("addUser")),
+            )
+          : null,
         el("button", {
           class: "user-menu-signout",
           onclick: () => { state.userMenuOpen = false; logout(); },
@@ -5709,18 +5732,26 @@
 
     if (state.modal === "addEmployee") {
       const nameIn = el("input", { placeholder: strings[state.lang].fullName });
-      const userIn = el("input", { placeholder: strings[state.lang].username });
+      const userIn = el("input", { placeholder: strings[state.lang].username, autocapitalize:"off", autocorrect:"off", spellcheck:"false" });
       const passIn = el("input", { placeholder: strings[state.lang].password, type:"password" });
+      const roleSel = el("select", {},
+        el("option", { value: "employee" }, tr("employee")),
+        el("option", { value: "admin" }, tr("admin")),
+        el("option", { value: "readonly" }, tr("readonly")),
+      );
       const err = el("div", {class:"err", style:"display:none"});
-      card.appendChild(el("h3", {}, tr("addEmployee")));
+      card.appendChild(el("h3", {}, tr("addUser")));
       card.appendChild(nameIn);
       card.appendChild(userIn);
       card.appendChild(passIn);
+      card.appendChild(el("div", {class:"field-label", style:"font-size:11px; font-weight:700; letter-spacing:.4px; text-transform:uppercase; color:var(--text-secondary); margin:2px 4px 6px;"}, tr("role")));
+      card.appendChild(roleSel);
       card.appendChild(err);
       card.appendChild(el("div", {class:"actions"},
         el("button", {class:"btn", onclick: close}, tr("cancel")),
         el("button", {class:"btn primary", onclick: () => {
           const name = nameIn.value.trim(), u = userIn.value.trim(), p = passIn.value;
+          const role = roleSel.value;
           if (!name || !u || !p) {
             err.textContent = state.lang === "es"
               ? "Todos los campos son obligatorios"
@@ -5739,10 +5770,10 @@
           const colors = ["var(--emp-1)","var(--emp-2)","var(--emp-3)","var(--emp-4)","var(--emp-5)","var(--emp-6)","var(--emp-7)","var(--emp-8)","var(--emp-9)","var(--emp-10)"];
           users.push({
             id: newId, username: u, password: p, displayName: name,
-            role: "employee", color: colors[newId % colors.length],
+            role, color: colors[newId % colors.length],
           });
           userById[newId] = users[users.length-1];
-          toast(state.lang === "es" ? "Empleado agregado" : "Employee added", {kind:"success", pill:"+"});
+          toast(state.lang === "es" ? "Usuario agregado" : "User added", {kind:"success", pill:"+"});
           close();
         }}, tr("add")),
       ));

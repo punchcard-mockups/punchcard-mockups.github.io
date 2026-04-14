@@ -623,12 +623,24 @@
   .big-cta:active { transform: scale(.985); }
   .big-cta.clock-in { background: linear-gradient(180deg, var(--accent-green), #059669); }
   .big-cta.clock-out { background: linear-gradient(180deg, var(--accent-red), #dc2626); }
-  .big-cta.submit { background: linear-gradient(180deg, var(--accent-blue), #1d4ed8); }
+  .big-cta.submit {
+    background: linear-gradient(180deg, var(--accent-blue), #1d4ed8);
+    /* Not a primary hero action like Clock In/Out — just the "save this shift"
+       button at the bottom of the summary. Compact and text-only. */
+    height: auto;
+    min-height: 52px;
+    border-radius: 14px;
+    font-size: 15px;
+    flex-direction: row;
+    gap: 6px;
+    padding: 0 18px;
+  }
   .big-cta.disabled {
     filter: grayscale(0.4) brightness(.7);
     cursor: not-allowed;
   }
   .big-cta svg { width: 32px; height: 32px; }
+  .big-cta.submit svg { width: 18px; height: 18px; }
 
   .clock-card {
     display: flex; align-items: center; gap: 14px;
@@ -917,10 +929,36 @@
     transition: border-color 150ms ease;
   }
   .comment-field:focus { border-color: var(--accent-blue); }
-  .comment-field.required { border-color: rgba(239,68,68,.5); }
+  /* Only applied after a failed submit attempt — calm by default. Uses
+     !important to override per-theme border/background treatments. */
+  .comment-field.required {
+    border: 1px solid rgba(239,68,68,.55) !important;
+    border-radius: 10px !important;
+    background: rgba(239,68,68,.06) !important;
+  }
+  /* Hint (amber pill) shown whenever a shift is under 9 hours. Informative,
+     not alarming — only promotes to red once the user submits without one. */
   .comment-required-note {
-    margin-top: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    padding: 4px 10px;
     font-size: 11px;
+    font-weight: 600;
+    line-height: 1.3;
+    background: rgba(245,158,11,.15);
+    border: 1px solid rgba(245,158,11,.35);
+    color: var(--accent-amber);
+    border-radius: 999px;
+  }
+  .comment-required-note::before {
+    content: "ⓘ";
+    font-weight: 700;
+  }
+  .comment-field.required + .comment-required-note {
+    background: rgba(239,68,68,.14);
+    border-color: rgba(239,68,68,.4);
     color: var(--accent-red-light);
   }
 
@@ -3487,7 +3525,7 @@
 <body class="theme-editorial">
 
 <div class="app-root">
-  <div class="version-tag" id="versionTag">v.2026-04-14.1411</div>
+  <div class="version-tag" id="versionTag">v.2026-04-14.1415</div>
   <div class="topbar" id="topbarRoot"></div>
   <div class="scroll" id="scrollRoot"></div>
   <div id="bottomBarRoot"></div>
@@ -5100,10 +5138,9 @@
     // state.clock === "out": summary + comment + submit
     const diffMin = (state.clockOut - state.clockIn) / 60000;
     const hrs = diffMin / 60;
-    const needsNote = hrs < 9 && !state.comment.trim();
 
     const commentField = el("textarea", {
-      class: `comment-field ${needsNote ? "required" : ""}`,
+      class: "comment-field",
       placeholder: tr("comments"),
       oninput: (e) => { state.comment = e.target.value; updateSubmitState(); },
     });
@@ -5147,7 +5184,7 @@
     wrap.appendChild(summaryEl);
     wrap.appendChild(el("div", {style:"height:14px"}));
     const submitBtn = el("button", {
-      class:`big-cta submit ${needsNote ? "disabled":""}`,
+      class: "big-cta submit",
       onclick: () => {
         if (hrs < 9 && !state.comment.trim()) {
           commentField.focus();
@@ -5175,13 +5212,15 @@
         toast(tr("shiftLogged"), {kind:"success", pill:"✓"});
         render();
       }
-    }, ICON("check", 32), el("div", {}, tr("submit")));
+    }, el("span", {}, tr("submit")));
     wrap.appendChild(submitBtn);
 
     function updateSubmitState() {
-      const stillNeeds = hrs < 9 && !state.comment.trim();
-      submitBtn.classList.toggle("disabled", stillNeeds);
-      commentField.classList.toggle("required", stillNeeds);
+      // Only clear a prior "required" state once the user has typed. We don't
+      // pre-warn them with red — the comment-required-note pill does that
+      // calmly in amber. The red state only appears if they try to submit
+      // without a comment.
+      if (state.comment.trim()) commentField.classList.remove("required");
     }
     return wrap;
   }

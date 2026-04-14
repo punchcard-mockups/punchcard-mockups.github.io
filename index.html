@@ -953,6 +953,16 @@
     transition: border-color 150ms ease;
   }
   .modal-card input:focus, .modal-card textarea:focus { border-color: var(--accent-blue); }
+
+  /* Prevent iOS Safari from auto-zooming the viewport when a form field is
+     focused. It only zooms if the focused field's computed font-size is under
+     16px, so bump form fields to 16px on touch devices. Desktop stays compact. */
+  @media (pointer: coarse) {
+    .login-form input,
+    .modal-card input,
+    .modal-card textarea,
+    .modal-card select { font-size: 16px; }
+  }
   .modal-card .actions {
     display: flex; justify-content: flex-end; gap: 8px;
     margin-top: 6px;
@@ -3199,7 +3209,7 @@
 <body class="theme-editorial">
 
 <div class="app-root">
-  <div class="version-tag" id="versionTag">v.2026-04-14.1134</div>
+  <div class="version-tag" id="versionTag">v.2026-04-14.1143</div>
   <div class="topbar" id="topbarRoot"></div>
   <div class="scroll" id="scrollRoot"></div>
   <div id="fabRoot"></div>

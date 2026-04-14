@@ -123,22 +123,25 @@
   }
   .topbar .spacer { flex: 1; }
   .topbar .back {
-    width: 38px; height: 38px;
+    width: 44px; height: 44px;
     border-radius: 12px;
     display: grid; place-items: center;
     color: var(--text-secondary);
     cursor: pointer;
+    touch-action: manipulation;
     transition: background 150ms ease, transform 100ms ease;
   }
   .topbar .back:hover { background: var(--surface-dark); color: var(--text-primary); }
   .topbar .back:active { transform: scale(.92); }
   .topbar .title { font-size: 15px; font-weight: 600; color: var(--text-primary); }
   .topbar .icon-btn {
-    width: 38px; height: 38px;
+    width: 44px; height: 44px;
     border-radius: 12px;
     display: grid; place-items: center;
     color: var(--text-secondary);
     cursor: pointer;
+    touch-action: manipulation;
+    position: relative;
     transition: background 150ms ease, transform 100ms ease;
   }
   .topbar .icon-btn:hover { background: var(--surface-dark); color: var(--text-primary); }
@@ -146,19 +149,22 @@
   .lang-toggle {
     position: relative;
     display: inline-flex;
+    align-items: center;
+    min-height: 44px;
     background: var(--surface-dark);
     border-radius: 999px;
-    padding: 3px;
+    padding: 4px;
     cursor: pointer;
     user-select: none;
     border: 1px solid var(--outline-soft);
     transition: background 150ms ease;
+    touch-action: manipulation;
   }
   .lang-toggle:hover { background: var(--surface-card-hi); }
   .lang-toggle .slider {
     position: absolute;
-    top: 3px; bottom: 3px;
-    width: calc(50% - 3px);
+    top: 4px; bottom: 4px;
+    width: calc(50% - 4px);
     background: var(--accent-blue);
     border-radius: 999px;
     transition: transform 220ms cubic-bezier(.2,.8,.2,1);
@@ -171,13 +177,85 @@
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.5px;
-    padding: 3px 10px;
+    padding: 8px 12px;
     color: var(--text-secondary);
     transition: color 180ms ease;
     min-width: 26px;
     text-align: center;
   }
   .lang-toggle .opt.active { color: #fff; }
+
+  /* Account dropdown — opened by tapping the sign-out icon. Replaces the old
+     one-tap sign-out (which was too easy to mis-tap and wiped the session). */
+  .user-trigger { overflow: visible; }
+  .user-trigger.open { background: var(--surface-dark); color: var(--text-primary); }
+  .user-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 200px;
+    background: var(--surface-card);
+    border: 1px solid var(--outline-soft);
+    border-radius: 14px;
+    padding: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.35), 0 2px 6px rgba(0,0,0,.2);
+    z-index: 60;
+    text-align: left;
+    cursor: default;
+    animation: fade-up 140ms ease both;
+  }
+  .user-menu-header {
+    padding: 10px 12px 12px;
+    border-bottom: 1px solid var(--outline-soft);
+    margin-bottom: 6px;
+  }
+  .user-menu-greeting {
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    font-weight: 600;
+  }
+  .user-menu-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-top: 3px;
+  }
+  .user-menu-role {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--surface-dark);
+    color: var(--text-secondary);
+  }
+  .user-menu-signout {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 44px;
+    padding: 0 12px;
+    background: transparent;
+    border: 0;
+    color: var(--accent-red-light);
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    text-align: left;
+    border-radius: 10px;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background 120ms ease;
+  }
+  .user-menu-signout:active { background: var(--surface-dark); }
+  @media (hover: hover) {
+    .user-menu-signout:hover { background: var(--surface-dark); }
+  }
 
   /* Greeting */
   .greeting { padding: 2px 6px 10px; }
@@ -201,11 +279,12 @@
     padding: 10px 2px;
   }
   .month-nav .chev {
-    width: 40px; height: 40px;
+    width: 44px; height: 44px;
     border-radius: 12px;
     display: grid; place-items: center;
     color: var(--text-secondary);
     cursor: pointer;
+    touch-action: manipulation;
     transition: background 150ms ease, transform 100ms ease;
   }
   .month-nav .chev:hover { background: var(--surface-dark); color: var(--text-primary); }
@@ -228,9 +307,11 @@
     aspect-ratio: 1/1;
     padding: 2px;
     cursor: pointer;
-    transition: transform 90ms ease;
+    touch-action: manipulation;
+    transition: transform 110ms cubic-bezier(.2,.8,.2,1);
   }
-  .cal .cell:active { transform: scale(.96); }
+  .cal .cell:active { transform: scale(.92); }
+  .cal .cell:active .inner { background: rgba(59,130,246,.18); }
   .cal .inner {
     width: 100%; height: 100%;
     border-radius: 12px;
@@ -962,6 +1043,29 @@
     .modal-card input,
     .modal-card textarea,
     .modal-card select { font-size: 16px; }
+  }
+
+  /* Bottom-sheet modal on narrow viewports (phones). On tablet/desktop the
+     modal stays centered. Bottom sheet is the native pattern on both Android
+     (Material) and iOS, and it keeps the confirm button in thumb reach above
+     the keyboard when a field inside is focused. */
+  @media (max-width: 640px) {
+    .modal-scrim {
+      place-items: end stretch;
+      padding: 0;
+    }
+    .modal-card {
+      width: 100%;
+      max-width: 100%;
+      max-height: 88vh;
+      border-radius: 22px 22px 0 0;
+      padding-bottom: max(22px, calc(env(safe-area-inset-bottom) + 12px));
+      animation: sheet-in 260ms cubic-bezier(.2,.8,.2,1) both;
+    }
+    @keyframes sheet-in {
+      from { transform: translateY(100%); }
+      to   { transform: translateY(0); }
+    }
   }
   .modal-card .actions {
     display: flex; justify-content: flex-end; gap: 8px;
@@ -3204,12 +3308,44 @@
     }
   }
 
+  /* Sticky-hover fix for touch devices.
+     On iOS Safari (and some Android browsers) a tap triggers :hover and the
+     hover style remains painted until the user taps elsewhere. On elements
+     where hover adds a visible background/color, that leaves a "ghost"
+     highlight on the previously-tapped control. Neutralise those specific
+     hover effects when the device has no hover pointer. :active still fires
+     for press feedback. */
+  @media (hover: none) {
+    .topbar .back:hover,
+    .topbar .icon-btn:hover,
+    .month-nav .chev:hover,
+    body[class*="theme-"] .topbar .back:hover,
+    body[class*="theme-"] .topbar .icon-btn:hover,
+    body[class*="theme-"] .month-nav .chev:hover {
+      background: transparent;
+      color: var(--text-secondary);
+    }
+    .lang-toggle:hover { background: var(--surface-dark); }
+    .info-card.clickable:hover { background: var(--surface-card); }
+    .emp-row:hover,
+    body[class*="theme-"] .emp-row:hover {
+      background: var(--surface-card);
+      border-color: var(--outline-soft);
+    }
+    .demo-chip:hover,
+    body[class*="theme-"] .demo-chip:hover { background: var(--surface-card); }
+    .approval-row .top.expandable:hover { background: transparent; }
+    .hist-week-head.expandable:hover { background: transparent; }
+    .theme-switch .opt:hover { color: var(--text-secondary); }
+    .modal-card .btn:hover { background: transparent; color: var(--text-secondary); }
+  }
+
 </style>
 </head>
 <body class="theme-editorial">
 
 <div class="app-root">
-  <div class="version-tag" id="versionTag">v.2026-04-14.1143</div>
+  <div class="version-tag" id="versionTag">v.2026-04-14.1211</div>
   <div class="topbar" id="topbarRoot"></div>
   <div class="scroll" id="scrollRoot"></div>
   <div id="fabRoot"></div>
@@ -3247,6 +3383,8 @@
     expandedApproval: null,
     // history week-expansion: Set<weekStart>. Lazy-init to { thisWeekStart() }.
     expandedHistoryWeeks: null,
+    // user menu (account dropdown) open state
+    userMenuOpen: false,
     // flashing toast for banner animation
   };
 
@@ -3656,6 +3794,8 @@
       noLocation: "No location recorded",
       untilNineHours: (rem) => `Need ${rem} more or leave a note`,
       signOutConfirm: "Sign out?",
+      account: "Account",
+      signedInAs: "Signed in as",
     },
     es: {
       appName: "PunchCard",
@@ -3746,6 +3886,8 @@
       noLocation: "Sin ubicación registrada",
       untilNineHours: (rem) => `Faltan ${rem} horas o deja una nota`,
       signOutConfirm: "¿Cerrar sesión?",
+      account: "Cuenta",
+      signedInAs: "Sesión iniciada como",
     },
   };
   function tr(k, ...args) {
@@ -4253,7 +4395,7 @@
     if (hasBack) {
       root.appendChild(el("div", { class:"back", onclick: navBack }, ICON("back")));
     } else {
-      root.appendChild(el("div", { style:"width:38px" }));
+      root.appendChild(el("div", { style:"width:44px" }));
     }
 
     // Title in middle of topbar for secondary screens
@@ -4278,10 +4420,51 @@
         onclick: () => navTo("history")
       }, ICON("history")));
     }
-    root.appendChild(el("div", {
-      class:"icon-btn", title: tr("logout"),
-      onclick: logout,
-    }, ICON("logout")));
+    root.appendChild(renderUserMenu());
+  }
+
+  // Account / sign-out dropdown. Replaces what used to be a single-tap
+  // sign-out icon — a mis-tap on that wiped the session. Now tapping
+  // opens a menu, and the user has to hit "Sign out" deliberately.
+  function renderUserMenu() {
+    const u = state.currentUser;
+    const roleKey =
+      u?.role === "owner" ? "owner" :
+      u?.role === "admin" ? "admin" :
+      u?.role === "readonly" ? "readonly" :
+      null;
+    const trigger = el("div", {
+      class: "icon-btn user-trigger" + (state.userMenuOpen ? " open" : ""),
+      title: tr("account"),
+      onclick: (e) => {
+        e.stopPropagation();
+        state.userMenuOpen = !state.userMenuOpen;
+        render();
+      },
+    }, ICON("logout"));
+    if (state.userMenuOpen) {
+      const menu = el("div", {
+        class: "user-menu",
+        onclick: (e) => e.stopPropagation(),
+      },
+        el("div", {class: "user-menu-header"},
+          el("div", {class: "user-menu-greeting"}, tr("signedInAs")),
+          el("div", {class: "user-menu-name"}, u?.displayName || ""),
+          roleKey
+            ? el("div", {class: "user-menu-role"}, tr(roleKey))
+            : null,
+        ),
+        el("button", {
+          class: "user-menu-signout",
+          onclick: () => { state.userMenuOpen = false; logout(); },
+        },
+          ICON("logout", 14),
+          el("span", {}, tr("logout")),
+        ),
+      );
+      trigger.appendChild(menu);
+    }
+    return trigger;
   }
 
   function renderFab() {
@@ -4305,8 +4488,22 @@
     root.className = "scroll";
 
     let errorBox = null;
-    const userIn = el("input", { placeholder: s.username, autocomplete:"username" });
-    const passIn = el("input", { placeholder: s.password, type:"password", autocomplete:"current-password" });
+    const userIn = el("input", {
+      placeholder: s.username,
+      autocomplete: "username",
+      autocapitalize: "off",
+      autocorrect: "off",
+      spellcheck: "false",
+      inputmode: "text",
+    });
+    const passIn = el("input", {
+      placeholder: s.password,
+      type: "password",
+      autocomplete: "current-password",
+      autocapitalize: "off",
+      autocorrect: "off",
+      spellcheck: "false",
+    });
 
     function attempt(username, password) {
       const u = users.find(x => x.username === username && x.password === password);
@@ -5564,6 +5761,16 @@
 
     renderModal();
   }
+
+  // Close the account dropdown when the user taps anywhere outside it.
+  // Children of the trigger / menu stop propagation so the menu survives
+  // internal clicks.
+  document.addEventListener("click", () => {
+    if (state.userMenuOpen) {
+      state.userMenuOpen = false;
+      render();
+    }
+  });
 
   render();
 </script>

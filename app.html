@@ -1060,8 +1060,9 @@
     border-left: 3px solid var(--outline-soft);
     padding-left: 14px;
   }
-  .week-group.pending { border-left-color: var(--accent-amber); }
+  .week-group.pending  { border-left-color: var(--accent-amber); }
   .week-group.approved { border-left-color: var(--accent-green); }
+  .week-group.rejected { border-left-color: var(--accent-red, #ef4444); }
   .hist-week-head {
     display: flex; align-items: center; justify-content: space-between;
     gap: 8px;
@@ -1091,8 +1092,9 @@
     font-size: 9px; font-weight: 700; letter-spacing: 0.4px;
     padding: 2px 7px; border-radius: 999px; text-transform: uppercase;
   }
-  .hist-week-head .w-status.pending { background: rgba(245,158,11,.2); color: var(--accent-amber); }
+  .hist-week-head .w-status.pending  { background: rgba(245,158,11,.2); color: var(--accent-amber); }
   .hist-week-head .w-status.approved { background: rgba(16,185,129,.2); color: var(--accent-green-light); }
+  .hist-week-head .w-status.rejected { background: rgba(239,68,68,.2); color: var(--accent-red-light, #fca5a5); }
   /* Shift cards inside an expanded week sit slightly inset from the rail */
   .week-group .hist-shift-card { margin-top: 8px; }
   .week-group .hist-shift-card:first-of-type { margin-top: 10px; }
@@ -1294,6 +1296,88 @@
   .approval-row .approve { background: var(--accent-green); color: #fff; }
   .approval-row .reject { background: rgba(239,68,68,.2); color: var(--accent-red-light); }
   .approval-row .approve:hover, .approval-row .reject:hover { filter: brightness(1.1); }
+
+  /* Inline "why are you rejecting" form that swaps in for the actions row */
+  .reject-form {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--outline-soft);
+    animation: fade-in 180ms ease both;
+  }
+  .reject-reason-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent-red-light);
+    letter-spacing: 0.3px;
+    margin-bottom: 6px;
+  }
+  .reject-reason-field {
+    width: 100%;
+    box-sizing: border-box;
+    font-family: inherit;
+    font-size: 12px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--outline-soft);
+    background: var(--surface-dark);
+    color: var(--text-primary);
+    resize: vertical;
+    min-height: 64px;
+  }
+  .reject-reason-field:focus { outline: 2px solid var(--accent-red-light); outline-offset: -1px; }
+  .reject-reason-err {
+    font-size: 11px;
+    color: var(--accent-red-light);
+    margin-top: 4px;
+  }
+  .reject-form-actions {
+    display: flex; gap: 8px; margin-top: 8px;
+  }
+  .reject-form-actions button {
+    flex: 1;
+    font-family: inherit;
+    border: 0;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 12px; font-weight: 700;
+    cursor: pointer;
+    transition: filter 150ms ease;
+    background: rgba(239,68,68,.2);
+    color: var(--accent-red-light);
+  }
+  .reject-form-actions button.confirm {
+    background: var(--accent-red, #ef4444);
+    color: #fff;
+  }
+  .reject-form-actions button:hover { filter: brightness(1.1); }
+
+  /* Rejection notice shown to the employee (on weekSignoffCard + past-week row)
+     with the admin's reason for rejecting. */
+  .rejection-notice {
+    background: rgba(239,68,68,.08);
+    border: 1px dashed rgba(239,68,68,.35);
+    border-radius: 10px;
+    padding: 8px 12px;
+    animation: fade-in 220ms ease both;
+  }
+  .rejection-notice .label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--accent-red-light, #fca5a5);
+    margin-bottom: 2px;
+  }
+  .rejection-notice .reason {
+    font-size: 12px;
+    font-style: italic;
+    color: var(--text-primary);
+    line-height: 1.35;
+  }
+  /* Rejected past-week rows get a subtle red left accent */
+  .past-weeks .prow.rejected {
+    box-shadow: inset 3px 0 0 var(--accent-red, #ef4444);
+  }
   .approval-row .top.expandable,
   .hist-week-head.expandable {
     cursor: pointer;
@@ -3003,7 +3087,7 @@
 <body class="theme-editorial">
 
 <div class="app-root">
-  <div class="version-tag" id="versionTag">v.2026-04-14.0120</div>
+  <div class="version-tag" id="versionTag">v.2026-04-14.0140</div>
   <div class="topbar" id="topbarRoot"></div>
   <div class="scroll" id="scrollRoot"></div>
   <div id="fabRoot"></div>
@@ -3283,6 +3367,9 @@
   const weekApprovals = [
     { empId: 6, weekStart: "2026-04-06", status: "pending" }, // Maria
     { empId: 7, weekStart: "2026-04-06", status: "pending" }, // Jose
+    // Luis submitted his last week, admin bounced it back with a reason — he needs to fix + resubmit.
+    { empId: 8, weekStart: "2026-04-06", status: "rejected",
+      rejectionComment: "Thursday's hours look off — 9:00 AM start but the GPS was still at home. Please double-check and resubmit." },
   ];
 
   // Role helpers
@@ -3304,9 +3391,19 @@
     const wa = weekApprovals.find(w => w.empId === empId && w.weekStart === weekStart);
     return wa ? wa.status : null;
   }
+  function weekRejectionComment(empId, weekStart) {
+    const wa = weekApprovals.find(w => w.empId === empId && w.weekStart === weekStart);
+    return wa?.status === "rejected" ? (wa.rejectionComment || "") : "";
+  }
   function setWeekStatus(empId, weekStart, status) {
     const wa = weekApprovals.find(w => w.empId === empId && w.weekStart === weekStart);
-    if (wa) wa.status = status; else weekApprovals.push({ empId, weekStart, status });
+    if (wa) {
+      wa.status = status;
+      // Resubmit clears any prior rejection comment.
+      if (status !== "rejected") wa.rejectionComment = null;
+    } else {
+      weekApprovals.push({ empId, weekStart, status });
+    }
   }
 
   // =============================================================
@@ -3350,10 +3447,17 @@
       weekSubmitted: "Week submitted",
       weekPending: "Pending review",
       weekApproved: "Approved",
+      weekRejected: "Rejected",
       weeklySignoff: "Weekly submission",
       signoffAttest: "By submitting you confirm these hours are accurate.",
       pastWeeksSignoffTitle: "Past weeks to submit",
       noPastWeeks: "All past weeks submitted.",
+      rejectReasonTitle: "Why are you rejecting this week?",
+      rejectReasonPlaceholder: "Explain what needs to change…",
+      rejectReasonRequired: "A reason is required — the employee will see this.",
+      confirmReject: "Reject with reason",
+      rejectedByAdmin: "Rejected by admin",
+      resubmit: "Resubmit",
       pendingApprovals: "Pending approvals",
       nPending: (n) => `${n} ${n===1?"week":"weeks"} awaiting your review`,
       approve: "Approve", reject: "Reject",
@@ -3425,10 +3529,17 @@
       weekSubmitted: "Semana validada",
       weekPending: "Pendiente de revisión",
       weekApproved: "Aprobado",
+      weekRejected: "Rechazada",
       weeklySignoff: "Validación semanal",
       signoffAttest: "Al validar confirmas que estas horas son correctas.",
       pastWeeksSignoffTitle: "Semanas anteriores sin validar",
       noPastWeeks: "Todas las semanas anteriores están validadas.",
+      rejectReasonTitle: "¿Por qué rechazas esta semana?",
+      rejectReasonPlaceholder: "Explica qué debe cambiar…",
+      rejectReasonRequired: "Se requiere una explicación — el empleado la verá.",
+      confirmReject: "Rechazar con motivo",
+      rejectedByAdmin: "Rechazada por el admin",
+      resubmit: "Enviar de nuevo",
       pendingApprovals: "Aprobaciones pendientes",
       nPending: (n) => `${n} ${n===1?"semana":"semanas"} esperando tu revisión`,
       approve: "Aprobar", reject: "Rechazar",
@@ -4146,12 +4257,13 @@
     const wkShifts = shiftsForWeek(u.id, wkStart);
     const wkHours = wkShifts.reduce((s,x)=>s+x.hours,0);
     const status = weekStatus(u.id, wkStart);
+    const rejectionComment = weekRejectionComment(u.id, wkStart);
 
     const left = el("div", {class:"left"},
       el("div", {class:"title"}, `${tr("thisWeek")} · ${fmtDateShort(wkStart)} – ${fmtDateShort(wkEnd)}`),
       el("div", {class:"sub"}, `${wkHours.toFixed(1)} ${tr("hours").toLowerCase()} · ${wkShifts.length} ${tr("shifts").toLowerCase()}`),
     );
-    if (!status) {
+    if (!status || status === "rejected") {
       left.appendChild(el("div", {class:"attest"}, tr("signoffAttest")));
     }
 
@@ -4161,6 +4273,8 @@
     } else if (status === "pending") {
       head.appendChild(el("span", {class:"status-pill pending"}, tr("weekPending")));
     } else {
+      // Unsigned OR rejected — both show the submit button, rejected also shows the reason below.
+      const label = status === "rejected" ? tr("resubmit") : tr("submitWeek");
       head.appendChild(el("button", {
         class:"btn",
         onclick: (ev) => {
@@ -4172,16 +4286,29 @@
             if (pill) pill.classList.add("pop-in");
           });
         },
-      }, tr("submitWeek")));
+      }, label));
     }
 
     const card = el("div", {class:"week-submit"}, head);
+    if (status === "rejected" && rejectionComment) {
+      card.appendChild(rejectionNotice(rejectionComment));
+    }
     if (wkShifts.length) {
       card.appendChild(weekShiftBreakdown(wkShifts));
     }
     return card;
   }
 
+  // Amber-outlined banner showing the admin's rejection reason.
+  function rejectionNotice(reason) {
+    return el("div", {class:"rejection-notice"},
+      el("div", {class:"label"}, tr("rejectedByAdmin")),
+      el("div", {class:"reason"}, `"${reason}"`),
+    );
+  }
+
+  // Past weeks that need the employee's action: unsigned (no status yet) OR
+  // rejected (admin sent back). Approved / pending weeks are excluded.
   function unsignedPastWeeks(empId) {
     const thisWk = thisWeekStart();
     const weeks = new Map(); // wkStart -> {hours, count}
@@ -4189,14 +4316,18 @@
       if (sh.empId !== empId) continue;
       const wkStart = weekStartOf(sh.date);
       if (wkStart >= thisWk) continue;
-      if (weekStatus(empId, wkStart)) continue;
+      const st = weekStatus(empId, wkStart);
+      if (st === "pending" || st === "approved") continue;
       const agg = weeks.get(wkStart) || {hours:0, count:0};
       agg.hours += sh.hours;
       agg.count += 1;
       weeks.set(wkStart, agg);
     }
     return [...weeks.entries()]
-      .map(([wkStart, agg]) => ({wkStart, ...agg}))
+      .map(([wkStart, agg]) => ({
+        wkStart, ...agg,
+        rejectionComment: weekRejectionComment(empId, wkStart),
+      }))
       .sort((a,b) => b.wkStart.localeCompare(a.wkStart));
   }
 
@@ -4209,7 +4340,8 @@
     const list = el("div", {class:"past-weeks"});
     for (const w of past) {
       const wkShifts = shiftsForWeek(u.id, w.wkStart);
-      const prow = el("div", {class:"prow"},
+      const btnLabel = w.rejectionComment ? tr("resubmit") : tr("submitWeek");
+      const prow = el("div", {class: `prow ${w.rejectionComment ? "rejected" : ""}`},
         el("div", {class:"head"},
           el("div", {class:"left"},
             el("div", {class:"title"}, `${fmtDateShort(w.wkStart)} – ${fmtDateShort(weekEndOf(w.wkStart))}`),
@@ -4225,8 +4357,9 @@
                 render();
               });
             },
-          }, tr("submitWeek")),
+          }, btnLabel),
         ),
+        w.rejectionComment ? rejectionNotice(w.rejectionComment) : null,
         weekShiftBreakdown(wkShifts),
       );
       list.appendChild(prow);
@@ -4723,8 +4856,10 @@
           el("span", {class:"w-hrs"}, `${wHours.toFixed(1)}${tr("hoursShort")}`),
         );
         if (status) {
-          right.appendChild(el("span", {class:`w-status ${status}`},
-            status === "approved" ? tr("weekApproved") : tr("weekPending")));
+          const label = status === "approved" ? tr("weekApproved")
+                      : status === "rejected" ? tr("weekRejected")
+                      : tr("weekPending");
+          right.appendChild(el("span", {class:`w-status ${status}`}, label));
         }
         right.appendChild(el("span", {class: `chevron ${isOpen ? "up" : ""}`}, "▾"));
 
@@ -4958,19 +5093,51 @@
             row.appendChild(weekShiftBreakdown(wkShifts));
           }
           if (canApprove(state.currentUser)) {
-            row.appendChild(el("div", {class:"actions"},
+            const actions = el("div", {class:"actions"},
               el("button", {
                 class:"reject",
                 onclick: (ev) => {
+                  // Open inline rejection-reason form in place of the buttons.
                   const rowNode = ev.currentTarget.closest(".approval-row");
-                  animateOutAndThen(rowNode, () => {
-                    w.status = null;
-                    const idx = weekApprovals.findIndex(x => x === w);
-                    if (idx >= 0) weekApprovals.splice(idx, 1);
-                    state.expandedApproval = null;
-                    toast(tr("weekRejectedToast"), {kind:"warn", pill:"↺"});
-                    render();
+                  const reasonField = el("textarea", {
+                    class: "reject-reason-field",
+                    placeholder: tr("rejectReasonPlaceholder"),
+                    rows: 3,
                   });
+                  const err = el("div", {class:"reject-reason-err", style:"display:none;"});
+                  const form = el("div", {class:"reject-form"},
+                    el("div", {class:"reject-reason-title"}, tr("rejectReasonTitle")),
+                    reasonField,
+                    err,
+                    el("div", {class:"reject-form-actions"},
+                      el("button", {
+                        class:"reject",
+                        onclick: () => { form.remove(); actions.style.display = ""; },
+                      }, tr("cancel")),
+                      el("button", {
+                        class:"reject confirm",
+                        onclick: () => {
+                          const reason = reasonField.value.trim();
+                          if (!reason) {
+                            err.textContent = tr("rejectReasonRequired");
+                            err.style.display = "block";
+                            reasonField.focus();
+                            return;
+                          }
+                          animateOutAndThen(rowNode, () => {
+                            w.status = "rejected";
+                            w.rejectionComment = reason;
+                            state.expandedApproval = null;
+                            toast(tr("weekRejectedToast"), {kind:"warn", pill:"↺"});
+                            render();
+                          });
+                        },
+                      }, tr("confirmReject")),
+                    ),
+                  );
+                  actions.style.display = "none";
+                  rowNode.appendChild(form);
+                  reasonField.focus();
                 },
               }, tr("reject")),
               el("button", {
@@ -4979,13 +5146,15 @@
                   const rowNode = ev.currentTarget.closest(".approval-row");
                   animateOutAndThen(rowNode, () => {
                     w.status = "approved";
+                    w.rejectionComment = null;
                     state.expandedApproval = null;
                     toast(tr("weekApprovedToast"), {kind:"success", pill:"✓"});
                     render();
                   });
                 },
               }, tr("approve")),
-            ));
+            );
+            row.appendChild(actions);
           }
           card.appendChild(row);
         }

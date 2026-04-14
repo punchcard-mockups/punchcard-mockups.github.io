@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;500;600;700&family=Gloock&family=Vollkorn:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <style>
   :root {
     --navy: #0D1B2A;
@@ -1114,21 +1116,27 @@
     inset: 0;
     display: grid;
   }
-  .mini-map .tiles img {
+  .mini-map .tiles img,
+  .mini-map .leaflet-tile {
     width: 100%; height: 100%;
     display: block;
     filter: hue-rotate(190deg) saturate(.35) brightness(.7) contrast(1.1);
   }
+  .mini-map .leaflet-container { width: 100%; height: 100%; background: #0a1b2e; font: inherit; }
   .mini-map .pins {
     position: absolute; inset: 0;
     pointer-events: none;
   }
-  .mini-map .pin {
-    position: absolute;
+  .mini-map .pin,
+  .mini-map .leaflet-marker-icon .pin {
     width: 16px; height: 16px;
     border-radius: 50%;
     border: 3px solid #fff;
     box-shadow: 0 0 0 2px rgba(0,0,0,.4), 0 2px 6px rgba(0,0,0,.5);
+    box-sizing: border-box;
+  }
+  .mini-map .pins .pin {
+    position: absolute;
     transform: translate(-50%, -50%);
   }
   .mini-map .pin.in { background: var(--accent-green); }
@@ -1136,12 +1144,30 @@
   .mini-map .legend {
     position: absolute;
     left: 10px; bottom: 10px;
+    z-index: 500;
+    pointer-events: none;
     display: flex; gap: 10px;
     font-size: 10px; font-weight: 600;
     background: rgba(13,27,42,.85);
     padding: 4px 8px;
     border-radius: 999px;
     backdrop-filter: blur(4px);
+  }
+  .mini-map .leaflet-bar a { border-radius: 0; }
+  .mini-map.mini-map--locked::after {
+    content: "Click map to enable scroll zoom";
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 12px; font-weight: 600;
+    background: rgba(10, 27, 46, 0);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .18s ease, background .18s ease;
+    z-index: 400;
+  }
+  .mini-map.mini-map--locked.show-hint::after {
+    opacity: 1;
+    background: rgba(10, 27, 46, .35);
   }
   .mini-map .legend span {
     display: inline-flex; align-items: center; gap: 4px;
@@ -1948,7 +1974,8 @@
   body.theme-minimal .mini-map {
     border: 1px solid var(--outline-soft); border-radius: 6px; background: oklch(90% 0.005 250);
   }
-  body.theme-minimal .mini-map .tiles img {
+  body.theme-minimal .mini-map .tiles img,
+  body.theme-minimal .mini-map .leaflet-tile {
     filter: grayscale(0.25) brightness(1.05) contrast(1.05);
   }
   /* Modal */
@@ -2179,7 +2206,8 @@
   body.theme-warm .hist-shift-card .week-status.approved { background: oklch(92% 0.04 170); color: oklch(40% 0.12 170); }
   /* Map */
   body.theme-warm .mini-map { border-radius: 14px; border: 1px solid var(--outline-soft); }
-  body.theme-warm .mini-map .tiles img { filter: saturate(0.7) brightness(1.05); }
+  body.theme-warm .mini-map .tiles img,
+  body.theme-warm .mini-map .leaflet-tile { filter: saturate(0.7) brightness(1.05); }
   /* Modal */
   body.theme-warm .modal-scrim { background: oklch(24% 0.015 75 / .35); }
   body.theme-warm .modal-card { background: oklch(99% 0.008 75); border: 1px solid var(--outline-soft); border-radius: 20px; }
@@ -2376,7 +2404,8 @@
   body.theme-nordic .hist-shift-card .week-status.pending { background: oklch(93% 0.04 75); color: oklch(45% 0.1 75); }
   body.theme-nordic .hist-shift-card .week-status.approved { background: oklch(92% 0.03 155); color: oklch(40% 0.1 155); }
   body.theme-nordic .mini-map { border-radius: 18px; border: 1px solid var(--outline-soft); }
-  body.theme-nordic .mini-map .tiles img { filter: saturate(0.55) brightness(1.05) contrast(0.95); }
+  body.theme-nordic .mini-map .tiles img,
+  body.theme-nordic .mini-map .leaflet-tile { filter: saturate(0.55) brightness(1.05) contrast(0.95); }
   body.theme-nordic .modal-scrim { background: oklch(30% 0.02 230 / .3); }
   body.theme-nordic .modal-card { background: oklch(99% 0.004 170); border: 1px solid var(--outline-soft); border-radius: 24px; }
   body.theme-nordic .modal-card input, body.theme-nordic .modal-card textarea {
@@ -2637,7 +2666,8 @@
     border-radius: 4px; border: 1px solid var(--outline-soft);
     background: oklch(90% 0.015 85);
   }
-  body.theme-tactile .mini-map .tiles img { filter: sepia(0.18) saturate(0.6) brightness(1) contrast(1.05); }
+  body.theme-tactile .mini-map .tiles img,
+  body.theme-tactile .mini-map .leaflet-tile { filter: sepia(0.18) saturate(0.6) brightness(1) contrast(1.05); }
   body.theme-tactile .modal-scrim { background: oklch(20% 0.015 60 / .35); }
   body.theme-tactile .modal-card { background: oklch(97% 0.008 85); border: 1px solid var(--outline-soft); border-radius: 8px; }
   body.theme-tactile .modal-card input, body.theme-tactile .modal-card textarea {
@@ -3022,7 +3052,8 @@
   body.theme-editorial .hist-shift-card .week-status.approved { color: var(--accent-green); }
   /* Map */
   body.theme-editorial .mini-map { border-radius: 2px; border: 1px solid var(--outline-soft); background: oklch(90% 0.018 85); }
-  body.theme-editorial .mini-map .tiles img { filter: sepia(0.22) saturate(0.8) brightness(0.95) contrast(1.05); }
+  body.theme-editorial .mini-map .tiles img,
+  body.theme-editorial .mini-map .leaflet-tile { filter: sepia(0.22) saturate(0.8) brightness(0.95) contrast(1.05); }
   body.theme-editorial .mini-map .legend { background: oklch(16% 0.015 30 / .85); color: oklch(96% 0.015 85); border-radius: 2px; font-family: var(--tf-body); }
   /* Modal */
   body.theme-editorial .modal-scrim { background: oklch(16% 0.015 30 / .45); }
@@ -3168,7 +3199,7 @@
 <body class="theme-editorial">
 
 <div class="app-root">
-  <div class="version-tag" id="versionTag">v.2026-04-14.1119</div>
+  <div class="version-tag" id="versionTag">v.2026-04-14.1134</div>
   <div class="topbar" id="topbarRoot"></div>
   <div class="scroll" id="scrollRoot"></div>
   <div id="fabRoot"></div>
@@ -5070,13 +5101,12 @@
   // =============================================================
   // MAP
   // =============================================================
-  // Tight-framed OSM tile map — 2x2 grid, minimal padding, high zoom.
-  // Improves on the prior "too zoomed out" issue.
-  function lng2tileX(lng, zoom) { const n = 1 << zoom; return (lng + 180) / 360 * n; }
-  function lat2tileY(lat, zoom) {
-    const n = 1 << zoom;
-    return (1 - Math.log(Math.tan(lat*Math.PI/180) + 1/Math.cos(lat*Math.PI/180))/Math.PI)/2*n;
-  }
+  // Leaflet-backed map. Auto-fits to pins, caps zoom so tight clusters
+  // still show neighborhood context. Interactive: drag, pinch, zoom buttons.
+  // Scroll-wheel zoom is disabled until the user clicks the map so it
+  // doesn't hijack page scroll.
+  const MAP_MAX_ZOOM = 15;
+  const MAP_FIT_PADDING = 24;
 
   function miniMap(locatedShifts) {
     const pins = [];
@@ -5085,61 +5115,60 @@
       if (sh.clockOut) pins.push({ lat: sh.clockOut.lat, lng: sh.clockOut.lng, in: false });
     }
     if (!pins.length) return el("div", {});
-    const lats = pins.map(p => p.lat);
-    const lngs = pins.map(p => p.lng);
-    const minLat = Math.min(...lats), maxLat = Math.max(...lats);
-    const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
-    // Tight padding (was 30%; reduced to 12% to zoom in more)
-    const latSpread = maxLat - minLat || 0.0005;
-    const lngSpread = maxLng - minLng || 0.0005;
-    const latPad = Math.max(latSpread * 0.12, 0.0003);
-    const lngPad = Math.max(lngSpread * 0.12, 0.0003);
-    const padMinLat = minLat - latPad, padMaxLat = maxLat + latPad;
-    const padMinLng = minLng - lngPad, padMaxLng = maxLng + lngPad;
-    // Use 2x2 grid instead of 3x2 for tighter framing
-    const tilesWide = 2, tilesTall = 2;
-    let zoom = 19;
-    while (zoom > 1) {
-      const minTX = lng2tileX(padMinLng, zoom), maxTX = lng2tileX(padMaxLng, zoom);
-      const minTY = lat2tileY(padMaxLat, zoom), maxTY = lat2tileY(padMinLat, zoom);
-      if ((maxTX - minTX) <= tilesWide && (maxTY - minTY) <= tilesTall) break;
-      zoom--;
-    }
-    const centerLng = (padMinLng + padMaxLng) / 2;
-    const centerLat = (padMinLat + padMaxLat) / 2;
-    const centerTX = lng2tileX(centerLng, zoom);
-    const centerTY = lat2tileY(centerLat, zoom);
-    const startTX = Math.floor(centerTX - tilesWide / 2);
-    const startTY = Math.floor(centerTY - tilesTall / 2);
 
-    const mapEl = el("div", {class:"mini-map"});
-    const tiles = el("div", {class:"tiles",
-      style: `grid-template-columns: repeat(${tilesWide}, 1fr); grid-template-rows: repeat(${tilesTall}, 1fr);`});
-    for (let r = 0; r < tilesTall; r++) {
-      for (let c = 0; c < tilesWide; c++) {
-        const tx = startTX + c;
-        const ty = startTY + r;
-        const url = `https://tile.openstreetmap.org/${zoom}/${tx}/${ty}.png`;
-        tiles.appendChild(el("img", { src: url, alt:"", loading:"lazy" }));
-      }
-    }
-    mapEl.appendChild(tiles);
-
-    const pinsEl = el("div", {class:"pins"});
-    for (const p of pins) {
-      const tX = lng2tileX(p.lng, zoom), tY = lat2tileY(p.lat, zoom);
-      const xPct = ((tX - startTX) / tilesWide) * 100;
-      const yPct = ((tY - startTY) / tilesTall) * 100;
-      pinsEl.appendChild(el("div", {
-        class: `pin ${p.in ? "in" : "out"}`,
-        style: `left:${xPct}%; top:${yPct}%`
-      }));
-    }
-    mapEl.appendChild(pinsEl);
-    mapEl.appendChild(el("div", {class:"legend"},
-      el("span", {class:"in"}, tr("mapLegendIn")),
-      el("span", {class:"out"}, tr("mapLegendOut")),
+    const mapEl = el("div", {class: "mini-map mini-map--locked"});
+    mapEl.appendChild(el("div", {class: "legend"},
+      el("span", {class: "in"}, tr("mapLegendIn")),
+      el("span", {class: "out"}, tr("mapLegendOut")),
     ));
+
+    // Leaflet needs the element in the DOM with a measurable size.
+    requestAnimationFrame(() => {
+      const map = L.map(mapEl, {
+        scrollWheelZoom: false,
+        zoomControl: true,
+        attributionControl: false,
+      });
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: "© OpenStreetMap",
+      }).addTo(map);
+      L.control.attribution({ prefix: false, position: "bottomright" })
+        .addAttribution("© OSM").addTo(map);
+
+      for (const p of pins) {
+        L.marker([p.lat, p.lng], {
+          icon: L.divIcon({
+            className: "pin-marker",
+            html: `<div class="pin ${p.in ? "in" : "out"}"></div>`,
+            iconSize: [16, 16],
+            iconAnchor: [8, 8],
+          }),
+        }).addTo(map);
+      }
+
+      const bounds = L.latLngBounds(pins.map(p => [p.lat, p.lng]));
+      map.fitBounds(bounds, {
+        padding: [MAP_FIT_PADDING, MAP_FIT_PADDING],
+        maxZoom: MAP_MAX_ZOOM,
+      });
+
+      // Click-to-activate scroll zoom. Also show a brief hint if the user
+      // tries to scroll-wheel-zoom while it's still locked.
+      const activate = () => {
+        map.scrollWheelZoom.enable();
+        mapEl.classList.remove("mini-map--locked");
+      };
+      map.once("click", activate);
+      mapEl.addEventListener("wheel", (e) => {
+        if (mapEl.classList.contains("mini-map--locked")) {
+          mapEl.classList.add("show-hint");
+          clearTimeout(mapEl._hintTimer);
+          mapEl._hintTimer = setTimeout(() => mapEl.classList.remove("show-hint"), 900);
+        }
+      }, { passive: true });
+    });
+
     return mapEl;
   }
 

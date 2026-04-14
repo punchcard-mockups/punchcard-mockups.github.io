@@ -1442,12 +1442,22 @@
     letter-spacing: 0.2px;
   }
 
-  /* Small "✎ N admin edits" pill on the history week header */
-  .hist-week-head .w-admin-edits {
-    font-size: 9px; font-weight: 700; letter-spacing: 0.4px;
-    padding: 2px 7px; border-radius: 999px; text-transform: uppercase;
-    background: rgba(245,158,11,.18);
-    color: var(--accent-amber);
+  /* "✎" admin-edit marker on a shift card — placed next to the date so the
+     user can see which specific day was edited without opening the detail. */
+  .hist-shift-card .edit-badge {
+    display: inline-grid;
+    place-items: center;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--accent-amber);
+    color: #1a1a1a;
+    font-size: 11px;
+    font-weight: 700;
+    margin-left: 2px;
+    flex: 0 0 auto;
+  }
+  .hist-shift-card.edited {
+    box-shadow: inset 3px 0 0 var(--accent-amber);
   }
   .approval-row .top.expandable,
   .hist-week-head.expandable {
@@ -3158,7 +3168,7 @@
 <body class="theme-editorial">
 
 <div class="app-root">
-  <div class="version-tag" id="versionTag">v.2026-04-14.0200</div>
+  <div class="version-tag" id="versionTag">v.2026-04-14.0215</div>
   <div class="topbar" id="topbarRoot"></div>
   <div class="scroll" id="scrollRoot"></div>
   <div id="fabRoot"></div>
@@ -4948,8 +4958,9 @@
     const shDate = new Date(sh.date + "T00:00:00");
     const inTz  = sh.clockInTz  ? tzShort(sh.clockInTz,  shDate) : "";
     const outTz = sh.clockOutTz ? tzShort(sh.clockOutTz, shDate) : "";
+    const editedN = sh.adminEdits?.length || 0;
     return el("div", {
-      class:"hist-shift-card",
+      class: `hist-shift-card ${editedN > 0 ? "edited" : ""}`,
       style:"cursor:pointer",
       onclick: () => navTo("shift_detail", { viewingShiftId: sh.id }),
     },
@@ -4957,6 +4968,7 @@
         el("div", {class:"left"},
           el("div", {class:`status-dot ${ok ? "ok":"warn"}`}),
           el("div", {class:"date"}, fmtDateLong(sh.date)),
+          editedN > 0 ? el("span", {class:"edit-badge", title: tr("editedByAdmin")}, "✎") : null,
         ),
         el("div", {class:`hrs ${ok ? "ok":"warn"}`}, `${sh.hours.toFixed(1)}${tr("hoursShort")}`),
       ),
@@ -5029,11 +5041,6 @@
                       : status === "rejected" ? tr("weekRejected")
                       : tr("weekPending");
           right.appendChild(el("span", {class:`w-status ${status}`}, label));
-        }
-        const adminEditN = weekAdminEditCount(empId, wkStart);
-        if (adminEditN > 0) {
-          right.appendChild(el("span", {class:"w-admin-edits", title: tr("editedByAdmin")},
-            `✎ ${tr("editedNTimes", adminEditN)}`));
         }
         right.appendChild(el("span", {class: `chevron ${isOpen ? "up" : ""}`}, "▾"));
 

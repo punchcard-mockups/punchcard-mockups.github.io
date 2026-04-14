@@ -1104,6 +1104,9 @@
     border-radius: 16px;
     padding: 14px 16px;
     margin-top: 12px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .week-submit .head {
     display: flex; align-items: center; gap: 12px;
   }
   .week-submit .left { flex: 1; min-width: 0; }
@@ -1155,13 +1158,14 @@
     margin-top: 6px;
   }
   .past-weeks .prow {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+    display: flex; flex-direction: column; gap: 8px;
     padding: 10px 12px;
     border-bottom: 1px solid var(--outline-soft);
   }
   .past-weeks .prow:last-child { border-bottom: 0; }
+  .past-weeks .prow .head {
+    display: flex; align-items: center; gap: 12px;
+  }
   .past-weeks .prow .left { flex: 1; min-width: 0; }
   .past-weeks .prow .title { font-size: 12px; font-weight: 600; }
   .past-weeks .prow .sub {
@@ -1224,29 +1228,37 @@
   .approval-row .approve { background: var(--accent-green); color: #fff; }
   .approval-row .reject { background: rgba(239,68,68,.2); color: var(--accent-red-light); }
   .approval-row .approve:hover, .approval-row .reject:hover { filter: brightness(1.1); }
-  .approval-row .top.expandable {
+  .approval-row .top.expandable,
+  .hist-week-head.expandable {
     cursor: pointer;
     user-select: none;
+    transition: background 120ms ease;
+  }
+  .approval-row .top.expandable {
     margin: -12px -14px 0;
     padding: 12px 14px;
     border-radius: 12px 12px 0 0;
-    transition: background 120ms ease;
   }
   .approval-row .top.expandable:hover { background: rgba(255,255,255,.04); }
+  .hist-week-head.expandable {
+    padding: 4px 6px;
+    margin: 14px -2px 0;
+    border-radius: 8px;
+  }
+  .hist-week-head.expandable:hover { background: rgba(0,0,0,.03); }
   .approval-row .total { display: flex; align-items: center; gap: 8px; }
-  .approval-row .chevron {
+  .chevron {
     font-size: 10px; color: var(--text-muted);
     transition: transform 150ms ease;
     display: inline-block;
   }
-  .approval-row .chevron.up { transform: rotate(180deg); }
-  .approval-row .breakdown {
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px dashed var(--outline-soft);
+  .chevron.up { transform: rotate(180deg); }
+
+  /* Shared shift breakdown list */
+  .breakdown {
     display: flex; flex-direction: column; gap: 8px;
   }
-  .approval-row .breakdown .drow {
+  .breakdown .drow {
     display: grid;
     grid-template-columns: 64px 1fr auto;
     column-gap: 10px;
@@ -1254,33 +1266,41 @@
     align-items: baseline;
     font-size: 12px;
   }
-  .approval-row .breakdown .drow .d {
+  .breakdown .drow .d {
     color: var(--text-secondary);
     font-variant-numeric: tabular-nums;
     font-weight: 600;
   }
-  .approval-row .breakdown .drow .t {
+  .breakdown .drow .t {
     color: var(--text-primary);
     font-variant-numeric: tabular-nums;
   }
-  .approval-row .breakdown .drow .h {
+  .breakdown .drow .h {
     color: var(--accent-blue-bright);
     font-weight: 700;
     font-variant-numeric: tabular-nums;
     text-align: right;
   }
-  .approval-row .breakdown .drow .c {
+  .breakdown .drow .c {
     grid-column: 2 / -1;
     font-size: 11px;
     color: var(--text-muted);
     font-style: italic;
   }
-  .approval-row .breakdown .empty {
+  .breakdown .empty {
     font-size: 11px;
     color: var(--text-muted);
     font-style: italic;
     text-align: center;
     padding: 4px 0;
+  }
+  /* When breakdown appears inside another card, add a divider on top */
+  .approval-row .breakdown,
+  .week-submit .breakdown,
+  .past-weeks .prow .breakdown {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--outline-soft);
   }
 
   /* Read-only badge */
@@ -2912,7 +2932,7 @@
 <body class="theme-editorial">
 
 <div class="app-root">
-  <div class="version-tag" id="versionTag">v.2026-04-13.2200</div>
+  <div class="version-tag" id="versionTag">v.2026-04-13.2315</div>
   <div class="topbar" id="topbarRoot"></div>
   <div class="scroll" id="scrollRoot"></div>
   <div id="fabRoot"></div>
@@ -2946,6 +2966,8 @@
     modal: null,        // "addEmployee" | "approvals" | "submitWeek"
     // drill-in: "empId:weekStart" of approval row currently expanded in approvals modal
     expandedApproval: null,
+    // history week-expansion: Set<weekStart>. Lazy-init to { thisWeekStart() }.
+    expandedHistoryWeeks: null,
     // flashing toast for banner animation
   };
 
@@ -3435,6 +3457,8 @@
     state.screen = "login";
     state.nav = [];
     state.modal = null;
+    state.expandedApproval = null;
+    state.expandedHistoryWeeks = null;
     state.clock = "idle"; state.clockIn = state.clockOut = null; state.comment = "";
     render();
   }
@@ -3846,6 +3870,30 @@
     root.appendChild(el("div", {style:"height:40px"}));
   }
 
+  // Shared compact shift list used by admin approvals drill-in,
+  // employee sign-off card, past-weeks rows, and history week expansion.
+  function weekShiftBreakdown(wkShifts) {
+    const details = el("div", {class:"breakdown"});
+    if (!wkShifts.length) {
+      details.appendChild(el("div", {class:"empty"}, tr("noShifts")));
+      return details;
+    }
+    const sorted = [...wkShifts].sort((a,b) =>
+      a.date.localeCompare(b.date) || a.start.localeCompare(b.start));
+    for (const sh of sorted) {
+      const drow = el("div", {class:"drow"},
+        el("div", {class:"d"}, fmtDateShort(sh.date)),
+        el("div", {class:"t"}, `${fmt12(sh.start)} – ${fmt12(sh.end)}`),
+        el("div", {class:"h"}, `${sh.hours.toFixed(1)}${tr("hoursShort")}`),
+      );
+      if (sh.comment) {
+        drow.appendChild(el("div", {class:"c"}, `"${sh.comment}"`));
+      }
+      details.appendChild(drow);
+    }
+    return details;
+  }
+
   function weekSignoffCard() {
     const u = state.currentUser;
     const wkStart = thisWeekStart();
@@ -3862,13 +3910,13 @@
       left.appendChild(el("div", {class:"attest"}, tr("signoffAttest")));
     }
 
-    const card = el("div", {class:"week-submit"}, left);
+    const head = el("div", {class:"head"}, left);
     if (status === "approved") {
-      card.appendChild(el("span", {class:"status-pill approved"}, tr("weekApproved")));
+      head.appendChild(el("span", {class:"status-pill approved"}, tr("weekApproved")));
     } else if (status === "pending") {
-      card.appendChild(el("span", {class:"status-pill pending"}, tr("weekPending")));
+      head.appendChild(el("span", {class:"status-pill pending"}, tr("weekPending")));
     } else {
-      card.appendChild(el("button", {
+      head.appendChild(el("button", {
         class:"btn",
         onclick: () => {
           setWeekStatus(u.id, wkStart, "pending");
@@ -3876,6 +3924,11 @@
           render();
         }
       }, tr("submitWeek")));
+    }
+
+    const card = el("div", {class:"week-submit"}, head);
+    if (wkShifts.length) {
+      card.appendChild(weekShiftBreakdown(wkShifts));
     }
     return card;
   }
@@ -3906,20 +3959,25 @@
     wrap.appendChild(el("div", {class:"signoff-label"}, tr("pastWeeksSignoffTitle")));
     const list = el("div", {class:"past-weeks"});
     for (const w of past) {
-      list.appendChild(el("div", {class:"prow"},
-        el("div", {class:"left"},
-          el("div", {class:"title"}, `${fmtDateShort(w.wkStart)} – ${fmtDateShort(weekEndOf(w.wkStart))}`),
-          el("div", {class:"sub"}, `${w.hours.toFixed(1)} ${tr("hours").toLowerCase()} · ${w.count} ${tr("shifts").toLowerCase()}`),
+      const wkShifts = shiftsForWeek(u.id, w.wkStart);
+      const prow = el("div", {class:"prow"},
+        el("div", {class:"head"},
+          el("div", {class:"left"},
+            el("div", {class:"title"}, `${fmtDateShort(w.wkStart)} – ${fmtDateShort(weekEndOf(w.wkStart))}`),
+            el("div", {class:"sub"}, `${w.hours.toFixed(1)} ${tr("hours").toLowerCase()} · ${w.count} ${tr("shifts").toLowerCase()}`),
+          ),
+          el("button", {
+            class:"btn",
+            onclick: () => {
+              setWeekStatus(u.id, w.wkStart, "pending");
+              toast(tr("weekSubmitted"), {kind:"success", pill:"✓"});
+              render();
+            },
+          }, tr("submitWeek")),
         ),
-        el("button", {
-          class:"btn",
-          onclick: () => {
-            setWeekStatus(u.id, w.wkStart, "pending");
-            toast(tr("weekSubmitted"), {kind:"success", pill:"✓"});
-            render();
-          },
-        }, tr("submitWeek")),
-      ));
+        weekShiftBreakdown(wkShifts),
+      );
+      list.appendChild(prow);
     }
     wrap.appendChild(list);
     return wrap;
@@ -4334,8 +4392,14 @@
 
   // Groups shifts by month → week and appends headers + cards to `root`.
   // Expects shifts already sorted newest-to-oldest.
+  // Weeks other than the current one default to collapsed; click the header to toggle.
   function appendGroupedShifts(root, sortedShifts, empId) {
     if (!sortedShifts.length) return;
+    if (state.expandedHistoryWeeks == null) {
+      state.expandedHistoryWeeks = new Set([thisWeekStart()]);
+    }
+    const expanded = state.expandedHistoryWeeks;
+
     const byMonth = new Map();
     for (const sh of sortedShifts) {
       const mKey = sh.date.slice(0, 7); // YYYY-MM
@@ -4368,6 +4432,7 @@
         const wShifts = byWeek.get(wkStart);
         const wHours = wShifts.reduce((s,x)=>s+x.hours,0);
         const status = weekStatus(empId, wkStart);
+        const isOpen = expanded.has(wkStart);
 
         const right = el("div", {class:"w-right"},
           el("span", {class:"w-hrs"}, `${wHours.toFixed(1)}${tr("hoursShort")}`),
@@ -4376,14 +4441,25 @@
           right.appendChild(el("span", {class:`w-status ${status}`},
             status === "approved" ? tr("weekApproved") : tr("weekPending")));
         }
-        root.appendChild(el("div", {class:"hist-week-head"},
+        right.appendChild(el("span", {class: `chevron ${isOpen ? "up" : ""}`}, "▾"));
+
+        root.appendChild(el("div", {
+          class:"hist-week-head expandable",
+          onclick: () => {
+            if (isOpen) expanded.delete(wkStart);
+            else expanded.add(wkStart);
+            render();
+          },
+        },
           el("div", {class:"w-title"},
             `${fmtDateShort(wkStart)} – ${fmtDateShort(weekEndOf(wkStart))}`),
           right,
         ));
 
-        for (const sh of wShifts) {
-          root.appendChild(renderShiftCard(sh));
+        if (isOpen) {
+          for (const sh of wShifts) {
+            root.appendChild(renderShiftCard(sh));
+          }
         }
       }
     }
@@ -4592,25 +4668,7 @@
             el("div", {class:"week"}, `${fmtDateShort(w.weekStart)} – ${fmtDateShort(weekEndOf(w.weekStart))} · ${wkShifts.length} ${tr("shifts").toLowerCase()}`),
           );
           if (isExpanded) {
-            const details = el("div", {class:"breakdown"});
-            if (!wkShifts.length) {
-              details.appendChild(el("div", {class:"empty"}, tr("noShifts")));
-            } else {
-              const sorted = [...wkShifts].sort((a,b) =>
-                a.date.localeCompare(b.date) || a.start.localeCompare(b.start));
-              for (const sh of sorted) {
-                const drow = el("div", {class:"drow"},
-                  el("div", {class:"d"}, fmtDateShort(sh.date)),
-                  el("div", {class:"t"}, `${fmt12(sh.start)} – ${fmt12(sh.end)}`),
-                  el("div", {class:"h"}, `${sh.hours.toFixed(1)}${tr("hoursShort")}`),
-                );
-                if (sh.comment) {
-                  drow.appendChild(el("div", {class:"c"}, `"${sh.comment}"`));
-                }
-                details.appendChild(drow);
-              }
-            }
-            row.appendChild(details);
+            row.appendChild(weekShiftBreakdown(wkShifts));
           }
           if (canApprove(state.currentUser)) {
             row.appendChild(el("div", {class:"actions"},

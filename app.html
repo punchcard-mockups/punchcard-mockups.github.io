@@ -357,11 +357,6 @@
     width: 10px; height: 10px; border-radius: 3px; flex: 0 0 auto;
   }
   .emp-breakdown .brow .name { flex: 1; font-size: 12px; }
-  .emp-breakdown .brow .meter {
-    flex: 2; height: 6px;
-    background: var(--outline-soft); border-radius: 3px; overflow: hidden;
-  }
-  .emp-breakdown .brow .meter span { display: block; height: 100%; border-radius: 3px; }
   .emp-breakdown .brow .hrs {
     font-size: 11px; font-weight: 700;
     min-width: 34px; text-align: right;
@@ -978,6 +973,53 @@
   .hist-shift-card .week-status.pending { background: rgba(245,158,11,.2); color: var(--accent-amber); }
   .hist-shift-card .week-status.approved { background: rgba(16,185,129,.2); color: var(--accent-green-light); }
 
+  /* History grouping */
+  .hist-month-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin: 22px 4px 2px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--outline-soft);
+  }
+  .hist-month-head:first-child { margin-top: 8px; }
+  .hist-month-head .m-title {
+    font-size: 15px; font-weight: 700;
+    letter-spacing: 0.2px;
+  }
+  .hist-month-head .m-stats {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+  }
+  .hist-week-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin: 14px 4px 0;
+    gap: 8px;
+  }
+  .hist-week-head .w-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .hist-week-head .w-right {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .hist-week-head .w-hrs {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent-blue-bright);
+    font-variant-numeric: tabular-nums;
+  }
+  .hist-week-head .w-status {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.4px;
+    padding: 2px 7px; border-radius: 999px; text-transform: uppercase;
+  }
+  .hist-week-head .w-status.pending { background: rgba(245,158,11,.2); color: var(--accent-amber); }
+  .hist-week-head .w-status.approved { background: rgba(16,185,129,.2); color: var(--accent-green-light); }
+
   /* Map */
   .mini-map {
     position: relative;
@@ -1091,6 +1133,63 @@
   }
   .week-submit .status-pill.pending { background: rgba(245,158,11,.2); color: var(--accent-amber); }
   .week-submit .status-pill.approved { background: rgba(16,185,129,.2); color: var(--accent-green-light); }
+  .week-submit .attest {
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 4px;
+    letter-spacing: 0.1px;
+    line-height: 1.35;
+  }
+  .signoff-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 18px 4px 6px;
+  }
+  .past-weeks {
+    background: var(--surface-card);
+    border-radius: 16px;
+    padding: 4px 4px;
+    margin-top: 6px;
+  }
+  .past-weeks .prow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--outline-soft);
+  }
+  .past-weeks .prow:last-child { border-bottom: 0; }
+  .past-weeks .prow .left { flex: 1; min-width: 0; }
+  .past-weeks .prow .title { font-size: 12px; font-weight: 600; }
+  .past-weeks .prow .sub {
+    font-size: 10px;
+    color: var(--text-secondary);
+    margin-top: 1px;
+    font-variant-numeric: tabular-nums;
+  }
+  .past-weeks .prow .btn {
+    background: var(--accent-amber);
+    color: #1a1a1a;
+    border: 0;
+    font-family: inherit;
+    font-size: 11px; font-weight: 700;
+    padding: 6px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    letter-spacing: 0.2px;
+    transition: filter 150ms ease;
+  }
+  .past-weeks .prow .btn:hover { filter: brightness(1.05); }
+  .past-weeks .empty {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 10px;
+    font-style: italic;
+  }
 
   /* Approval row (in modal) */
   .approval-row {
@@ -1125,6 +1224,64 @@
   .approval-row .approve { background: var(--accent-green); color: #fff; }
   .approval-row .reject { background: rgba(239,68,68,.2); color: var(--accent-red-light); }
   .approval-row .approve:hover, .approval-row .reject:hover { filter: brightness(1.1); }
+  .approval-row .top.expandable {
+    cursor: pointer;
+    user-select: none;
+    margin: -12px -14px 0;
+    padding: 12px 14px;
+    border-radius: 12px 12px 0 0;
+    transition: background 120ms ease;
+  }
+  .approval-row .top.expandable:hover { background: rgba(255,255,255,.04); }
+  .approval-row .total { display: flex; align-items: center; gap: 8px; }
+  .approval-row .chevron {
+    font-size: 10px; color: var(--text-muted);
+    transition: transform 150ms ease;
+    display: inline-block;
+  }
+  .approval-row .chevron.up { transform: rotate(180deg); }
+  .approval-row .breakdown {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--outline-soft);
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .approval-row .breakdown .drow {
+    display: grid;
+    grid-template-columns: 64px 1fr auto;
+    column-gap: 10px;
+    row-gap: 2px;
+    align-items: baseline;
+    font-size: 12px;
+  }
+  .approval-row .breakdown .drow .d {
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+  }
+  .approval-row .breakdown .drow .t {
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+  .approval-row .breakdown .drow .h {
+    color: var(--accent-blue-bright);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+  .approval-row .breakdown .drow .c {
+    grid-column: 2 / -1;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+  .approval-row .breakdown .empty {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-style: italic;
+    text-align: center;
+    padding: 4px 0;
+  }
 
   /* Read-only badge */
   .readonly-banner {
@@ -1354,7 +1511,6 @@
     border-top: 1px solid var(--outline-soft); padding-top: 12px;
   }
   body.theme-minimal .emp-breakdown .brow .name { font-size: 13px; font-weight: 500; }
-  body.theme-minimal .emp-breakdown .brow .meter { background: oklch(90% 0.005 250); }
   /* Calendar */
   body.theme-minimal .cal .dows span {
     color: var(--text-muted);
@@ -1887,8 +2043,6 @@
     border-top: 1px solid var(--outline-soft); padding-top: 14px; margin-top: 14px;
   }
   body.theme-nordic .emp-breakdown .brow .name { font-weight: 500; }
-  body.theme-nordic .emp-breakdown .brow .meter { background: oklch(92% 0.008 170); border-radius: 999px; }
-  body.theme-nordic .emp-breakdown .brow .meter span { border-radius: 999px; }
   /* Calendar */
   body.theme-nordic .cal .dows span { color: var(--text-muted); font-weight: 500; letter-spacing: 0.8px; }
   body.theme-nordic .cal .inner { border-radius: 50%; }
@@ -2088,8 +2242,6 @@
   body.theme-tactile .emp-breakdown .brow { border-bottom: 1px dotted var(--outline-soft); padding: 8px 0; }
   body.theme-tactile .emp-breakdown .brow:last-child { border-bottom: 0; }
   body.theme-tactile .emp-breakdown .brow .name { font-weight: 600; }
-  body.theme-tactile .emp-breakdown .brow .meter { background: oklch(91% 0.01 85); border-radius: 0; height: 3px; }
-  body.theme-tactile .emp-breakdown .brow .meter span { border-radius: 0; }
   body.theme-tactile .cal .dows span { color: var(--text-muted); font-weight: 600; letter-spacing: 1.4px; }
   body.theme-tactile .cal .inner { border-radius: 8px; }
   body.theme-tactile .cal .cell.today .inner { background: transparent; outline: 1.5px solid var(--accent-blue); outline-offset: -2px; }
@@ -2389,8 +2541,6 @@
   body.theme-editorial .emp-breakdown .brow { padding: 7px 0; border-bottom: 1px dotted var(--outline-soft); }
   body.theme-editorial .emp-breakdown .brow:last-child { border-bottom: 0; }
   body.theme-editorial .emp-breakdown .brow .name { font-family: var(--tf-display); font-weight: 400; font-size: 14px; }
-  body.theme-editorial .emp-breakdown .brow .meter { background: oklch(88% 0.02 85); border-radius: 0; height: 3px; }
-  body.theme-editorial .emp-breakdown .brow .meter span { border-radius: 0; }
   /* Calendar */
   body.theme-editorial .cal .dows span {
     font-family: var(--tf-body);
@@ -2762,7 +2912,7 @@
 <body class="theme-editorial">
 
 <div class="app-root">
-  <div class="version-tag" id="versionTag">v.2026-04-13.1825</div>
+  <div class="version-tag" id="versionTag">v.2026-04-13.2200</div>
   <div class="topbar" id="topbarRoot"></div>
   <div class="scroll" id="scrollRoot"></div>
   <div id="fabRoot"></div>
@@ -2794,6 +2944,8 @@
     comment: "",
     // modals
     modal: null,        // "addEmployee" | "approvals" | "submitWeek"
+    // drill-in: "empId:weekStart" of approval row currently expanded in approvals modal
+    expandedApproval: null,
     // flashing toast for banner animation
   };
 
@@ -3010,10 +3162,14 @@
       commentLabel: "Note",
       mapLegendIn: "Clock-in",
       mapLegendOut: "Clock-out",
-      submitWeek: "Submit week",
-      weekSubmitted: "Week submitted",
+      submitWeek: "Sign off",
+      weekSubmitted: "Week signed off",
       weekPending: "Pending review",
       weekApproved: "Approved",
+      weeklySignoff: "Weekly sign-off",
+      signoffAttest: "By signing off you confirm these hours are accurate.",
+      pastWeeksSignoffTitle: "Past weeks awaiting sign-off",
+      noPastWeeks: "All past weeks signed off.",
       pendingApprovals: "Pending approvals",
       nPending: (n) => `${n} ${n===1?"week":"weeks"} awaiting your review`,
       approve: "Approve", reject: "Reject",
@@ -3051,7 +3207,7 @@
     es: {
       appName: "PunchCard",
       tagline: "Seguimiento simple de turnos",
-      welcome: "Bienvenido,",
+      welcome: "Hola,",
       owner: "PROPIETARIA",
       admin: "ADMINISTRADOR",
       readonly: "SOLO LECTURA",
@@ -3061,7 +3217,7 @@
       thisMonth: "este mes",
       clockIn: "Entrar", clockOut: "Salir",
       submit: "Enviar turno",
-      clockedInAt: "Entró a las",
+      clockedInAt: "Entrada a las",
       start: "Inicio", end: "Fin",
       today: "Hoy",
       noShifts: "Sin turnos",
@@ -3077,46 +3233,50 @@
       shiftLogged: "Turno registrado",
       hoursShort: "h",
       comments: "Añade una nota…",
-      commentRequired: "Se requiere una nota para turnos menores a 9 horas",
+      commentRequired: "Se requiere una nota para turnos menores de 9 horas",
       commentLabel: "Nota",
       mapLegendIn: "Entrada",
       mapLegendOut: "Salida",
-      submitWeek: "Enviar semana",
-      weekSubmitted: "Semana enviada",
+      submitWeek: "Firmar",
+      weekSubmitted: "Semana firmada",
       weekPending: "Pendiente de revisión",
       weekApproved: "Aprobada",
+      weeklySignoff: "Firma semanal",
+      signoffAttest: "Al firmar confirmas que estas horas son correctas.",
+      pastWeeksSignoffTitle: "Semanas anteriores sin firmar",
+      noPastWeeks: "Todas las semanas anteriores están firmadas.",
       pendingApprovals: "Aprobaciones pendientes",
-      nPending: (n) => `${n} ${n===1?"semana espera":"semanas esperan"} tu revisión`,
+      nPending: (n) => `${n} ${n===1?"semana":"semanas"} esperando tu revisión`,
       approve: "Aprobar", reject: "Rechazar",
       approvalsTitle: "Aprobaciones semanales",
-      noPending: "Nada pendiente — al día.",
+      noPending: "Nada pendiente — todo al día.",
       readonlyBanner: "Solo lectura — cambios deshabilitados",
       thisWeek: "Esta semana",
       weekRange: (from, to) => `${from} – ${to}`,
       loggedHours: "Horas registradas esta semana",
       shiftSaved: "Turno guardado",
       weekApprovedToast: "Semana aprobada",
-      weekRejectedToast: "Semana devuelta para editar",
+      weekRejectedToast: "Semana devuelta para corregir",
       viewHistory: "Ver historial",
       totalHrs: "Horas totales",
       shiftDetailTitle: "Detalle del turno",
-      requestEdit: "Solicitar edición",
+      requestEdit: "Solicitar cambio",
       editShiftTitle: "Editar turno",
-      editComment: "¿Por qué solicitas esta edición?",
-      editCommentRequired: "Se requiere un comentario explicando la edición",
-      editSubmitted: "Solicitud de edición enviada",
-      editPending: "Edición pendiente",
-      editApproved: "Edición aprobada",
-      editRejected: "Edición rechazada",
-      editRequests: "Solicitudes de edición",
+      editComment: "¿Por qué solicitas este cambio?",
+      editCommentRequired: "Se requiere un comentario explicando el cambio",
+      editSubmitted: "Solicitud enviada",
+      editPending: "Cambio pendiente",
+      editApproved: "Cambio aprobado",
+      editRejected: "Cambio rechazado",
+      editRequests: "Solicitudes de cambio",
       approveEdit: "Aprobar",
       rejectEdit: "Rechazar",
-      noEditRequests: "No hay solicitudes de edición",
+      noEditRequests: "No hay solicitudes de cambio",
       requestedChange: "Cambio solicitado",
       originalValue: "Original",
       locationCaptured: "Ubicación registrada",
       noLocation: "Sin ubicación registrada",
-      untilNineHours: (rem) => `Faltan ${rem} más o deja una nota`,
+      untilNineHours: (rem) => `Faltan ${rem} horas o deja una nota`,
       signOutConfirm: "¿Cerrar sesión?",
     },
   };
@@ -3504,14 +3664,12 @@
       stat("green", String(st.activeDays), tr("days")),
     ));
     const sorted = Object.entries(st.empHours).sort((a,b)=>b[1]-a[1]);
-    const maxH = Math.max(...sorted.map(([,h])=>h), 1);
     const list = el("div", {class:"legend-list emp-breakdown"});
     for (const [empIdStr, hrs] of sorted) {
       const emp = userById[Number(empIdStr)];
       list.appendChild(el("div", {class:"brow"},
         el("div", {class:"swatch", style:`background:${emp.color}`}),
         el("div", {class:"name"}, emp.displayName),
-        el("div", {class:"meter"}, el("span", {style:`width:${(hrs/maxH)*100}%; background:${emp.color}`})),
         el("div", {class:"hrs", style:`color:${emp.color}`}, hrs.toFixed(1)),
       ));
     }
@@ -3673,7 +3831,10 @@
     root.appendChild(block);
 
     // Weekly sign-off
+    root.appendChild(el("div", {class:"signoff-label", style:"margin-top:14px"}, tr("weeklySignoff")));
     root.appendChild(weekSignoffCard());
+    const pastSection = pastWeeksSignoffSection();
+    if (pastSection) root.appendChild(pastSection);
 
     // Today / Clock-in
     const todayLabel = new Date(2026, 3, 13).toLocaleDateString(locale(),
@@ -3693,12 +3854,15 @@
     const wkHours = wkShifts.reduce((s,x)=>s+x.hours,0);
     const status = weekStatus(u.id, wkStart);
 
-    const card = el("div", {class:"week-submit"},
-      el("div", {class:"left"},
-        el("div", {class:"title"}, `${tr("thisWeek")} · ${fmtDateShort(wkStart)} – ${fmtDateShort(wkEnd)}`),
-        el("div", {class:"sub"}, `${wkHours.toFixed(1)} ${tr("hours").toLowerCase()} · ${wkShifts.length} ${tr("shifts").toLowerCase()}`),
-      ),
+    const left = el("div", {class:"left"},
+      el("div", {class:"title"}, `${tr("thisWeek")} · ${fmtDateShort(wkStart)} – ${fmtDateShort(wkEnd)}`),
+      el("div", {class:"sub"}, `${wkHours.toFixed(1)} ${tr("hours").toLowerCase()} · ${wkShifts.length} ${tr("shifts").toLowerCase()}`),
     );
+    if (!status) {
+      left.appendChild(el("div", {class:"attest"}, tr("signoffAttest")));
+    }
+
+    const card = el("div", {class:"week-submit"}, left);
     if (status === "approved") {
       card.appendChild(el("span", {class:"status-pill approved"}, tr("weekApproved")));
     } else if (status === "pending") {
@@ -3714,6 +3878,51 @@
       }, tr("submitWeek")));
     }
     return card;
+  }
+
+  function unsignedPastWeeks(empId) {
+    const thisWk = thisWeekStart();
+    const weeks = new Map(); // wkStart -> {hours, count}
+    for (const sh of shifts) {
+      if (sh.empId !== empId) continue;
+      const wkStart = weekStartOf(sh.date);
+      if (wkStart >= thisWk) continue;
+      if (weekStatus(empId, wkStart)) continue;
+      const agg = weeks.get(wkStart) || {hours:0, count:0};
+      agg.hours += sh.hours;
+      agg.count += 1;
+      weeks.set(wkStart, agg);
+    }
+    return [...weeks.entries()]
+      .map(([wkStart, agg]) => ({wkStart, ...agg}))
+      .sort((a,b) => b.wkStart.localeCompare(a.wkStart));
+  }
+
+  function pastWeeksSignoffSection() {
+    const u = state.currentUser;
+    const past = unsignedPastWeeks(u.id);
+    if (!past.length) return null;
+    const wrap = document.createDocumentFragment();
+    wrap.appendChild(el("div", {class:"signoff-label"}, tr("pastWeeksSignoffTitle")));
+    const list = el("div", {class:"past-weeks"});
+    for (const w of past) {
+      list.appendChild(el("div", {class:"prow"},
+        el("div", {class:"left"},
+          el("div", {class:"title"}, `${fmtDateShort(w.wkStart)} – ${fmtDateShort(weekEndOf(w.wkStart))}`),
+          el("div", {class:"sub"}, `${w.hours.toFixed(1)} ${tr("hours").toLowerCase()} · ${w.count} ${tr("shifts").toLowerCase()}`),
+        ),
+        el("button", {
+          class:"btn",
+          onclick: () => {
+            setWeekStatus(u.id, w.wkStart, "pending");
+            toast(tr("weekSubmitted"), {kind:"success", pill:"✓"});
+            render();
+          },
+        }, tr("submitWeek")),
+      ));
+    }
+    wrap.appendChild(list);
+    return wrap;
   }
 
   function clockSection() {
@@ -3942,10 +4151,8 @@
       root.appendChild(miniMap(withCoords));
     }
 
-    // Shift list
-    for (const sh of empShifts) {
-      root.appendChild(renderShiftCard(sh));
-    }
+    // Shift list (grouped by month → week)
+    appendGroupedShifts(root, empShifts, e.id);
     root.appendChild(el("div", {style:"height:40px"}));
   }
 
@@ -3970,9 +4177,7 @@
       root.appendChild(miniMap(withCoords));
     }
 
-    for (const sh of mine) {
-      root.appendChild(renderShiftCard(sh));
-    }
+    appendGroupedShifts(root, mine, u.id);
     root.appendChild(el("div", {style:"height:40px"}));
   }
 
@@ -4107,8 +4312,6 @@
 
   function renderShiftCard(sh) {
     const ok = sh.hours >= 9;
-    const wkStart = weekStartOf(sh.date);
-    const status = weekStatus(sh.empId, wkStart);
     return el("div", {
       class:"hist-shift-card",
       style:"cursor:pointer",
@@ -4126,8 +4329,64 @@
         el("span", {class:"chip"}, ICON("clock", 11), el("span", {}, `${tr("end")} ${fmt12(sh.end)}`)),
       ),
       sh.comment ? el("div", {class:"comment"}, `"${sh.comment}"`) : null,
-      status ? el("div", {class:`week-status ${status}`}, status === "approved" ? tr("weekApproved") : tr("weekPending")) : null,
     );
+  }
+
+  // Groups shifts by month → week and appends headers + cards to `root`.
+  // Expects shifts already sorted newest-to-oldest.
+  function appendGroupedShifts(root, sortedShifts, empId) {
+    if (!sortedShifts.length) return;
+    const byMonth = new Map();
+    for (const sh of sortedShifts) {
+      const mKey = sh.date.slice(0, 7); // YYYY-MM
+      if (!byMonth.has(mKey)) byMonth.set(mKey, []);
+      byMonth.get(mKey).push(sh);
+    }
+    const mKeys = [...byMonth.keys()].sort().reverse();
+    for (const mKey of mKeys) {
+      const mShifts = byMonth.get(mKey);
+      const mHours = mShifts.reduce((s,x)=>s+x.hours,0);
+      const [y, m] = mKey.split("-").map(Number);
+      const monthLabel = new Date(y, m-1, 1)
+        .toLocaleDateString(locale(), {month:"long", year:"numeric"})
+        .replace(/^./, c => c.toUpperCase());
+
+      root.appendChild(el("div", {class:"hist-month-head"},
+        el("div", {class:"m-title"}, monthLabel),
+        el("div", {class:"m-stats"},
+          `${mHours.toFixed(1)}${tr("hoursShort")} · ${mShifts.length} ${tr("shifts").toLowerCase()}`),
+      ));
+
+      const byWeek = new Map();
+      for (const sh of mShifts) {
+        const wkStart = weekStartOf(sh.date);
+        if (!byWeek.has(wkStart)) byWeek.set(wkStart, []);
+        byWeek.get(wkStart).push(sh);
+      }
+      const wKeys = [...byWeek.keys()].sort().reverse();
+      for (const wkStart of wKeys) {
+        const wShifts = byWeek.get(wkStart);
+        const wHours = wShifts.reduce((s,x)=>s+x.hours,0);
+        const status = weekStatus(empId, wkStart);
+
+        const right = el("div", {class:"w-right"},
+          el("span", {class:"w-hrs"}, `${wHours.toFixed(1)}${tr("hoursShort")}`),
+        );
+        if (status) {
+          right.appendChild(el("span", {class:`w-status ${status}`},
+            status === "approved" ? tr("weekApproved") : tr("weekPending")));
+        }
+        root.appendChild(el("div", {class:"hist-week-head"},
+          el("div", {class:"w-title"},
+            `${fmtDateShort(wkStart)} – ${fmtDateShort(weekEndOf(wkStart))}`),
+          right,
+        ));
+
+        for (const sh of wShifts) {
+          root.appendChild(renderShiftCard(sh));
+        }
+      }
+    }
   }
 
   // =============================================================
@@ -4257,7 +4516,7 @@
     root.innerHTML = "";
     if (!state.modal) return;
 
-    const close = () => { state.modal = null; render(); };
+    const close = () => { state.modal = null; state.expandedApproval = null; render(); };
     const card = el("div", {class:"modal-card"});
     const scrim = el("div", {
       class:"modal-scrim",
@@ -4314,13 +4573,45 @@
           const emp = userById[w.empId];
           const wkShifts = shiftsForWeek(w.empId, w.weekStart);
           const wkHours = wkShifts.reduce((s,x)=>s+x.hours,0);
+          const key = `${w.empId}:${w.weekStart}`;
+          const isExpanded = state.expandedApproval === key;
           const row = el("div", {class:"approval-row"},
-            el("div", {class:"top"},
+            el("div", {
+              class:"top expandable",
+              onclick: () => {
+                state.expandedApproval = isExpanded ? null : key;
+                render();
+              },
+            },
               el("div", {class:"who", style:`color:${emp.color}`}, emp.displayName),
-              el("div", {class:"total"}, `${wkHours.toFixed(1)}${tr("hoursShort")}`),
+              el("div", {class:"total"},
+                `${wkHours.toFixed(1)}${tr("hoursShort")}`,
+                el("span", {class: `chevron ${isExpanded ? "up" : ""}`}, "▾"),
+              ),
             ),
             el("div", {class:"week"}, `${fmtDateShort(w.weekStart)} – ${fmtDateShort(weekEndOf(w.weekStart))} · ${wkShifts.length} ${tr("shifts").toLowerCase()}`),
           );
+          if (isExpanded) {
+            const details = el("div", {class:"breakdown"});
+            if (!wkShifts.length) {
+              details.appendChild(el("div", {class:"empty"}, tr("noShifts")));
+            } else {
+              const sorted = [...wkShifts].sort((a,b) =>
+                a.date.localeCompare(b.date) || a.start.localeCompare(b.start));
+              for (const sh of sorted) {
+                const drow = el("div", {class:"drow"},
+                  el("div", {class:"d"}, fmtDateShort(sh.date)),
+                  el("div", {class:"t"}, `${fmt12(sh.start)} – ${fmt12(sh.end)}`),
+                  el("div", {class:"h"}, `${sh.hours.toFixed(1)}${tr("hoursShort")}`),
+                );
+                if (sh.comment) {
+                  drow.appendChild(el("div", {class:"c"}, `"${sh.comment}"`));
+                }
+                details.appendChild(drow);
+              }
+            }
+            row.appendChild(details);
+          }
           if (canApprove(state.currentUser)) {
             row.appendChild(el("div", {class:"actions"},
               el("button", {
@@ -4329,6 +4620,7 @@
                   w.status = null;
                   const idx = weekApprovals.findIndex(x => x === w);
                   if (idx >= 0) weekApprovals.splice(idx, 1);
+                  state.expandedApproval = null;
                   toast(tr("weekRejectedToast"), {kind:"warn", pill:"↺"});
                   render();
                 }
@@ -4337,6 +4629,7 @@
                 class:"approve",
                 onclick: () => {
                   w.status = "approved";
+                  state.expandedApproval = null;
                   toast(tr("weekApprovedToast"), {kind:"success", pill:"✓"});
                   render();
                 }

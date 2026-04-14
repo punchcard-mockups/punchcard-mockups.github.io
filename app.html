@@ -1378,6 +1378,77 @@
   .past-weeks .prow.rejected {
     box-shadow: inset 3px 0 0 var(--accent-red, #ef4444);
   }
+
+  /* Admin edit audit log on the shift detail screen */
+  .sd-admin-log {
+    display: flex; flex-direction: column; gap: 10px;
+    margin-top: 6px;
+  }
+  .sd-admin-log-entry {
+    background: var(--surface-dark);
+    border-left: 3px solid var(--accent-amber);
+    border-radius: 6px;
+    padding: 8px 10px;
+  }
+  .sd-admin-log-entry .meta {
+    display: flex; align-items: baseline; justify-content: space-between;
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.3px;
+    margin-bottom: 4px;
+  }
+  .sd-admin-log-entry .meta .who {
+    font-weight: 700;
+    color: var(--accent-amber);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .sd-admin-log-entry .diff {
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    margin-bottom: 4px;
+  }
+  .sd-admin-log-entry .diff .before {
+    color: var(--text-muted);
+    text-decoration: line-through;
+  }
+  .sd-admin-log-entry .diff .arrow {
+    margin: 0 8px;
+    color: var(--text-muted);
+  }
+  .sd-admin-log-entry .diff .after {
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .sd-admin-log-entry .reason {
+    font-size: 11px;
+    font-style: italic;
+    color: var(--text-secondary);
+    line-height: 1.35;
+  }
+
+  /* "Approved — locked for editing" notice shown to the employee when they
+     try to open a shift in an admin-approved week. */
+  .sd-locked-notice {
+    margin-top: 8px;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: var(--accent-green-light);
+    background: rgba(16,185,129,.08);
+    border: 1px dashed rgba(16,185,129,.35);
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+  }
+
+  /* Small "✎ N admin edits" pill on the history week header */
+  .hist-week-head .w-admin-edits {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.4px;
+    padding: 2px 7px; border-radius: 999px; text-transform: uppercase;
+    background: rgba(245,158,11,.18);
+    color: var(--accent-amber);
+  }
   .approval-row .top.expandable,
   .hist-week-head.expandable {
     cursor: pointer;
@@ -3087,7 +3158,7 @@
 <body class="theme-editorial">
 
 <div class="app-root">
-  <div class="version-tag" id="versionTag">v.2026-04-14.0140</div>
+  <div class="version-tag" id="versionTag">v.2026-04-14.0200</div>
   <div class="topbar" id="topbarRoot"></div>
   <div class="scroll" id="scrollRoot"></div>
   <div id="fabRoot"></div>
@@ -3372,6 +3443,27 @@
       rejectionComment: "Thursday's hours look off — 9:00 AM start but the GPS was still at home. Please double-check and resubmit." },
   ];
 
+  // Seed one admin direct-edit so the audit-log surface is visible on first load.
+  // Alee (owner, id=1) retroactively shortened one of Maria's earlier shifts.
+  {
+    const targetShift = shifts.find(s => s.empId === 6 && s.date === "2026-04-01");
+    if (targetShift) {
+      if (!targetShift.adminEdits) targetShift.adminEdits = [];
+      targetShift.adminEdits.push({
+        by: 1,
+        at: new Date("2026-04-05T14:30:00").toISOString(),
+        oldStart: targetShift.start,
+        oldEnd: targetShift.end,
+        newStart: targetShift.start,
+        newEnd: "15:00",
+        comment: "Cut short — Maria left 30 min early for dentist; she forgot to clock out.",
+      });
+      targetShift.end = "15:00";
+      const [sh, sm] = targetShift.start.split(":").map(Number);
+      targetShift.hours = ((15*60) - (sh*60+sm)) / 60;
+    }
+  }
+
   // Role helpers
   const isOwner      = (u) => u?.role === "owner";
   const isAdmin      = (u) => u?.role === "admin";
@@ -3394,6 +3486,20 @@
   function weekRejectionComment(empId, weekStart) {
     const wa = weekApprovals.find(w => w.empId === empId && w.weekStart === weekStart);
     return wa?.status === "rejected" ? (wa.rejectionComment || "") : "";
+  }
+  // Count of admin direct-edits across every shift in the given week.
+  // Used for the "N admin edits" badge on the week header.
+  function weekAdminEditCount(empId, weekStart) {
+    const start = new Date(weekStart + "T00:00:00");
+    const end = new Date(start); end.setDate(end.getDate() + 7);
+    let n = 0;
+    for (const sh of shifts) {
+      if (sh.empId !== empId) continue;
+      const d = new Date(sh.date + "T00:00:00");
+      if (d < start || d >= end) continue;
+      n += (sh.adminEdits?.length || 0);
+    }
+    return n;
   }
   function setWeekStatus(empId, weekStart, status) {
     const wa = weekApprovals.find(w => w.empId === empId && w.weekStart === weekStart);
@@ -3458,6 +3564,14 @@
       confirmReject: "Reject with reason",
       rejectedByAdmin: "Rejected by admin",
       resubmit: "Resubmit",
+      lockedAfterApproval: "Approved — locked for editing",
+      adminEditTitle: "Edit shift",
+      adminEditReason: "Why are you editing this shift?",
+      adminEditReasonRequired: "A reason is required — this edit will be logged.",
+      adminEditSaved: "Shift edited",
+      adminEditLog: "Admin edit log",
+      editedByAdmin: "Edited by admin",
+      editedNTimes: (n) => n === 1 ? "1 admin edit" : `${n} admin edits`,
       pendingApprovals: "Pending approvals",
       nPending: (n) => `${n} ${n===1?"week":"weeks"} awaiting your review`,
       approve: "Approve", reject: "Reject",
@@ -3540,6 +3654,14 @@
       confirmReject: "Rechazar con motivo",
       rejectedByAdmin: "Rechazada por el admin",
       resubmit: "Enviar de nuevo",
+      lockedAfterApproval: "Aprobada — bloqueada para editar",
+      adminEditTitle: "Editar turno",
+      adminEditReason: "¿Por qué editas este turno?",
+      adminEditReasonRequired: "Se requiere una explicación — este cambio quedará registrado.",
+      adminEditSaved: "Turno editado",
+      adminEditLog: "Historial de cambios",
+      editedByAdmin: "Editado por admin",
+      editedNTimes: (n) => n === 1 ? "1 edición del admin" : `${n} ediciones del admin`,
       pendingApprovals: "Aprobaciones pendientes",
       nPending: (n) => `${n} ${n===1?"semana":"semanas"} esperando tu revisión`,
       approve: "Aprobar", reject: "Rechazar",
@@ -4729,7 +4851,42 @@
       ));
     }
 
-    // Actions: owner/admin (not readonly) can approve/reject; employees on their own shift can request edit
+    // Admin edit log — every direct edit by admin/owner is recorded here and
+    // visible to everyone who can see the shift.
+    if (sh.adminEdits && sh.adminEdits.length > 0) {
+      root.appendChild(el("div", {class:"sd-section-label"}, tr("adminEditLog")));
+      const logWrap = el("div", {class:"sd-admin-log"});
+      for (const entry of [...sh.adminEdits].reverse()) {
+        const editor = userById[entry.by];
+        const when = new Date(entry.at);
+        logWrap.appendChild(el("div", {class:"sd-admin-log-entry"},
+          el("div", {class:"meta"},
+            el("span", {class:"who"}, editor ? editor.displayName : tr("admin")),
+            el("span", {class:"when"}, when.toLocaleString(locale(), {
+              month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+            })),
+          ),
+          (entry.oldStart !== entry.newStart || entry.oldEnd !== entry.newEnd)
+            ? el("div", {class:"diff"},
+                el("span", {class:"before"}, `${fmt12(entry.oldStart)} – ${fmt12(entry.oldEnd)}`),
+                el("span", {class:"arrow"}, "→"),
+                el("span", {class:"after"}, `${fmt12(entry.newStart)} – ${fmt12(entry.newEnd)}`),
+              )
+            : null,
+          el("div", {class:"reason"}, `"${entry.comment}"`),
+        ));
+      }
+      root.appendChild(logWrap);
+    }
+
+    // Actions:
+    //   - owner/admin: can approve/reject a pending employee edit request,
+    //     and can directly edit the shift (requires a reason, logged).
+    //   - employee on own shift: can request an edit — UNLESS the week has
+    //     already been admin-approved, in which case the shift is locked.
+    const weekSt = weekStatus(sh.empId, weekStartOf(sh.date));
+    const weekIsLocked = weekSt === "approved";
+
     if (editReq && canApprove(u)) {
       root.appendChild(el("div", {class:"sd-action-row"},
         el("button", {
@@ -4741,11 +4898,23 @@
           onclick: () => rejectEditRequest(editReq.id),
         }, tr("rejectEdit")),
       ));
-    } else if (!editReq && isEmployee(u) && u.id === sh.empId) {
+    }
+    // Admin/owner direct edit button — always available (even after approval)
+    if (canApprove(u)) {
+      root.appendChild(el("button", {
+        class:"sd-btn primary sd-btn-full",
+        style: "margin-top:8px;",
+        onclick: () => { state.modal = "adminEditShift"; render(); },
+      }, tr("adminEditTitle")));
+    } else if (!editReq && isEmployee(u) && u.id === sh.empId && !weekIsLocked) {
+      // Employee can request edit only if week isn't locked by approval.
       root.appendChild(el("button", {
         class:"sd-btn primary sd-btn-full",
         onclick: () => { state.modal = "editShift"; render(); },
       }, tr("requestEdit")));
+    } else if (!editReq && isEmployee(u) && u.id === sh.empId && weekIsLocked) {
+      // Approved-week lock notice.
+      root.appendChild(el("div", {class:"sd-locked-notice"}, tr("lockedAfterApproval")));
     }
 
     root.appendChild(el("div", {style:"height:40px"}));
@@ -4860,6 +5029,11 @@
                       : status === "rejected" ? tr("weekRejected")
                       : tr("weekPending");
           right.appendChild(el("span", {class:`w-status ${status}`}, label));
+        }
+        const adminEditN = weekAdminEditCount(empId, wkStart);
+        if (adminEditN > 0) {
+          right.appendChild(el("span", {class:"w-admin-edits", title: tr("editedByAdmin")},
+            `✎ ${tr("editedNTimes", adminEditN)}`));
         }
         right.appendChild(el("span", {class: `chevron ${isOpen ? "up" : ""}`}, "▾"));
 
@@ -5250,6 +5424,64 @@
             submittedAt: new Date().toISOString(),
           });
           toast(tr("editSubmitted"), {kind:"success", pill:"✓"});
+          close();
+        }}, tr("save")),
+      ));
+    } else if (state.modal === "adminEditShift") {
+      // Admin/owner direct-edit: saves the shift immediately (no approval loop)
+      // and appends an entry to sh.adminEdits so the change is visible in the
+      // detail's audit log and surfaces on the week header.
+      const sh = shifts.find(s => s.id === state.viewingShiftId);
+      if (!sh) { close(); return; }
+      const startIn = el("input", { type: "time", value: sh.start });
+      const endIn   = el("input", { type: "time", value: sh.end });
+      const noteIn  = el("textarea", { rows: 3, placeholder: tr("adminEditReason") });
+      const err = el("div", {class:"err", style:"display:none"});
+      const labelStyle = "font-size:11px; color:var(--text-muted); letter-spacing:0.4px; text-transform:uppercase; font-weight:700; display:block; margin-bottom:4px;";
+      card.appendChild(el("h3", {}, tr("adminEditTitle")));
+      card.appendChild(el("p", {}, fmtDateLong(sh.date)));
+      card.appendChild(el("label", {style: labelStyle}, tr("start")));
+      card.appendChild(startIn);
+      card.appendChild(el("label", {style: labelStyle}, tr("end")));
+      card.appendChild(endIn);
+      card.appendChild(el("label", {style: labelStyle}, tr("adminEditReason")));
+      card.appendChild(noteIn);
+      card.appendChild(err);
+      card.appendChild(el("div", {class:"actions"},
+        el("button", {class:"btn", onclick: close}, tr("cancel")),
+        el("button", {class:"btn primary", onclick: () => {
+          const start = startIn.value;
+          const end = endIn.value;
+          const comment = noteIn.value.trim();
+          if (!comment) {
+            err.textContent = tr("adminEditReasonRequired");
+            err.style.display = "block";
+            noteIn.focus();
+            return;
+          }
+          if (!start || !end) {
+            err.textContent = state.lang === "es"
+              ? "Las horas de inicio y fin son obligatorias"
+              : "Start and end times are required";
+            err.style.display = "block";
+            return;
+          }
+          // Record the edit on the shift
+          if (!sh.adminEdits) sh.adminEdits = [];
+          sh.adminEdits.push({
+            by: state.currentUser.id,
+            at: new Date().toISOString(),
+            oldStart: sh.start, oldEnd: sh.end,
+            newStart: start,   newEnd: end,
+            comment,
+          });
+          // Apply changes
+          sh.start = start;
+          sh.end = end;
+          const [sh_h, sh_m] = start.split(":").map(Number);
+          const [eh, em] = end.split(":").map(Number);
+          sh.hours = ((eh*60+em) - (sh_h*60+sh_m)) / 60;
+          toast(tr("adminEditSaved"), {kind:"success", pill:"✓"});
           close();
         }}, tr("save")),
       ));

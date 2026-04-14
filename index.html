@@ -3274,6 +3274,74 @@
     border-bottom: 0;
   }
 
+  /* Bottom bar — home for the tabbar (employees) and pinned-approvals
+     (admin). Either content may render into it; the empty state collapses. */
+  #bottomBarRoot {
+    flex: 0 0 auto;
+    position: relative;
+    z-index: 10;
+  }
+  .tabbar {
+    display: flex;
+    background: var(--surface-card);
+    border-top: 1px solid var(--outline-soft);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+  .tabbar .tab {
+    flex: 1;
+    min-height: 52px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: color 120ms ease, background 120ms ease;
+  }
+  .tabbar .tab .tab-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+  }
+  .tabbar .tab svg { width: 22px; height: 22px; }
+  .tabbar .tab.active { color: var(--accent-blue); }
+  .tabbar .tab:active { background: var(--surface-dark); }
+
+  .pinned-approvals {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    padding-bottom: max(14px, calc(env(safe-area-inset-bottom, 0) + 14px));
+    background: linear-gradient(180deg, rgba(245,158,11,.18), rgba(245,158,11,.08));
+    border-top: 1px solid rgba(245,158,11,.3);
+    color: var(--text-primary);
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .pinned-approvals:active { filter: brightness(.95); }
+  .pinned-approvals .icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: grid; place-items: center;
+    background: rgba(245,158,11,.28);
+    color: var(--accent-amber);
+    flex: 0 0 auto;
+  }
+  .pinned-approvals .body { flex: 1; min-width: 0; }
+  .pinned-approvals .title {
+    font-size: 14px; font-weight: 700;
+  }
+  .pinned-approvals .meta {
+    font-size: 12px; color: var(--text-secondary);
+  }
+  .pinned-approvals .chev {
+    color: var(--text-secondary);
+    flex: 0 0 auto;
+  }
+
   .scroll {
     flex: 1 1 auto;
     overflow-y: auto;
@@ -3376,9 +3444,10 @@
 <body class="theme-editorial">
 
 <div class="app-root">
-  <div class="version-tag" id="versionTag">v.2026-04-14.1359</div>
+  <div class="version-tag" id="versionTag">v.2026-04-14.1404</div>
   <div class="topbar" id="topbarRoot"></div>
   <div class="scroll" id="scrollRoot"></div>
+  <div id="bottomBarRoot"></div>
   <div id="fabRoot"></div>
   <div class="toast-wrap" id="toastWrap"></div>
   <div id="modalRoot"></div>
@@ -3842,6 +3911,7 @@
       start: "Start", end: "End",
       today: "Today",
       noShifts: "No shifts",
+      home: "Home",
       history: "History",
       logout: "Sign out",
       signIn: "Sign in",
@@ -3934,6 +4004,7 @@
       start: "Entrada", end: "Salida",
       today: "Hoy",
       noShifts: "Sin turnos",
+      home: "Inicio",
       history: "Historial",
       logout: "Cerrar sesión",
       signIn: "Iniciar sesión",
@@ -4054,6 +4125,7 @@
     const paths = {
       chevLeft: "M15 18l-6-6 6-6",
       chevRight: "M9 18l6-6-6-6",
+      home: "M3 12l9-9 9 9|M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10",
       history: "M3 3v5h5|M3.05 13a9 9 0 1 0 .5-5|M12 7v5l3 3",
       logout: "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4|M16 17l5-5-5-5|M21 12H9",
       back: "M19 12H5|M12 19l-7-7 7-7",
@@ -4545,12 +4617,6 @@
 
     root.appendChild(langToggle());
 
-    if (state.screen === "employee_home") {
-      root.appendChild(el("div", {
-        class:"icon-btn", title: tr("history"),
-        onclick: () => navTo("history")
-      }, ICON("history")));
-    }
     root.appendChild(renderUserMenu());
   }
 
@@ -4603,6 +4669,44 @@
     root.innerHTML = "";
     // The add-employee FAB moved into the account dropdown (see renderUserMenu).
     // This slot is kept around for future per-screen primary actions.
+  }
+
+  // Bottom bar: Home/History tabs for employees, pinned approvals banner for
+  // the admin home. Both live in the same slot — only one renders at a time,
+  // and it stays on-screen while the scroll area scrolls above it.
+  function renderBottomBar() {
+    const root = document.getElementById("bottomBarRoot");
+    root.innerHTML = "";
+    const u = state.currentUser;
+    if (!u) return;
+
+    if (isEmployee(u) && (state.screen === "employee_home" || state.screen === "history")) {
+      const tab = (name, iconName, labelKey, screen) => el("div", {
+        class: `tab ${state.screen === screen ? "active" : ""}`,
+        onclick: () => navTo(screen),
+      }, ICON(iconName), el("span", {class: "tab-label"}, tr(labelKey)));
+      root.appendChild(el("div", {class: "tabbar"},
+        tab("home", "home", "home", "employee_home"),
+        tab("history", "history", "history", "history"),
+      ));
+      return;
+    }
+
+    if (state.screen === "admin_home" && canApprove(u)) {
+      const totalPending = pendingApprovals().length + pendingEditRequests().length;
+      if (totalPending === 0) return;
+      root.appendChild(el("div", {
+        class: "pinned-approvals",
+        onclick: () => { state.modal = "approvals"; render(); },
+      },
+        el("div", {class: "icon"}, ICON("inbox")),
+        el("div", {class: "body"},
+          el("div", {class: "title"}, tr("pendingApprovals")),
+          el("div", {class: "meta"}, tr("nPending", totalPending)),
+        ),
+        el("div", {class: "chev"}, ICON("chevRight")),
+      ));
+    }
   }
 
   // =============================================================
@@ -5906,6 +6010,7 @@
 
     renderTopbar();
     renderFab();
+    renderBottomBar();
 
     if (state.screen === "login") {
       renderLogin();

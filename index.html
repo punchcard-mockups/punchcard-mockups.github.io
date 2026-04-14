@@ -3248,6 +3248,11 @@
     box-sizing: content-box;
     flex: 0 0 auto;
     margin-bottom: 0;
+    /* The scroll area below gets transform-based screen-enter animations
+       which create a stacking context — without this, dropdowns anchored
+       inside the topbar (account menu) would paint behind the scroll. */
+    position: relative;
+    z-index: 10;
   }
 
   .scroll {
@@ -3351,7 +3356,7 @@
 <body class="theme-editorial">
 
 <div class="app-root">
-  <div class="version-tag" id="versionTag">v.2026-04-14.1222</div>
+  <div class="version-tag" id="versionTag">v.2026-04-14.1230</div>
   <div class="topbar" id="topbarRoot"></div>
   <div class="scroll" id="scrollRoot"></div>
   <div id="fabRoot"></div>

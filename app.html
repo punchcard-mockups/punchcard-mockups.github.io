@@ -1127,7 +1127,8 @@
   .week-submit .left { flex: 1; min-width: 0; }
   .week-submit .title { font-size: 13px; font-weight: 700; }
   .week-submit .sub { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
-  .week-submit .btn {
+  .week-submit .btn,
+  .past-weeks .prow .btn {
     background: var(--accent-blue);
     color: #fff;
     border: 0;
@@ -1139,7 +1140,8 @@
     letter-spacing: 0.3px;
     transition: filter 150ms ease;
   }
-  .week-submit .btn:hover { filter: brightness(1.1); }
+  .week-submit .btn:hover,
+  .past-weeks .prow .btn:hover { filter: brightness(1.1); }
   .week-submit .btn:disabled {
     filter: grayscale(.5) brightness(.7);
     cursor: default;
@@ -1189,19 +1191,6 @@
     margin-top: 1px;
     font-variant-numeric: tabular-nums;
   }
-  .past-weeks .prow .btn {
-    background: var(--accent-blue);
-    color: #fff;
-    border: 0;
-    font-family: inherit;
-    font-size: 11px; font-weight: 700;
-    padding: 6px 10px;
-    border-radius: 8px;
-    cursor: pointer;
-    letter-spacing: 0.2px;
-    transition: filter 150ms ease;
-  }
-  .past-weeks .prow .btn:hover { filter: brightness(1.1); }
   .past-weeks .empty {
     font-size: 11px;
     color: var(--text-muted);
@@ -1699,7 +1688,8 @@
   body.theme-minimal .week-submit {
     background: oklch(99% 0.003 250); border: 1px solid var(--outline-soft); border-radius: 6px;
   }
-  body.theme-minimal .week-submit .btn {
+  body.theme-minimal .week-submit .btn,
+  body.theme-minimal .past-weeks .prow .btn {
     background: var(--text-primary); color: #fff; border-radius: 4px;
     font-family: var(--tf-display); font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
   }
@@ -1948,7 +1938,8 @@
   body.theme-warm .approvals-banner .title { color: oklch(38% 0.12 75); font-weight: 700; }
   /* Week submit */
   body.theme-warm .week-submit { background: oklch(99% 0.008 75); border: 1px solid var(--outline-soft); border-radius: 14px; }
-  body.theme-warm .week-submit .btn { background: var(--accent-blue); border-radius: 999px; font-weight: 700; letter-spacing: 0.3px; }
+  body.theme-warm .week-submit .btn,
+  body.theme-warm .past-weeks .prow .btn { background: var(--accent-blue); border-radius: 999px; font-weight: 700; letter-spacing: 0.3px; }
   body.theme-warm .week-submit .status-pill { border-radius: 999px; }
   body.theme-warm .week-submit .status-pill.pending { background: oklch(93% 0.04 75); color: oklch(45% 0.12 75); }
   body.theme-warm .week-submit .status-pill.approved { background: oklch(92% 0.04 170); color: oklch(40% 0.12 170); }
@@ -2146,7 +2137,8 @@
   body.theme-nordic .approvals-banner .icon { background: oklch(82% 0.1 75); color: #fff; border-radius: 12px; }
   body.theme-nordic .approvals-banner .title { color: oklch(42% 0.1 75); font-weight: 600; }
   body.theme-nordic .week-submit { background: oklch(99% 0.004 170); border: 1px solid var(--outline-soft); border-radius: 18px; }
-  body.theme-nordic .week-submit .btn { background: var(--accent-blue); border-radius: 999px; font-weight: 600; letter-spacing: 0.3px; }
+  body.theme-nordic .week-submit .btn,
+  body.theme-nordic .past-weeks .prow .btn { background: var(--accent-blue); border-radius: 999px; font-weight: 600; letter-spacing: 0.3px; }
   body.theme-nordic .week-submit .status-pill { border-radius: 999px; letter-spacing: 0.8px; }
   body.theme-nordic .week-submit .status-pill.pending { background: oklch(93% 0.04 75); color: oklch(45% 0.1 75); }
   body.theme-nordic .week-submit .status-pill.approved { background: oklch(92% 0.03 155); color: oklch(40% 0.1 155); }
@@ -2388,7 +2380,8 @@
     border-top: 1px solid var(--outline-soft); border-bottom: 1px solid var(--outline-soft);
     border-radius: 0; padding: 14px 4px;
   }
-  body.theme-tactile .week-submit .btn {
+  body.theme-tactile .week-submit .btn,
+  body.theme-tactile .past-weeks .prow .btn {
     background: var(--text-primary); color: var(--t-bg); border-radius: 4px;
     font-family: var(--tf-display); font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase;
   }
@@ -2768,7 +2761,8 @@
     border-bottom: 1px solid var(--outline-soft);
     border-radius: 0; padding: 14px 4px;
   }
-  body.theme-editorial .week-submit .btn {
+  body.theme-editorial .week-submit .btn,
+  body.theme-editorial .past-weeks .prow .btn {
     background: var(--accent-blue); color: var(--t-bg);
     border-radius: 2px;
     font-family: var(--tf-display); font-weight: 400; letter-spacing: 0.3px;
@@ -2947,7 +2941,7 @@
 <body class="theme-editorial">
 
 <div class="app-root">
-  <div class="version-tag" id="versionTag">v.2026-04-13.2345</div>
+  <div class="version-tag" id="versionTag">v.2026-04-13.2355</div>
   <div class="topbar" id="topbarRoot"></div>
   <div class="scroll" id="scrollRoot"></div>
   <div id="fabRoot"></div>

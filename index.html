@@ -3351,7 +3351,7 @@
 <body class="theme-editorial">
 
 <div class="app-root">
-  <div class="version-tag" id="versionTag">v.2026-04-14.1218</div>
+  <div class="version-tag" id="versionTag">v.2026-04-14.1222</div>
   <div class="topbar" id="topbarRoot"></div>
   <div class="scroll" id="scrollRoot"></div>
   <div id="fabRoot"></div>
@@ -5626,9 +5626,6 @@
           card.appendChild(row);
         }
       }
-      card.appendChild(el("div", {class:"actions"},
-        el("button", {class:"btn", onclick: close}, state.lang === "es" ? "Cerrar" : "Close"),
-      ));
     } else if (state.modal === "editShift") {
       const sh = shifts.find(s => s.id === state.viewingShiftId);
       if (!sh) { close(); return; }

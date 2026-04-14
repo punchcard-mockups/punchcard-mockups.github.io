@@ -1222,6 +1222,18 @@
   .week-group .hist-shift-card:first-of-type { margin-top: 10px; }
 
   /* Map */
+  /* Compact thumbnail variant for the clock-in/out card: shorter, no legend,
+     no interaction hint. Applied alongside .mini-map. */
+  .mini-map--thumb {
+    height: 88px !important;
+    border-radius: 10px !important;
+    margin-top: 8px;
+    margin-bottom: 2px;
+  }
+  .mini-map--thumb .legend,
+  .mini-map--thumb .mini-map--locked::after { display: none !important; }
+  .mini-map--thumb .leaflet-control-attribution { display: none !important; }
+
   .mini-map {
     position: relative;
     width: 100%;
@@ -3364,7 +3376,7 @@
 <body class="theme-editorial">
 
 <div class="app-root">
-  <div class="version-tag" id="versionTag">v.2026-04-14.1353</div>
+  <div class="version-tag" id="versionTag">v.2026-04-14.1359</div>
   <div class="topbar" id="topbarRoot"></div>
   <div class="scroll" id="scrollRoot"></div>
   <div id="fabRoot"></div>
@@ -4106,6 +4118,13 @@
     const d = new Date(dateStr + "T00:00:00");
     return d.toLocaleDateString(locale(), { month:"short", day:"numeric" });
   }
+  // Mid-length: weekday + short month + day — e.g. "Mon, Apr 6" / "lun, 6 abr".
+  // Used where readers need to scan by weekday without the full prose of fmtDateLong.
+  function fmtDateWD(dateStr) {
+    const d = new Date(dateStr + "T00:00:00");
+    return d.toLocaleDateString(locale(), { weekday:"short", month:"short", day:"numeric" })
+      .replace(/^./, c => c.toUpperCase());
+  }
   // Weeks run Monday–Sunday (payroll alignment).
   function weekStartOf(dateStr) {
     const d = new Date(dateStr + "T00:00:00");
@@ -4403,7 +4422,11 @@
     for (const [empIdStr, list] of Object.entries(groups)) {
       const emp = userById[Number(empIdStr)];
       for (const sh of list) {
-        t.appendChild(el("div", {class:"trow"},
+        t.appendChild(el("div", {
+          class:"trow",
+          style:"cursor:pointer; touch-action:manipulation;",
+          onclick: () => navTo("shift_detail", { viewingShiftId: sh.id }),
+        },
           el("span", {class:"nm"},
             el("span", {class:"sw", style:`background:${emp.color}`}),
             el("span", {}, emp.displayName),
@@ -4578,12 +4601,8 @@
   function renderFab() {
     const root = document.getElementById("fabRoot");
     root.innerHTML = "";
-    if (state.screen === "admin_home" && canManage(state.currentUser)) {
-      root.appendChild(el("button", {
-        class:"fab", title: tr("addEmployee"),
-        onclick: () => { state.modal = "addEmployee"; render(); },
-      }, ICON("addUser", 24)));
-    }
+    // The add-employee FAB moved into the account dropdown (see renderUserMenu).
+    // This slot is kept around for future per-screen primary actions.
   }
 
   // =============================================================
@@ -4681,17 +4700,6 @@
     root.appendChild(el("div", {style:"height:12px"}));
     root.appendChild(clockSection());
 
-    // Month nav
-    root.appendChild(el("div", {style:"height:18px"}));
-    root.appendChild(monthNav());
-
-    // Calendar block
-    const block = el("div", {class: "cal-block " + (state.lastAnim === 1 ? "month-anim-next" : state.lastAnim === -1 ? "month-anim-prev" : "")});
-    state.lastAnim = 0;
-    block.appendChild(renderCalendar(u.id));
-    block.appendChild(summaryCard(u.id));
-    root.appendChild(block);
-
     // Weekly submission
     root.appendChild(el("div", {class:"signoff-label", style:"margin-top:14px"}, tr("weeklySignoff")));
     root.appendChild(weekSignoffCard());
@@ -4714,7 +4722,7 @@
     for (const sh of sorted) {
       const shDate = new Date(sh.date + "T00:00:00");
       const drow = el("div", {class:"drow"},
-        el("div", {class:"d"}, fmtDateShort(sh.date)),
+        el("div", {class:"d"}, fmtDateWD(sh.date)),
         el("div", {class:"t"},
           timeRangeWithTz(sh.start, sh.end, sh.clockInTz, sh.clockOutTz, shDate),
         ),
@@ -4738,7 +4746,7 @@
     const rejectionComment = weekRejectionComment(u.id, wkStart);
 
     const left = el("div", {class:"left"},
-      el("div", {class:"title"}, `${tr("thisWeek")} · ${fmtDateShort(wkStart)} – ${fmtDateShort(wkEnd)}`),
+      el("div", {class:"title"}, `${tr("thisWeek")} · ${fmtDateWD(wkStart)} – ${fmtDateWD(wkEnd)}`),
       el("div", {class:"sub"}, `${wkHours.toFixed(1)} ${tr("hours").toLowerCase()} · ${wkShifts.length} ${tr("shifts").toLowerCase()}`),
     );
     if (!status || status === "rejected") {
@@ -4822,7 +4830,7 @@
       const prow = el("div", {class: `prow ${w.rejectionComment ? "rejected" : ""}`},
         el("div", {class:"head"},
           el("div", {class:"left"},
-            el("div", {class:"title"}, `${fmtDateShort(w.wkStart)} – ${fmtDateShort(weekEndOf(w.wkStart))}`),
+            el("div", {class:"title"}, `${fmtDateWD(w.wkStart)} – ${fmtDateWD(weekEndOf(w.wkStart))}`),
             el("div", {class:"sub"}, `${w.hours.toFixed(1)} ${tr("hours").toLowerCase()} · ${w.count} ${tr("shifts").toLowerCase()}`),
           ),
           el("button", {
@@ -4861,8 +4869,7 @@
           state.clockInCoord = c.real ? { lat: c.lat, lng: c.lng } : null;
           const t = gpsToast(c, "Clock-in");
           toast(t.msg, { kind: t.kind, pill: t.pill });
-          const lbl = document.querySelector(".gps-note");
-          if (lbl) lbl.textContent = gpsNoteText(state.clockInCoord);
+          render();
         }
       }, ICON("play", 32), el("div", {}, tr("clockIn")));
     }
@@ -4877,9 +4884,11 @@
             fmtTimeDate(state.clockIn),
             inTz ? el("span", {class:"tz-tag"}, inTz) : null,
           ),
-          el("div", {class:"gps-note"}, gpsNoteText(state.clockInCoord)),
         )
       ));
+      if (state.clockInCoord) {
+        wrap.appendChild(miniMapThumb([{...state.clockInCoord, in: true}]));
+      }
       wrap.appendChild(el("div", {style:"height:14px"}));
       wrap.appendChild(el("button", {
         class:"big-cta clock-out",
@@ -4893,8 +4902,7 @@
           state.clockOutCoord = c.real ? { lat: c.lat, lng: c.lng } : null;
           const t = gpsToast(c, "Clock-out");
           toast(t.msg, { kind: t.kind, pill: t.pill });
-          const lbl = document.querySelector(".gps-note-out");
-          if (lbl) lbl.textContent = gpsNoteText(state.clockOutCoord);
+          render();
         }
       }, ICON("stop", 32), el("div", {}, tr("clockOut"))));
       return wrap;
@@ -4914,6 +4922,10 @@
     const wrap = el("div", {});
     const inTzShort  = tzShort(state.clockInTz,  state.clockIn);
     const outTzShort = tzShort(state.clockOutTz, state.clockOut);
+    const summaryPins = [];
+    if (state.clockInCoord)  summaryPins.push({...state.clockInCoord,  in: true });
+    if (state.clockOutCoord) summaryPins.push({...state.clockOutCoord, in: false });
+
     const summaryEl = el("div", {class:"shift-summary"},
       el("div", {class:"row"},
         el("div", {class:"col"},
@@ -4922,7 +4934,6 @@
             fmtTimeDate(state.clockIn),
             inTzShort ? el("span", {class:"tz-tag"}, inTzShort) : null,
           ),
-          el("div", {class:"gps-note"}, gpsNoteText(state.clockInCoord)),
         ),
         el("div", {class:"col r"},
           el("div", {class:"l-label"}, tr("end")),
@@ -4930,9 +4941,9 @@
             fmtTimeDate(state.clockOut),
             outTzShort ? el("span", {class:"tz-tag"}, outTzShort) : null,
           ),
-          el("div", {class:"gps-note"}, gpsNoteText(state.clockOutCoord)),
         ),
       ),
+      summaryPins.length ? miniMapThumb(summaryPins) : null,
       el("div", {class:"total"},
         el("span", {class:`value ${hrs < 9 ? "warn":""}`}, hrs.toFixed(1)),
         el("span", {class:"unit"}, tr("hours").toLowerCase()),
@@ -5003,24 +5014,7 @@
     const block = el("div", {class: "cal-block " + (state.lastAnim === 1 ? "month-anim-next" : state.lastAnim === -1 ? "month-anim-prev" : "")});
     state.lastAnim = 0;
     block.appendChild(renderCalendar(null));
-    block.appendChild(summaryCard(null));
     root.appendChild(block);
-
-    // Approvals banner (weeks + edit requests)
-    const totalPending = pendingApprovals().length + pendingEditRequests().length;
-    if (totalPending > 0) {
-      root.appendChild(el("div", {
-        class:"approvals-banner",
-        onclick: () => { state.modal = "approvals"; render(); },
-      },
-        el("div", {class:"icon"}, ICON("inbox")),
-        el("div", {class:"body"},
-          el("div", {class:"title"}, tr("pendingApprovals")),
-          el("div", {class:"meta"}, tr("nPending", totalPending)),
-        ),
-        el("div", {}, ICON("chevRight")),
-      ));
-    }
 
     // Employees list
     root.appendChild(el("div", {class:"section-header"},
@@ -5091,11 +5085,19 @@
     const root = document.getElementById("scrollRoot");
     root.innerHTML = "";
 
+    // Calendar at the top — moved here from the clock-in home screen. Scoped
+    // to the current employee so it filters to their own shifts.
+    root.appendChild(monthNav());
+    const calBlock = el("div", {class: "cal-block " + (state.lastAnim === 1 ? "month-anim-next" : state.lastAnim === -1 ? "month-anim-prev" : "")});
+    state.lastAnim = 0;
+    calBlock.appendChild(renderCalendar(u.id));
+    root.appendChild(calBlock);
+
     const mine = shifts.filter(s => s.empId === u.id)
       .sort((a,b) => b.date.localeCompare(a.date) || b.start.localeCompare(a.start));
     const total = mine.reduce((s,x)=>s+x.hours,0);
 
-    root.appendChild(el("div", {class:"info-card"},
+    root.appendChild(el("div", {class:"info-card", style:"margin-top:14px"},
       el("div", {class:"row"},
         stat("blue", String(mine.length), tr("shifts")),
         stat("green", total.toFixed(1), tr("hours")),
@@ -5443,6 +5445,41 @@
   const MAP_MAX_ZOOM = 15;
   const MAP_FIT_PADDING = 24;
 
+  // Compact, non-interactive map for the clock-in/out card. No drag, no
+  // zoom, no legend, no attribution bar — just a visual confirmation of
+  // where the user was. Accepts a coord array: [{lat, lng, in: bool}].
+  function miniMapThumb(coordPins) {
+    const pins = coordPins.filter(p => p && Number.isFinite(p.lat) && Number.isFinite(p.lng));
+    if (!pins.length) return el("div", {});
+    const mapEl = el("div", {class: "mini-map mini-map--thumb"});
+    requestAnimationFrame(() => {
+      const map = L.map(mapEl, {
+        scrollWheelZoom: false, zoomControl: false, attributionControl: false,
+        dragging: false, touchZoom: false, doubleClickZoom: false,
+        boxZoom: false, keyboard: false, tap: false,
+      });
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
+      for (const p of pins) {
+        L.marker([p.lat, p.lng], {
+          icon: L.divIcon({
+            className: "pin-marker",
+            html: `<div class="pin ${p.in ? "in" : "out"}"></div>`,
+            iconSize: [14, 14], iconAnchor: [7, 7],
+          }),
+          interactive: false,
+        }).addTo(map);
+      }
+      if (pins.length === 1) {
+        map.setView([pins[0].lat, pins[0].lng], 16);
+      } else {
+        map.fitBounds(L.latLngBounds(pins.map(p => [p.lat, p.lng])), {
+          padding: [12, 12], maxZoom: 16,
+        });
+      }
+    });
+    return mapEl;
+  }
+
   function miniMap(locatedShifts) {
     const pins = [];
     for (const sh of locatedShifts) {
@@ -5632,7 +5669,7 @@
                 el("span", {class: `chevron ${isExpanded ? "up" : ""}`}, "▾"),
               ),
             ),
-            el("div", {class:"week"}, `${fmtDateShort(w.weekStart)} – ${fmtDateShort(weekEndOf(w.weekStart))} · ${wkShifts.length} ${tr("shifts").toLowerCase()}`),
+            el("div", {class:"week"}, `${fmtDateWD(w.weekStart)} – ${fmtDateWD(weekEndOf(w.weekStart))} · ${wkShifts.length} ${tr("shifts").toLowerCase()}`),
           );
           if (isExpanded) {
             row.appendChild(weekShiftBreakdown(wkShifts));

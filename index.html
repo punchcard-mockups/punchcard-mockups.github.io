@@ -3254,6 +3254,13 @@
     position: relative;
     z-index: 10;
   }
+  /* On the login screen renderTopbar() leaves the container empty. Collapse
+     it so the login content doesn't look pushed down by a ghost 44px bar. */
+  .topbar:empty {
+    min-height: 0;
+    padding: 0;
+    border-bottom: 0;
+  }
 
   .scroll {
     flex: 1 1 auto;
@@ -3306,6 +3313,7 @@
       padding-left: max(18px, env(safe-area-inset-left));
       padding-right: max(18px, env(safe-area-inset-right));
     }
+    .topbar:empty { padding: 0; }
     .scroll {
       padding-left: max(20px, env(safe-area-inset-left));
       padding-right: max(22px, env(safe-area-inset-right));
@@ -3356,7 +3364,7 @@
 <body class="theme-editorial">
 
 <div class="app-root">
-  <div class="version-tag" id="versionTag">v.2026-04-14.1230</div>
+  <div class="version-tag" id="versionTag">v.2026-04-14.1237</div>
   <div class="topbar" id="topbarRoot"></div>
   <div class="scroll" id="scrollRoot"></div>
   <div id="fabRoot"></div>

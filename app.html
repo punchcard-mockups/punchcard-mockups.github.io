@@ -2953,7 +2953,7 @@
 <body class="theme-editorial">
 
 <div class="app-root">
-  <div class="version-tag" id="versionTag">v.2026-04-14.0025</div>
+  <div class="version-tag" id="versionTag">v.2026-04-14.0040</div>
   <div class="topbar" id="topbarRoot"></div>
   <div class="scroll" id="scrollRoot"></div>
   <div id="fabRoot"></div>
@@ -3040,45 +3040,81 @@
     return `📍 ${coord.lat.toFixed(5)}, ${coord.lng.toFixed(5)}`;
   }
 
-  // Real-GPS capture. Returns a promise that resolves to:
-  //   { lat, lng, real: true }               — user granted permission
-  //   { real: false, reason: "denied" }      — user denied the prompt
-  //   { real: false, reason: "unavailable" } — position unavailable (hardware/OS)
-  //   { real: false, reason: "timeout" }     — browser timed out acquiring GPS
-  //   { real: false, reason: "unsupported" } — no geolocation API
-  // We deliberately do NOT time the prompt out from our side — on mobile the
-  // system permission sheet can take 10+ seconds to appear/be answered, and
-  // racing it would silently swallow the user's response.
-  function getCurrentCoord() {
-    return new Promise((resolve) => {
-      if (!navigator.geolocation) {
-        resolve({ real: false, reason: "unsupported" });
-        return;
+  // Real-GPS capture. Returns a promise that resolves to one of:
+  //   { lat, lng, real: true }                  — user granted, coord captured
+  //   { real: false, reason: "blocked" }        — site permission is cached as denied; browser won't prompt
+  //   { real: false, reason: "declined" }       — user saw the prompt and chose not to allow
+  //   { real: false, reason: "unavailable" }    — position couldn't be determined (OS Location Services off, GPS hardware unavailable, etc.)
+  //   { real: false, reason: "timeout" }        — browser gave up acquiring a position
+  //   { real: false, reason: "unsupported" }    — browser has no geolocation API
+  //
+  // Notes:
+  //  - We check `navigator.permissions` first so we can distinguish "cached denied" (won't re-prompt)
+  //    from "user declined just now". Different messages, different remediation.
+  //  - We explicitly do NOT set enableHighAccuracy:true. That forces GPS and fails often indoors / in
+  //    dense urban areas; the default (Wi-Fi / IP) is plenty for a "did you clock in where you said
+  //    you did" map pin and works almost everywhere.
+  //  - No outer timeout from our side — the native permission prompt can sit open for 10+ seconds on
+  //    mobile, and racing it silently discards the user's answer. The browser's own timeout below
+  //    handles the acquire-position phase.
+  async function getCurrentCoord() {
+    if (!navigator.geolocation) {
+      console.warn("[gps] navigator.geolocation is not available");
+      return { real: false, reason: "unsupported" };
+    }
+
+    // Pre-check permission state (supported in Chrome/Firefox/Edge; modern Safari as of 16+).
+    let permState = "prompt";
+    if (navigator.permissions && navigator.permissions.query) {
+      try {
+        const r = await navigator.permissions.query({ name: "geolocation" });
+        permState = r.state;
+      } catch (e) {
+        console.info("[gps] permissions.query unsupported; falling through", e);
       }
+    }
+    console.info("[gps] permission state:", permState);
+
+    if (permState === "denied") {
+      // Browser has this site blocked — getCurrentPosition will fail instantly with no prompt.
+      return { real: false, reason: "blocked" };
+    }
+
+    return new Promise((resolve) => {
       navigator.geolocation.getCurrentPosition(
-        (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude, real: true }),
-        (err) => resolve({
-          real: false,
-          reason: err.code === 1 ? "denied"
-                : err.code === 2 ? "unavailable"
-                : err.code === 3 ? "timeout"
-                : "unknown",
-        }),
-        { enableHighAccuracy: true, timeout: 20000, maximumAge: 30000 }
+        (pos) => {
+          console.info("[gps] position acquired:", pos.coords.latitude, pos.coords.longitude, `±${Math.round(pos.coords.accuracy)}m`);
+          resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude, real: true });
+        },
+        (err) => {
+          console.warn("[gps] getCurrentPosition error:", err.code, err.message);
+          // code 1 PERMISSION_DENIED can mean either the user just declined, or (on some
+          // OSes) the browser was allowed at site level but the OS blocked it. We use
+          // `permState === "prompt"` above as a rough signal: if the permission state was
+          // "prompt" moments ago and we got code 1, the user almost certainly just declined.
+          let reason;
+          if (err.code === 1) reason = permState === "prompt" ? "declined" : "blocked";
+          else if (err.code === 2) reason = "unavailable";
+          else if (err.code === 3) reason = "timeout";
+          else reason = "unknown";
+          resolve({ real: false, reason });
+        },
+        { enableHighAccuracy: false, timeout: 20000, maximumAge: 30000 }
       );
     });
   }
 
-  // Map a getCurrentCoord() result to a user-facing toast string.
+  // Map a getCurrentCoord() result to a user-facing toast.
   function gpsToast(result, action) {
     if (result.real) {
       return { msg: `${action} location captured`, kind: "success", pill: "📍" };
     }
     const reasons = {
-      denied:      "Location permission denied",
-      unavailable: "Location unavailable",
-      timeout:     "Location timed out",
-      unsupported: "Location not supported by browser",
+      blocked:     "Location blocked — enable it for this site in your browser settings",
+      declined:    "Location not shared",
+      unavailable: "Location unavailable — check that Location Services are on",
+      timeout:     "Location timed out — try again",
+      unsupported: "Location not supported by this browser",
       unknown:     "Location not captured",
     };
     return { msg: reasons[result.reason] || reasons.unknown, kind: "warn", pill: "⚠" };

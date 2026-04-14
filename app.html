@@ -576,6 +576,19 @@
   .clock-card .time {
     font-size: 22px; font-weight: 700; color: var(--accent-green-light);
   }
+  .tz-tag {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin-left: 8px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--surface-dark);
+    color: var(--text-muted);
+    vertical-align: middle;
+    font-variant-numeric: tabular-nums;
+  }
   .gps-note {
     font-size: 10px;
     color: var(--text-muted);
@@ -633,6 +646,27 @@
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     color: var(--text-primary);
+  }
+  .sd-row .sd-tz {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    margin-left: 8px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--surface-dark);
+    font-variant-numeric: tabular-nums;
+  }
+  .sd-tz-note {
+    margin-top: 8px;
+    padding: 8px 10px;
+    font-size: 11px;
+    color: var(--accent-amber);
+    background: rgba(245,158,11,.08);
+    border: 1px dashed rgba(245,158,11,.35);
+    border-radius: 8px;
+    font-weight: 600;
   }
 
   .sd-section-label {
@@ -2953,7 +2987,7 @@
 <body class="theme-editorial">
 
 <div class="app-root">
-  <div class="version-tag" id="versionTag">v.2026-04-14.0040</div>
+  <div class="version-tag" id="versionTag">v.2026-04-14.0055</div>
   <div class="topbar" id="topbarRoot"></div>
   <div class="scroll" id="scrollRoot"></div>
   <div id="fabRoot"></div>
@@ -2982,6 +3016,8 @@
     clockOut: null,
     clockInCoord: null,
     clockOutCoord: null,
+    clockInTz: null,
+    clockOutTz: null,
     comment: "",
     // modals
     modal: null,        // "addEmployee" | "approvals" | "submitWeek"
@@ -3021,7 +3057,7 @@
   // Curated April 2026 data (roughly matches prior mockup)
   let nextShiftId = 100;
   const shifts = [];
-  function addShift({empId, date, start, end, comment="", loc}) {
+  function addShift({empId, date, start, end, comment="", loc, tz}) {
     const [sh, sm] = start.split(":").map(Number);
     const [eh, em] = end.split(":").map(Number);
     const hours = ((eh*60+em) - (sh*60+sm)) / 60;
@@ -3030,7 +3066,35 @@
       empId, date, start, end, hours, comment,
       clockIn: loc?.in || null,
       clockOut: loc?.out || null,
+      clockInTz: tz?.in || null,
+      clockOutTz: tz?.out || null,
     });
+  }
+
+  // IANA timezone of the device at call time. Falls back to null if
+  // Intl isn't available (very old browsers).
+  function currentTimezone() {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone || null;
+    } catch {
+      return null;
+    }
+  }
+
+  // Short timezone name ("EDT", "PST", "CEST", etc.) for display. Falls back to
+  // the IANA string if the short name can't be resolved for any reason.
+  function tzShort(tz, when) {
+    if (!tz) return "";
+    try {
+      const parts = new Intl.DateTimeFormat("en", {
+        timeZone: tz,
+        timeZoneName: "short",
+      }).formatToParts(when || new Date());
+      const p = parts.find(x => x.type === "timeZoneName");
+      return p ? p.value : tz;
+    } catch {
+      return tz;
+    }
   }
 
   // Fake business next to the Pentagon (Arlington, VA)
@@ -3584,7 +3648,7 @@
     state.modal = null;
     state.expandedApproval = null;
     state.expandedHistoryWeeks = null;
-    state.clock = "idle"; state.clockIn = state.clockOut = null; state.comment = "";
+    state.clock = "idle"; state.clockIn = state.clockOut = null; state.clockInTz = state.clockOutTz = null; state.comment = "";
     render();
   }
 
@@ -4126,6 +4190,7 @@
           state.clock = "in";
           state.clockIn = new Date();
           state.clockInCoord = null;
+          state.clockInTz = currentTimezone();
           render();
           const c = await getCurrentCoord();
           state.clockInCoord = c.real ? { lat: c.lat, lng: c.lng } : null;
@@ -4138,11 +4203,15 @@
     }
     if (state.clock === "in") {
       const wrap = el("div", {});
+      const inTz = tzShort(state.clockInTz, state.clockIn);
       wrap.appendChild(el("div", {class:"clock-card"},
         el("div", {class:"pulse"}),
         el("div", {style:"flex:1"},
           el("div", {class:"label"}, tr("clockedInAt")),
-          el("div", {class:"time"}, fmtTimeDate(state.clockIn)),
+          el("div", {class:"time"},
+            fmtTimeDate(state.clockIn),
+            inTz ? el("span", {class:"tz-tag"}, inTz) : null,
+          ),
           el("div", {class:"gps-note"}, gpsNoteText(state.clockInCoord)),
         )
       ));
@@ -4153,6 +4222,7 @@
           state.clock = "out";
           state.clockOut = new Date();
           state.clockOutCoord = null;
+          state.clockOutTz = currentTimezone();
           render();
           const c = await getCurrentCoord();
           state.clockOutCoord = c.real ? { lat: c.lat, lng: c.lng } : null;
@@ -4177,16 +4247,24 @@
     commentField.value = state.comment;
 
     const wrap = el("div", {});
+    const inTzShort  = tzShort(state.clockInTz,  state.clockIn);
+    const outTzShort = tzShort(state.clockOutTz, state.clockOut);
     const summaryEl = el("div", {class:"shift-summary"},
       el("div", {class:"row"},
         el("div", {class:"col"},
           el("div", {class:"l-label"}, tr("start")),
-          el("div", {class:"time"}, fmtTimeDate(state.clockIn)),
+          el("div", {class:"time"},
+            fmtTimeDate(state.clockIn),
+            inTzShort ? el("span", {class:"tz-tag"}, inTzShort) : null,
+          ),
           el("div", {class:"gps-note"}, gpsNoteText(state.clockInCoord)),
         ),
         el("div", {class:"col r"},
           el("div", {class:"l-label"}, tr("end")),
-          el("div", {class:"time"}, fmtTimeDate(state.clockOut)),
+          el("div", {class:"time"},
+            fmtTimeDate(state.clockOut),
+            outTzShort ? el("span", {class:"tz-tag"}, outTzShort) : null,
+          ),
           el("div", {class:"gps-note"}, gpsNoteText(state.clockOutCoord)),
         ),
       ),
@@ -4221,10 +4299,12 @@
           end:   `${pad(state.clockOut.getHours())}:${pad(state.clockOut.getMinutes())}`,
           comment: state.comment.trim(),
           loc: { in: state.clockInCoord, out: state.clockOutCoord },
+          tz:  { in: state.clockInTz,    out: state.clockOutTz    },
         });
         state.clock = "idle";
         state.clockIn = state.clockOut = null;
         state.clockInCoord = state.clockOutCoord = null;
+        state.clockInTz = state.clockOutTz = null;
         state.comment = "";
         toast(tr("shiftLogged"), {kind:"success", pill:"✓"});
         render();
@@ -4408,16 +4488,28 @@
     ));
 
     // Start / End rows (compact, not stats-card giant text)
+    const shDate = new Date(sh.date + "T00:00:00");
+    const inTz = sh.clockInTz ? tzShort(sh.clockInTz, shDate) : null;
+    const outTz = sh.clockOutTz ? tzShort(sh.clockOutTz, shDate) : null;
     const times = el("div", {class:"sd-rows"});
-    times.appendChild(el("div", {class:"sd-row"},
+    const startRow = el("div", {class:"sd-row"},
       el("span", {class:"sd-label"}, tr("start")),
       el("span", {class:"sd-value"}, fmt12(sh.start)),
-    ));
-    times.appendChild(el("div", {class:"sd-row"},
+    );
+    if (inTz) startRow.appendChild(el("span", {class:"sd-tz"}, inTz));
+    times.appendChild(startRow);
+    const endRow = el("div", {class:"sd-row"},
       el("span", {class:"sd-label"}, tr("end")),
       el("span", {class:"sd-value"}, fmt12(sh.end)),
-    ));
+    );
+    if (outTz) endRow.appendChild(el("span", {class:"sd-tz"}, outTz));
+    times.appendChild(endRow);
     root.appendChild(times);
+    // Heads-up if the employee clocked out in a different tz than they clocked in
+    if (sh.clockInTz && sh.clockOutTz && sh.clockInTz !== sh.clockOutTz) {
+      root.appendChild(el("div", {class:"sd-tz-note"},
+        `Clocked in ${inTz}, clocked out ${outTz}`));
+    }
 
     // Comment (if present)
     if (sh.comment) {

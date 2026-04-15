@@ -3525,7 +3525,7 @@
 <body class="theme-editorial">
 
 <div class="app-root">
-  <div class="version-tag" id="versionTag">v.2026-04-14.1415</div>
+  <div class="version-tag" id="versionTag"></div>
   <div class="topbar" id="topbarRoot"></div>
   <div class="scroll" id="scrollRoot"></div>
   <div id="bottomBarRoot"></div>
@@ -3734,6 +3734,26 @@
     editRequests.push(...data.editRequests);
     nextEditReqId = data.editRequests.reduce((m, r) => Math.max(m, r.id), 0) + 1;
   }
+
+  // Version tag reads Last-Modified from the current page — which GitHub
+  // Pages sets to the commit time of the most recent deploy. Rendered in
+  // the viewer's local time as v.YYYY-MM-DD.HHMM. If the header is missing
+  // (e.g., file:// or a dev server that doesn't emit it), leave it blank.
+  (async function setVersionTag() {
+    const el = document.getElementById("versionTag");
+    if (!el) return;
+    try {
+      const res = await fetch(location.href, { method: "HEAD", cache: "no-cache" });
+      const lm = res.headers.get("Last-Modified");
+      if (!lm) return;
+      const d = new Date(lm);
+      if (isNaN(d)) return;
+      const pad = (n) => String(n).padStart(2, "0");
+      const ymd = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      const hm = `${pad(d.getHours())}${pad(d.getMinutes())}`;
+      el.textContent = `v.${ymd}.${hm}`;
+    } catch { /* offline / blocked — leave empty */ }
+  })();
 
   // Role helpers
   const isOwner      = (u) => u?.role === "owner";

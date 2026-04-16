@@ -1166,7 +1166,10 @@
     border-radius: 12px;
     background: var(--surface-dark);
   }
-  .modal-card .manage-row .left { min-width: 0; }
+  .modal-card .manage-row .header {
+    display: flex; align-items: flex-start; gap: 10px;
+  }
+  .modal-card .manage-row .left { flex: 1; min-width: 0; }
   .modal-card .manage-row .name {
     font-weight: 700; color: var(--text-primary);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -1178,7 +1181,8 @@
   .modal-card .manage-row .actions {
     display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-start;
   }
-  .modal-card .manage-row .actions .btn {
+  .modal-card .manage-row .actions .btn,
+  .modal-card .manage-row .header .btn {
     padding: 6px 10px; font-size: 11px;
   }
   .modal-card .manage-section-label {
@@ -6185,17 +6189,26 @@
       const inactive = users.filter(u => u.active === false);
       const rowFor = (u) => {
         const isSelf = u.id === me.id;
-        const row = el("div", {class:"manage-row"},
+        const row = el("div", {class:"manage-row"});
+        // Header: name + role on the left, destructive Deactivate on the
+        // right so it sits away from the primary Edit / Reset buttons below.
+        const header = el("div", {class:"header"},
           el("div", {class:"left"},
             el("div", {class:"name"}, u.displayName + (isSelf ? " (you)" : "")),
             el("div", {class:"sub"}, `@${u.username} · ${tr(u.role)}`),
           ),
         );
+        if (u.active !== false && !isSelf) {
+          header.appendChild(el("button", {
+            class: "btn danger",
+            onclick: () => { state.manageTargetId = u.id; state.modal = "confirmDeactivate"; render(); },
+          }, tr("deactivate")));
+        }
+        row.appendChild(header);
         const actions = el("div", {class:"actions"});
         if (u.active !== false) {
           actions.appendChild(el("button", {class:"btn", onclick: () => { state.manageTargetId = u.id; state.modal = "editEmployee"; render(); }}, tr("editEmployee")));
           actions.appendChild(el("button", {class:"btn", onclick: () => { state.manageTargetId = u.id; state.modal = "resetPasswordUser"; render(); }}, tr("resetPassword")));
-          if (!isSelf) actions.appendChild(el("button", {class:"btn danger", onclick: () => { state.manageTargetId = u.id; state.modal = "confirmDeactivate"; render(); }}, tr("deactivate")));
         } else {
           actions.appendChild(el("button", {class:"btn primary", onclick: async (ev) => {
             if (ev.currentTarget.disabled) return;

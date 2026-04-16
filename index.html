@@ -4616,6 +4616,26 @@
     if (!u) return;
 
     if (isEmployee(u) && (state.screen === "employee_home" || state.screen === "history")) {
+      const unsignedCount = unsignedPastWeeks(u.id).length;
+      if (unsignedCount > 0) {
+        root.appendChild(el("div", {
+          class: "pinned-approvals",
+          onclick: () => {
+            if (state.screen !== "employee_home") navTo("employee_home");
+            requestAnimationFrame(() => {
+              const target = document.getElementById("past-weeks-section");
+              if (target) target.scrollIntoView({behavior: "smooth", block: "start"});
+            });
+          },
+        },
+          el("div", {class: "icon"}, ICON("inbox")),
+          el("div", {class: "body"},
+            el("div", {class: "title"}, tr("needsAttention")),
+            el("div", {class: "meta"}, tr("unsubmittedBanner", unsignedCount)),
+          ),
+          el("div", {class: "chev"}, ICON("chevRight")),
+        ));
+      }
       const tab = (name, iconName, labelKey, screen) => el("div", {
         class: `tab ${state.screen === screen ? "active" : ""}`,
         onclick: () => navTo(screen),
@@ -4731,23 +4751,6 @@
       el("div", {class:"hello"}, tr("welcome")),
       el("div", {class:"name"}, u.displayName),
     ));
-
-    // Urgency banner when the employee has unsubmitted past weeks. Taps
-    // scroll the past-weeks section into view.
-    const unsignedCount = unsignedPastWeeks(u.id).length;
-    if (unsignedCount > 0) {
-      root.appendChild(el("div", {
-        class: "urgency-banner",
-        onclick: () => {
-          const target = document.getElementById("past-weeks-section");
-          if (target) target.scrollIntoView({behavior: "smooth", block: "start"});
-        },
-      },
-        el("div", {class: "urgency-icon"}, "⚠"),
-        el("div", {class: "urgency-body"}, tr("unsubmittedBanner", unsignedCount)),
-        el("div", {class: "urgency-chev"}, ICON("chevRight")),
-      ));
-    }
 
     // Today's date + Clock-in (primary action, at the top)
     const todayLabel = new Date().toLocaleDateString(locale(),

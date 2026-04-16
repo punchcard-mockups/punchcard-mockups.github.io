@@ -1109,7 +1109,9 @@
     .modal-card {
       width: 100%;
       max-width: 100%;
-      max-height: calc(88vh - var(--kb-inset, 0px));
+      /* `dvh` tracks the *visible* viewport height on iOS Safari — so the
+         sheet can't extend under the URL bar the way `88vh` allowed. */
+      max-height: calc(88dvh - var(--kb-inset, 0px));
       border-radius: 22px 22px 0 0;
       padding-bottom: max(22px, calc(env(safe-area-inset-bottom) + 12px));
       animation: sheet-in 260ms cubic-bezier(.2,.8,.2,1) both;

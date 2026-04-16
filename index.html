@@ -3578,23 +3578,11 @@
   const userById = {};
   const employees = () => users.filter(u => u.role === "employee");
 
-  // Shifts: id, empId, date (YYYY-MM-DD), start, end, hours, comment, coords
-  // Curated April 2026 data (roughly matches prior mockup)
+  // Shifts: id, empId, date (YYYY-MM-DD), start, end, hours, comment, coords.
+  // Hydrated by loadDB() → hydrateFromDb(). Runtime writes go through
+  // api.createShift(); the server returns the canonical shift which we push.
   let nextShiftId = 100;
   const shifts = [];
-  function addShift({empId, date, start, end, comment="", loc, tz}) {
-    const [sh, sm] = start.split(":").map(Number);
-    const [eh, em] = end.split(":").map(Number);
-    const hours = ((eh*60+em) - (sh*60+sm)) / 60;
-    shifts.push({
-      id: nextShiftId++,
-      empId, date, start, end, hours, comment,
-      clockIn: loc?.in || null,
-      clockOut: loc?.out || null,
-      clockInTz: tz?.in || null,
-      clockOutTz: tz?.out || null,
-    });
-  }
 
   // IANA timezone of the device at call time. Falls back to null if
   // Intl isn't available (very old browsers).
@@ -3714,25 +3702,103 @@
   // entries may carry a rejectionComment.
   const weekApprovals = [];
 
-  // One-time data bootstrap. Called before the first render() so every
-  // subsequent screen sees a populated store. Writes back into the `const`
-  // arrays / `let` counters declared above; nothing is reassigned at the
-  // module level.
+  // =============================================================
+  // API CLIENT — talks to the Cloudflare Worker
+  // =============================================================
+  //
+  // All runtime writes are persisted there (one commit per write into the
+  // private punchcard-data repo). CORS on the Worker allows this origin only;
+  // session is an HttpOnly cookie set by POST /login, so every request must
+  // carry credentials: "include".
+  const API_BASE = "https://app.punchcard-api.workers.dev";
+
+  class ApiError extends Error {
+    constructor(status, message) { super(message); this.status = status; }
+  }
+
+  async function apiCall(method, path, body) {
+    let res;
+    try {
+      res = await fetch(API_BASE + path, {
+        method,
+        credentials: "include",
+        headers: body !== undefined ? { "Content-Type": "application/json" } : undefined,
+        body: body !== undefined ? JSON.stringify(body) : undefined,
+      });
+    } catch (e) {
+      throw new ApiError(0, "network"); // offline / CORS / DNS
+    }
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 401) {
+      // Session expired or never existed. If we thought we were logged in,
+      // drop to the login screen; otherwise (pre-login /me probe) just bubble.
+      if (state.currentUser) logout();
+      throw new ApiError(401, data.error || "unauthenticated");
+    }
+    if (!res.ok) throw new ApiError(res.status, data.error || res.statusText);
+    return data;
+  }
+
+  const api = {
+    me:                ()              => apiCall("GET",  "/me"),
+    login:             (u, p)          => apiCall("POST", "/login",         { username: u, password: p }),
+    logout:            ()              => apiCall("POST", "/logout"),
+    db:                ()              => apiCall("GET",  "/db"),
+    createShift:       (body)          => apiCall("POST", "/shifts",        body),
+    setApproval:       (empId, ws, status, reason) =>
+                                          apiCall("POST", "/approvals",     { empId, weekStart: ws, status, rejectionComment: reason }),
+    createEditRequest: (body)          => apiCall("POST", "/edit-requests", body),
+    decideEditRequest: (id, status)    => apiCall("POST", "/edit-requests", { action: "decide", id, status }),
+    adminEdit:         (body)          => apiCall("POST", "/admin-edits",   body),
+    createUser:        (body)          => apiCall("POST", "/users",         body),
+  };
+
+  // Present a Worker error as a user-facing toast. Network/5xx get a generic
+  // retry nudge; 4xx surface the Worker's error string so the user knows
+  // which validation tripped (missing reason, username taken, etc.).
+  function toastApiError(e, fallback) {
+    if (e instanceof ApiError && e.status >= 400 && e.status < 500) {
+      toast(e.message || fallback, { kind: "warn", pill: "⚠" });
+    } else {
+      toast(fallback, { kind: "warn", pill: "⚠" });
+      console.error(e);
+    }
+  }
+
+  // Reassigns the contents of every in-memory store from a /db response.
+  // Used on boot and after any write that might have cascading effects
+  // (edit-request approval → shift mutation + new adminEdits entry).
+  function hydrateFromDb(resp) {
+    users.length = 0;
+    users.push(...resp.db.users);
+    for (const k in userById) delete userById[k];
+    for (const u of resp.db.users) userById[u.id] = u;
+
+    shifts.length = 0;
+    shifts.push(...resp.db.shifts);
+    nextShiftId = resp.db.shifts.reduce((m, s) => Math.max(m, s.id), 99) + 1;
+
+    weekApprovals.length = 0;
+    weekApprovals.push(...resp.db.weekApprovals);
+
+    editRequests.length = 0;
+    editRequests.push(...resp.db.editRequests);
+    nextEditReqId = resp.db.editRequests.reduce((m, r) => Math.max(m, r.id), 0) + 1;
+  }
+
+  // One-time data bootstrap. Calls /me first — if a session cookie is valid
+  // we silently restore to that user's home. Otherwise we leave state.screen
+  // at "login" (its initial value) and the login screen renders.
   async function loadDB() {
-    const res = await fetch("db.json", { cache: "no-cache" });
-    if (!res.ok) throw new Error(`db.json load failed: ${res.status}`);
-    const data = await res.json();
+    let me;
+    try { me = await api.me(); }
+    catch (e) { return; /* 401 or network — show login */ }
 
-    users.push(...data.users);
-    for (const u of data.users) userById[u.id] = u;
-
-    shifts.push(...data.shifts);
-    nextShiftId = data.shifts.reduce((m, s) => Math.max(m, s.id), 99) + 1;
-
-    weekApprovals.push(...data.weekApprovals);
-
-    editRequests.push(...data.editRequests);
-    nextEditReqId = data.editRequests.reduce((m, r) => Math.max(m, r.id), 0) + 1;
+    state.currentUser = me.user;
+    state.screen = isAdminLike(me.user) ? "admin_home" : "employee_home";
+    state.calYear = 2026; state.calMonth = 3;
+    const dbResp = await api.db();
+    hydrateFromDb(dbResp);
   }
 
   // Version tag reads Last-Modified from the current page — which GitHub
@@ -3792,15 +3858,13 @@
     }
     return n;
   }
-  function setWeekStatus(empId, weekStart, status) {
-    const wa = weekApprovals.find(w => w.empId === empId && w.weekStart === weekStart);
-    if (wa) {
-      wa.status = status;
-      // Resubmit clears any prior rejection comment.
-      if (status !== "rejected") wa.rejectionComment = null;
-    } else {
-      weekApprovals.push({ empId, weekStart, status });
-    }
+  // Merge a server-authoritative week approval entry into the local array.
+  // Called after POST /approvals returns — replaces a matching (empId, weekStart)
+  // row with the server's version, or pushes a new one.
+  function upsertWeekApproval(entry) {
+    const i = weekApprovals.findIndex(w => w.empId === entry.empId && w.weekStart === entry.weekStart);
+    if (i >= 0) weekApprovals[i] = entry;
+    else weekApprovals.push(entry);
   }
 
   // =============================================================
@@ -4249,6 +4313,10 @@
     render();
   }
   function logout() {
+    // Fire-and-forget the Worker /logout — clearing local state is what matters
+    // for UX. Server-side cookie expiry + HMAC key rotation are the security
+    // guarantees; a failed POST here is fine.
+    api.logout().catch(() => {});
     state.currentUser = null;
     state.screen = "login";
     state.nav = [];
@@ -4704,15 +4772,23 @@
       spellcheck: "false",
     });
 
-    function attempt(username, password) {
-      const u = users.find(x => x.username === username && x.password === password);
-      if (!u) {
+    async function attempt(username, password) {
+      if (goBtn.disabled) return;
+      goBtn.disabled = true;
+      try {
+        const { user } = await api.login(username, password);
+        const dbResp = await api.db();
+        hydrateFromDb(dbResp);
+        login(user);
+      } catch (e) {
         if (!errorBox) errorBox = el("div", {class:"err"}, s.invalidCreds);
         form.insertBefore(errorBox, goBtn);
-        errorBox.textContent = s.invalidCreds;
-        return;
+        errorBox.textContent = e.status === 401 ? s.invalidCreds :
+          (state.lang === "es" ? "No se pudo iniciar sesión — revisa tu conexión"
+                               : "Couldn't sign in — check your connection");
+      } finally {
+        goBtn.disabled = false;
       }
-      login(u);
     }
 
     const goBtn = el("button", {
@@ -4835,14 +4911,23 @@
       const label = status === "rejected" ? tr("resubmit") : tr("submitWeek");
       head.appendChild(el("button", {
         class:"btn",
-        onclick: (ev) => {
-          animateShrinkAndThen(ev.currentTarget, () => {
-            setWeekStatus(u.id, wkStart, "pending");
-            toast(tr("weekSubmitted"), {kind:"success", pill:"✓"});
-            render();
-            const pill = document.querySelector(".week-submit .status-pill.pending");
-            if (pill) pill.classList.add("pop-in");
-          });
+        onclick: async (ev) => {
+          if (ev.currentTarget.disabled) return;
+          const btn = ev.currentTarget;
+          btn.disabled = true;
+          try {
+            const { entry } = await api.setApproval(u.id, wkStart, "pending");
+            upsertWeekApproval(entry);
+            animateShrinkAndThen(btn, () => {
+              toast(tr("weekSubmitted"), {kind:"success", pill:"✓"});
+              render();
+              const pill = document.querySelector(".week-submit .status-pill.pending");
+              if (pill) pill.classList.add("pop-in");
+            });
+          } catch (e) {
+            btn.disabled = false;
+            toastApiError(e, state.lang === "es" ? "No se pudo enviar la semana" : "Couldn't submit week");
+          }
         },
       }, label));
     }
@@ -4910,13 +4995,21 @@
           ),
           el("button", {
             class:"btn",
-            onclick: (ev) => {
+            onclick: async (ev) => {
+              if (ev.currentTarget.disabled) return;
+              ev.currentTarget.disabled = true;
               const rowNode = ev.currentTarget.closest(".prow");
-              animateOutAndThen(rowNode, () => {
-                setWeekStatus(u.id, w.wkStart, "pending");
-                toast(tr("weekSubmitted"), {kind:"success", pill:"✓"});
-                render();
-              });
+              try {
+                const { entry } = await api.setApproval(u.id, w.wkStart, "pending");
+                animateOutAndThen(rowNode, () => {
+                  upsertWeekApproval(entry);
+                  toast(tr("weekSubmitted"), {kind:"success", pill:"✓"});
+                  render();
+                });
+              } catch (e) {
+                ev.currentTarget.disabled = false;
+                toastApiError(e, state.lang === "es" ? "No se pudo enviar la semana" : "Couldn't submit week");
+              }
             },
           }, btnLabel),
         ),
@@ -5032,32 +5125,46 @@
     wrap.appendChild(el("div", {style:"height:14px"}));
     const submitBtn = el("button", {
       class: "big-cta submit",
-      onclick: () => {
+      onclick: async (ev) => {
         if (hrs < 9 && !state.comment.trim()) {
           commentField.focus();
           commentField.classList.add("required");
           return;
         }
-        // Save shift
+        if (ev.currentTarget.disabled) return;
+        ev.currentTarget.disabled = true;
         const d = state.clockIn;
         const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
         const pad = n => String(n).padStart(2,"0");
-        addShift({
-          empId: state.currentUser.id,
-          date: dateStr,
-          start: `${pad(state.clockIn.getHours())}:${pad(state.clockIn.getMinutes())}`,
-          end:   `${pad(state.clockOut.getHours())}:${pad(state.clockOut.getMinutes())}`,
-          comment: state.comment.trim(),
-          loc: { in: state.clockInCoord, out: state.clockOutCoord },
-          tz:  { in: state.clockInTz,    out: state.clockOutTz    },
-        });
-        state.clock = "idle";
-        state.clockIn = state.clockOut = null;
-        state.clockInCoord = state.clockOutCoord = null;
-        state.clockInTz = state.clockOutTz = null;
-        state.comment = "";
-        toast(tr("shiftLogged"), {kind:"success", pill:"✓"});
-        render();
+        const start = `${pad(state.clockIn.getHours())}:${pad(state.clockIn.getMinutes())}`;
+        const end   = `${pad(state.clockOut.getHours())}:${pad(state.clockOut.getMinutes())}`;
+        const [sh, sm] = start.split(":").map(Number);
+        const [eh, em] = end.split(":").map(Number);
+        const computedHours = ((eh*60+em) - (sh*60+sm)) / 60;
+        try {
+          const { shift } = await api.createShift({
+            date: dateStr,
+            start, end,
+            hours: computedHours,
+            comment: state.comment.trim(),
+            clockIn:  state.clockInCoord,
+            clockOut: state.clockOutCoord,
+            clockInTz:  state.clockInTz,
+            clockOutTz: state.clockOutTz,
+          });
+          shifts.push(shift);
+          nextShiftId = Math.max(nextShiftId, shift.id + 1);
+          state.clock = "idle";
+          state.clockIn = state.clockOut = null;
+          state.clockInCoord = state.clockOutCoord = null;
+          state.clockInTz = state.clockOutTz = null;
+          state.comment = "";
+          toast(tr("shiftLogged"), {kind:"success", pill:"✓"});
+          render();
+        } catch (e) {
+          ev.currentTarget.disabled = false;
+          toastApiError(e, state.lang === "es" ? "No se pudo guardar el turno" : "Couldn't save the shift");
+        }
       }
     }, el("span", {}, tr("submit")));
     wrap.appendChild(submitBtn);
@@ -5355,27 +5462,31 @@
     root.appendChild(el("div", {style:"height:40px"}));
   }
 
-  function approveEditRequest(reqId) {
-    const req = editRequests.find(r => r.id === reqId);
-    if (!req) return;
-    const sh = shifts.find(s => s.id === req.shiftId);
-    if (!sh) return;
-    // Apply the changes
-    sh.start = req.start;
-    sh.end = req.end;
-    const [sh_h, sh_m] = req.start.split(":").map(Number);
-    const [eh, em] = req.end.split(":").map(Number);
-    sh.hours = ((eh*60+em) - (sh_h*60+sh_m)) / 60;
-    req.status = "approved";
-    toast(tr("editApproved"), { kind:"success", pill:"✓" });
-    render();
+  async function approveEditRequest(reqId) {
+    try {
+      const { r: updated } = await api.decideEditRequest(reqId, "approved");
+      // Worker also mutated the underlying shift + appended an adminEdits entry.
+      // Re-hydrate so the shift change + audit log are visible everywhere.
+      hydrateFromDb(await api.db());
+      // hydrateFromDb resets the local editRequests array too, so the merged
+      // object already reflects the updated status — no need to patch it.
+      void updated;
+      toast(tr("editApproved"), { kind:"success", pill:"✓" });
+      render();
+    } catch (e) {
+      toastApiError(e, state.lang === "es" ? "No se pudo aprobar" : "Couldn't approve");
+    }
   }
-  function rejectEditRequest(reqId) {
-    const req = editRequests.find(r => r.id === reqId);
-    if (!req) return;
-    req.status = "rejected";
-    toast(tr("editRejected"), { kind:"warn", pill:"↺" });
-    render();
+  async function rejectEditRequest(reqId) {
+    try {
+      const { r: updated } = await api.decideEditRequest(reqId, "rejected");
+      const local = editRequests.find(x => x.id === reqId);
+      if (local) Object.assign(local, updated);
+      toast(tr("editRejected"), { kind:"warn", pill:"↺" });
+      render();
+    } catch (e) {
+      toastApiError(e, state.lang === "es" ? "No se pudo rechazar" : "Couldn't reject");
+    }
   }
 
   function renderShiftCard(sh) {
@@ -5679,7 +5790,7 @@
       card.appendChild(err);
       card.appendChild(el("div", {class:"actions"},
         el("button", {class:"btn", onclick: close}, tr("cancel")),
-        el("button", {class:"btn primary", onclick: () => {
+        el("button", {class:"btn primary", onclick: async (ev) => {
           const name = nameIn.value.trim(), u = userIn.value.trim(), p = passIn.value;
           const role = roleSel.value;
           if (!name || !u || !p) {
@@ -5696,15 +5807,24 @@
             err.style.display = "block";
             return;
           }
-          const newId = Math.max(...users.map(x => x.id)) + 1;
+          if (ev.currentTarget.disabled) return;
+          ev.currentTarget.disabled = true;
           const colors = ["var(--emp-1)","var(--emp-2)","var(--emp-3)","var(--emp-4)","var(--emp-5)","var(--emp-6)","var(--emp-7)","var(--emp-8)","var(--emp-9)","var(--emp-10)"];
-          users.push({
-            id: newId, username: u, password: p, displayName: name,
-            role, color: colors[newId % colors.length],
-          });
-          userById[newId] = users[users.length-1];
-          toast(state.lang === "es" ? "Usuario agregado" : "User added", {kind:"success", pill:"+"});
-          close();
+          const likelyNextId = Math.max(...users.map(x => x.id)) + 1;
+          try {
+            const { user: added } = await api.createUser({
+              username: u, password: p, displayName: name, role,
+              color: colors[likelyNextId % colors.length],
+            });
+            users.push(added);
+            userById[added.id] = added;
+            toast(state.lang === "es" ? "Usuario agregado" : "User added", {kind:"success", pill:"+"});
+            close();
+          } catch (e) {
+            ev.currentTarget.disabled = false;
+            err.textContent = e.message || (state.lang === "es" ? "No se pudo agregar" : "Couldn't add user");
+            err.style.display = "block";
+          }
         }}, tr("add")),
       ));
     } else if (state.modal === "approvals") {
@@ -5763,7 +5883,7 @@
                       }, tr("cancel")),
                       el("button", {
                         class:"reject confirm",
-                        onclick: () => {
+                        onclick: async (ev) => {
                           const reason = reasonField.value.trim();
                           if (!reason) {
                             err.textContent = tr("rejectReasonRequired");
@@ -5771,13 +5891,20 @@
                             reasonField.focus();
                             return;
                           }
-                          animateOutAndThen(rowNode, () => {
-                            w.status = "rejected";
-                            w.rejectionComment = reason;
-                            state.expandedApproval = null;
-                            toast(tr("weekRejectedToast"), {kind:"warn", pill:"↺"});
-                            render();
-                          });
+                          if (ev.currentTarget.disabled) return;
+                          ev.currentTarget.disabled = true;
+                          try {
+                            const { entry } = await api.setApproval(w.empId, w.weekStart, "rejected", reason);
+                            animateOutAndThen(rowNode, () => {
+                              upsertWeekApproval(entry);
+                              state.expandedApproval = null;
+                              toast(tr("weekRejectedToast"), {kind:"warn", pill:"↺"});
+                              render();
+                            });
+                          } catch (e) {
+                            ev.currentTarget.disabled = false;
+                            toastApiError(e, state.lang === "es" ? "No se pudo rechazar" : "Couldn't reject");
+                          }
                         },
                       }, tr("confirmReject")),
                     ),
@@ -5789,15 +5916,22 @@
               }, tr("reject")),
               el("button", {
                 class:"approve",
-                onclick: (ev) => {
+                onclick: async (ev) => {
+                  if (ev.currentTarget.disabled) return;
+                  ev.currentTarget.disabled = true;
                   const rowNode = ev.currentTarget.closest(".approval-row");
-                  animateOutAndThen(rowNode, () => {
-                    w.status = "approved";
-                    w.rejectionComment = null;
-                    state.expandedApproval = null;
-                    toast(tr("weekApprovedToast"), {kind:"success", pill:"✓"});
-                    render();
-                  });
+                  try {
+                    const { entry } = await api.setApproval(w.empId, w.weekStart, "approved");
+                    animateOutAndThen(rowNode, () => {
+                      upsertWeekApproval(entry);
+                      state.expandedApproval = null;
+                      toast(tr("weekApprovedToast"), {kind:"success", pill:"✓"});
+                      render();
+                    });
+                  } catch (e) {
+                    ev.currentTarget.disabled = false;
+                    toastApiError(e, state.lang === "es" ? "No se pudo aprobar" : "Couldn't approve");
+                  }
                 },
               }, tr("approve")),
             );
@@ -5868,7 +6002,7 @@
       card.appendChild(err);
       card.appendChild(el("div", {class:"actions"},
         el("button", {class:"btn", onclick: close}, tr("cancel")),
-        el("button", {class:"btn primary", onclick: () => {
+        el("button", {class:"btn primary", onclick: async (ev) => {
           const start = startIn.value;
           const end = endIn.value;
           const comment = noteIn.value.trim();
@@ -5885,16 +6019,19 @@
             err.style.display = "block";
             return;
           }
-          editRequests.push({
-            id: nextEditReqId++,
-            shiftId: sh.id,
-            empId: sh.empId,
-            start, end, comment,
-            status: "pending",
-            submittedAt: new Date().toISOString(),
-          });
-          toast(tr("editSubmitted"), {kind:"success", pill:"✓"});
-          close();
+          if (ev.currentTarget.disabled) return;
+          ev.currentTarget.disabled = true;
+          try {
+            const { request } = await api.createEditRequest({ shiftId: sh.id, start, end, comment });
+            editRequests.push(request);
+            nextEditReqId = Math.max(nextEditReqId, request.id + 1);
+            toast(tr("editSubmitted"), {kind:"success", pill:"✓"});
+            close();
+          } catch (e) {
+            ev.currentTarget.disabled = false;
+            err.textContent = e.message || (state.lang === "es" ? "No se pudo enviar" : "Couldn't submit");
+            err.style.display = "block";
+          }
         }}, tr("save")),
       ));
     } else if (state.modal === "adminEditShift") {
@@ -5919,7 +6056,7 @@
       card.appendChild(err);
       card.appendChild(el("div", {class:"actions"},
         el("button", {class:"btn", onclick: close}, tr("cancel")),
-        el("button", {class:"btn primary", onclick: () => {
+        el("button", {class:"btn primary", onclick: async (ev) => {
           const start = startIn.value;
           const end = endIn.value;
           const comment = noteIn.value.trim();
@@ -5936,23 +6073,18 @@
             err.style.display = "block";
             return;
           }
-          // Record the edit on the shift
-          if (!sh.adminEdits) sh.adminEdits = [];
-          sh.adminEdits.push({
-            by: state.currentUser.id,
-            at: new Date().toISOString(),
-            oldStart: sh.start, oldEnd: sh.end,
-            newStart: start,   newEnd: end,
-            comment,
-          });
-          // Apply changes
-          sh.start = start;
-          sh.end = end;
-          const [sh_h, sh_m] = start.split(":").map(Number);
-          const [eh, em] = end.split(":").map(Number);
-          sh.hours = ((eh*60+em) - (sh_h*60+sh_m)) / 60;
-          toast(tr("adminEditSaved"), {kind:"success", pill:"✓"});
-          close();
+          if (ev.currentTarget.disabled) return;
+          ev.currentTarget.disabled = true;
+          try {
+            const { shift: updated } = await api.adminEdit({ shiftId: sh.id, start, end, reason: comment });
+            Object.assign(sh, updated);
+            toast(tr("adminEditSaved"), {kind:"success", pill:"✓"});
+            close();
+          } catch (e) {
+            ev.currentTarget.disabled = false;
+            err.textContent = e.message || (state.lang === "es" ? "No se pudo guardar" : "Couldn't save");
+            err.style.display = "block";
+          }
         }}, tr("save")),
       ));
     }
@@ -6019,9 +6151,9 @@
   })();
 
   loadDB().then(render).catch((err) => {
-    console.error("Failed to load db.json", err);
+    console.error("Failed to load from the PunchCard API", err);
     const root = document.getElementById("scrollRoot");
-    if (root) root.textContent = "Couldn't load db.json — check the console.";
+    if (root) root.textContent = "Couldn't reach the PunchCard API — check your connection.";
   });
 </script>
 

@@ -6306,11 +6306,19 @@
   // =============================================================
   // ROOT RENDER
   // =============================================================
+  let _lastRenderedScreen = null;
   function render() {
     const scroll = document.getElementById("scrollRoot");
-    scroll.classList.remove("screen-enter");
-    void scroll.offsetWidth;
-    scroll.classList.add("screen-enter");
+    // Only replay the screen-enter transition when we're actually navigating
+    // to a new screen. Without this gate, every render() caused by a
+    // dropdown toggle, button state update, or in-place mutation looks like
+    // a full-page flash because the scroll area fades+shifts.
+    if (state.screen !== _lastRenderedScreen) {
+      scroll.classList.remove("screen-enter");
+      void scroll.offsetWidth;
+      scroll.classList.add("screen-enter");
+      _lastRenderedScreen = state.screen;
+    }
 
     renderTopbar();
     renderFab();

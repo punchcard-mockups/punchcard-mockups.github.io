@@ -1151,22 +1151,36 @@
     padding: 8px 10px;
     margin-bottom: 10px;
   }
-  /* Manage employees */
+  /* Manage employees — stacked so names and role sub-text always get the
+     full row width, and action buttons live on their own row below. With
+     the old horizontal layout, narrow viewports squeezed the left column
+     hard enough to wrap "Alejandra A." and "READ-ONLY" onto two lines
+     despite plenty of empty vertical space on each card. */
   .modal-card .manage-list {
     display: flex; flex-direction: column; gap: 8px;
     margin-bottom: 12px;
   }
   .modal-card .manage-row {
-    display: flex; align-items: center; gap: 10px;
-    padding: 10px 12px;
+    display: flex; flex-direction: column; gap: 10px;
+    padding: 12px 14px;
     border-radius: 12px;
     background: var(--surface-dark);
   }
-  .modal-card .manage-row .left { flex: 1; min-width: 0; }
-  .modal-card .manage-row .name { font-weight: 700; color: var(--text-primary); }
-  .modal-card .manage-row .sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-  .modal-card .manage-row .actions { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
-  .modal-card .manage-row .actions .btn { padding: 6px 10px; font-size: 11px; }
+  .modal-card .manage-row .left { min-width: 0; }
+  .modal-card .manage-row .name {
+    font-weight: 700; color: var(--text-primary);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .modal-card .manage-row .sub {
+    font-size: 11px; color: var(--text-muted); margin-top: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .modal-card .manage-row .actions {
+    display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-start;
+  }
+  .modal-card .manage-row .actions .btn {
+    padding: 6px 10px; font-size: 11px;
+  }
   .modal-card .manage-section-label {
     font-size: 11px; font-weight: 700; letter-spacing: 0.4px;
     text-transform: uppercase; color: var(--text-muted);

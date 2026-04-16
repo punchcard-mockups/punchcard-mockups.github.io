@@ -4134,7 +4134,7 @@
     return d.toISOString().slice(0, 10);
   }
   function thisWeekStart() {
-    return weekStartOf(isoDate(new Date()));
+    return weekStartOf(new Date().toISOString().slice(0, 10));
   }
   function shiftsForWeek(empId, weekStartStr) {
     const start = new Date(weekStartStr + "T00:00:00");

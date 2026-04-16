@@ -4176,6 +4176,7 @@
       home: "M3 12l9-9 9 9|M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10",
       history: "M3 3v5h5|M3.05 13a9 9 0 1 0 .5-5|M12 7v5l3 3",
       logout: "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4|M16 17l5-5-5-5|M21 12H9",
+      user: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2|M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8",
       back: "M19 12H5|M12 19l-7-7 7-7",
       plus: "M12 5v14|M5 12h14",
       addUser: "M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2|M8.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8|M20 8v6|M23 11h-6",
@@ -4703,7 +4704,7 @@
         state.userMenuOpen = !state.userMenuOpen;
         render();
       },
-    }, ICON("logout"));
+    }, ICON("user"));
     if (state.userMenuOpen) {
       const menu = el("div", {
         class: "user-menu",

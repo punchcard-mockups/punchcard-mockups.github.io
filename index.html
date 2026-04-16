@@ -3296,6 +3296,15 @@
   /* Modal */
   body.theme-editorial .modal-scrim { background: oklch(16% 0.015 30 / .45); }
   body.theme-editorial .modal-card { background: var(--t-bg); border: 1px solid var(--outline-soft); border-radius: 2px; }
+  /* On narrow viewports the modal is a bottom sheet — the rounded top
+     corners are the affordance that tells the user "this is a sheet,"
+     so the editorial border-radius:2px override has to give way here. */
+  @media (max-width: 640px) {
+    body.theme-editorial .modal-card {
+      border-radius: 22px 22px 0 0;
+      border-bottom: 0; border-left: 0; border-right: 0;
+    }
+  }
   body.theme-editorial .modal-card input, body.theme-editorial .modal-card textarea {
     background: transparent; border: 0; border-bottom: 1.5px solid var(--outline-soft); border-radius: 0; padding: 10px 4px;
     font-family: var(--tf-body);

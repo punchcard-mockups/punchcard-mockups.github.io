@@ -514,6 +514,11 @@
     align-items: center; justify-content: center;
     height: 100%;
     padding: 20px 12px;
+    /* Lift the form above the soft keyboard on mobile. --kb-inset is
+       maintained live by the VisualViewport handler at the bottom of the
+       script; it's 0 on desktop / any time no keyboard is open. */
+    padding-bottom: calc(20px + var(--kb-inset, 0px));
+    transition: padding-bottom 150ms ease;
     gap: 20px;
   }
   .login-wrap .brand {

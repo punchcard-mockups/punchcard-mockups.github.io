@@ -4002,7 +4002,7 @@
       account: "Account",
       signedInAs: "Signed in as",
       addUser: "Add user",
-      manageEmployees: "Manage employees",
+      manageEmployees: "Manage users",
       editEmployee: "Edit employee",
       resetPassword: "Reset password",
       newPassword: "New password",
@@ -4114,7 +4114,7 @@
       account: "Cuenta",
       signedInAs: "Sesión iniciada como",
       addUser: "Agregar usuario",
-      manageEmployees: "Administrar empleados",
+      manageEmployees: "Administrar usuarios",
       editEmployee: "Editar empleado",
       resetPassword: "Restablecer contraseña",
       newPassword: "Nueva contraseña",
@@ -4725,20 +4725,6 @@
             ? el("div", {class: "user-menu-role"}, tr(roleKey))
             : null,
         ),
-        canManage(u)
-          ? el("button", {
-              class: "user-menu-add",
-              onclick: () => {
-                state.userMenuOpen = false;
-                state.modal = "addEmployee";
-                history.pushState({ modal: true }, "");
-                render();
-              },
-            },
-              ICON("addUser", 14),
-              el("span", {}, tr("addUser")),
-            )
-          : null,
         u?.role === "owner"
           ? el("button", {
               class: "user-menu-add",
@@ -5855,8 +5841,10 @@
       card.appendChild(el("div", {class:"field-label", style:"font-size:11px; font-weight:700; letter-spacing:.4px; text-transform:uppercase; color:var(--text-secondary); margin:2px 4px 6px;"}, tr("role")));
       card.appendChild(roleSel);
       card.appendChild(err);
+      // Add user is always opened from inside Manage users — Cancel/Save
+      // return the user to the list rather than closing the modal stack.
       card.appendChild(el("div", {class:"actions"},
-        el("button", {class:"btn", onclick: close}, tr("cancel")),
+        el("button", {class:"btn", onclick: () => { state.modal = "manageEmployees"; render(); }}, tr("cancel")),
         el("button", {class:"btn primary", onclick: async (ev) => {
           const name = nameIn.value.trim(), u = userIn.value.trim(), p = passIn.value;
           const role = roleSel.value;
@@ -5886,7 +5874,8 @@
             users.push(added);
             userById[added.id] = added;
             toast(state.lang === "es" ? "Usuario agregado" : "User added", {kind:"success", pill:"+"});
-            close();
+            state.modal = "manageEmployees";
+            render();
           } catch (e) {
             ev.currentTarget.disabled = false;
             err.textContent = e.message || (state.lang === "es" ? "No se pudo agregar" : "Couldn't add user");
@@ -6156,10 +6145,16 @@
       ));
     } else if (state.modal === "manageEmployees") {
       // Owner-only: list every user, offer per-row Edit / Reset password /
-      // Deactivate (or Reactivate) actions. Deactivated users are moved to a
-      // separate section at the bottom so the default view only shows people
-      // who can currently sign in.
-      card.appendChild(el("h3", {}, tr("manageEmployees")));
+      // Deactivate (or Reactivate) actions plus a top-right Add user button.
+      // Deactivated users are moved to a separate section at the bottom so
+      // the default view only shows people who can currently sign in.
+      card.appendChild(el("div", { style: "display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px;" },
+        el("h3", { style: "margin:0;" }, tr("manageEmployees")),
+        el("button", {
+          class: "btn primary",
+          onclick: () => { state.modal = "addEmployee"; render(); },
+        }, tr("addUser")),
+      ));
       const me = state.currentUser;
       const active = users.filter(u => u.active !== false);
       const inactive = users.filter(u => u.active === false);

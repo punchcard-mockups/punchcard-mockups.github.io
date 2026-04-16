@@ -4218,6 +4218,7 @@
     state.screen = screen;
     Object.assign(state, extra);
     state.lastAnim = 0;
+    history.pushState({ depth: state.nav.length }, "");
     render();
   }
   function navBack() {
@@ -4229,12 +4230,22 @@
     }
     render();
   }
+  window.addEventListener("popstate", () => {
+    if (state.modal) {
+      state.modal = null;
+      state.expandedApproval = null;
+      render();
+    } else if (state.nav.length) {
+      navBack();
+    }
+  });
   function login(u) {
     state.currentUser = u;
     state.nav = [];
     state.selectedDay = null;
     state.calYear = 2026; state.calMonth = 3;
     state.screen = isAdminLike(u) ? "admin_home" : "employee_home";
+    history.replaceState({ depth: 0 }, "");
     render();
   }
   function logout() {
@@ -4245,6 +4256,7 @@
     state.expandedApproval = null;
     state.expandedHistoryWeeks = null;
     state.clock = "idle"; state.clockIn = state.clockOut = null; state.clockInTz = state.clockOutTz = null; state.comment = "";
+    history.replaceState({ depth: 0 }, "");
     render();
   }
 
@@ -4579,6 +4591,7 @@
               onclick: () => {
                 state.userMenuOpen = false;
                 state.modal = "addEmployee";
+                history.pushState({ modal: true }, "");
                 render();
               },
             },
@@ -4652,7 +4665,7 @@
       if (totalPending === 0) return;
       root.appendChild(el("div", {
         class: "pinned-approvals",
-        onclick: () => { state.modal = "approvals"; render(); },
+        onclick: () => { state.modal = "approvals"; history.pushState({ modal: true }, ""); render(); },
       },
         el("div", {class: "icon"}, ICON("inbox")),
         el("div", {class: "body"},
@@ -5326,13 +5339,13 @@
       root.appendChild(el("button", {
         class:"sd-btn primary sd-btn-full",
         style: "margin-top:8px;",
-        onclick: () => { state.modal = "adminEditShift"; render(); },
+        onclick: () => { state.modal = "adminEditShift"; history.pushState({ modal: true }, ""); render(); },
       }, tr("adminEditTitle")));
     } else if (!editReq && isEmployee(u) && u.id === sh.empId && !weekIsLocked) {
       // Employee can request edit only if week isn't locked by approval.
       root.appendChild(el("button", {
         class:"sd-btn primary sd-btn-full",
-        onclick: () => { state.modal = "editShift"; render(); },
+        onclick: () => { state.modal = "editShift"; history.pushState({ modal: true }, ""); render(); },
       }, tr("requestEdit")));
     } else if (!editReq && isEmployee(u) && u.id === sh.empId && weekIsLocked) {
       // Approved-week lock notice.
@@ -5640,7 +5653,7 @@
     root.innerHTML = "";
     if (!state.modal) return;
 
-    const close = () => { state.modal = null; state.expandedApproval = null; render(); };
+    const close = () => { history.back(); };
     const card = el("div", {class:"modal-card"});
     const scrim = el("div", {
       class:"modal-scrim",

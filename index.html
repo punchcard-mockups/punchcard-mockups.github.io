@@ -1144,6 +1144,27 @@
     padding: 8px 10px;
     margin-bottom: 10px;
   }
+  /* Manage employees */
+  .modal-card .manage-list {
+    display: flex; flex-direction: column; gap: 8px;
+    margin-bottom: 12px;
+  }
+  .modal-card .manage-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: var(--surface-dark);
+  }
+  .modal-card .manage-row .left { flex: 1; min-width: 0; }
+  .modal-card .manage-row .name { font-weight: 700; color: var(--text-primary); }
+  .modal-card .manage-row .sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .modal-card .manage-row .actions { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+  .modal-card .manage-row .actions .btn { padding: 6px 10px; font-size: 11px; }
+  .modal-card .manage-section-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.4px;
+    text-transform: uppercase; color: var(--text-muted);
+    margin: 8px 0 6px;
+  }
 
   /* History screen */
   .hist-shift-card {
@@ -3759,6 +3780,10 @@
     decideEditRequest: (id, status)    => apiCall("POST", "/edit-requests", { action: "decide", id, status }),
     adminEdit:         (body)          => apiCall("POST", "/admin-edits",   body),
     createUser:        (body)          => apiCall("POST", "/users",         body),
+    updateUser:        (body)          => apiCall("POST", "/users/update",          body),
+    resetPassword:     (id, password)  => apiCall("POST", "/users/reset-password",  { id, password }),
+    deactivateUser:    (id)            => apiCall("POST", "/users/deactivate",      { id }),
+    reactivateUser:    (id)            => apiCall("POST", "/users/reactivate",      { id }),
   };
 
   // Present a Worker error as a user-facing toast. Network/5xx get a generic
@@ -3972,6 +3997,20 @@
       account: "Account",
       signedInAs: "Signed in as",
       addUser: "Add user",
+      manageEmployees: "Manage employees",
+      editEmployee: "Edit employee",
+      resetPassword: "Reset password",
+      newPassword: "New password",
+      deactivate: "Deactivate",
+      reactivate: "Reactivate",
+      deactivated: "Deactivated",
+      deactivateConfirmTitle: "Deactivate this employee?",
+      deactivateConfirmBody: (name) => `${name} will no longer be able to sign in. Past shifts and history stay in place. You can reactivate them later.`,
+      saveChanges: "Save changes",
+      passwordChanged: "Password updated",
+      userUpdated: "User updated",
+      userDeactivated: "User deactivated",
+      userReactivated: "User reactivated",
       role: "Role",
       employee: "Employee",
       needsAttention: "Needs your attention",
@@ -4070,6 +4109,20 @@
       account: "Cuenta",
       signedInAs: "Sesión iniciada como",
       addUser: "Agregar usuario",
+      manageEmployees: "Administrar empleados",
+      editEmployee: "Editar empleado",
+      resetPassword: "Restablecer contraseña",
+      newPassword: "Nueva contraseña",
+      deactivate: "Desactivar",
+      reactivate: "Reactivar",
+      deactivated: "Desactivado",
+      deactivateConfirmTitle: "¿Desactivar este empleado?",
+      deactivateConfirmBody: (name) => `${name} ya no podrá iniciar sesión. Los turnos y el historial se conservan. Puedes reactivarle después.`,
+      saveChanges: "Guardar cambios",
+      passwordChanged: "Contraseña actualizada",
+      userUpdated: "Usuario actualizado",
+      userDeactivated: "Usuario desactivado",
+      userReactivated: "Usuario reactivado",
       role: "Rol",
       employee: "Empleado",
       needsAttention: "Necesita tu atención",
@@ -4675,6 +4728,20 @@
             },
               ICON("addUser", 14),
               el("span", {}, tr("addUser")),
+            )
+          : null,
+        u?.role === "owner"
+          ? el("button", {
+              class: "user-menu-add",
+              onclick: () => {
+                state.userMenuOpen = false;
+                state.modal = "manageEmployees";
+                history.pushState({ modal: true }, "");
+                render();
+              },
+            },
+              ICON("addUser", 14),
+              el("span", {}, tr("manageEmployees")),
             )
           : null,
         el("button", {
@@ -6077,6 +6144,150 @@
             err.style.display = "block";
           }
         }}, tr("save")),
+      ));
+    } else if (state.modal === "manageEmployees") {
+      // Owner-only: list every user, offer per-row Edit / Reset password /
+      // Deactivate (or Reactivate) actions. Deactivated users are moved to a
+      // separate section at the bottom so the default view only shows people
+      // who can currently sign in.
+      card.appendChild(el("h3", {}, tr("manageEmployees")));
+      const me = state.currentUser;
+      const active = users.filter(u => u.active !== false);
+      const inactive = users.filter(u => u.active === false);
+      const rowFor = (u) => {
+        const isSelf = u.id === me.id;
+        const row = el("div", {class:"manage-row"},
+          el("div", {class:"left"},
+            el("div", {class:"name"}, u.displayName + (isSelf ? " (you)" : "")),
+            el("div", {class:"sub"}, `@${u.username} · ${tr(u.role)}`),
+          ),
+        );
+        const actions = el("div", {class:"actions"});
+        if (u.active !== false) {
+          actions.appendChild(el("button", {class:"btn", onclick: () => { state.manageTargetId = u.id; state.modal = "editEmployee"; render(); }}, tr("editEmployee")));
+          actions.appendChild(el("button", {class:"btn", onclick: () => { state.manageTargetId = u.id; state.modal = "resetPasswordUser"; render(); }}, tr("resetPassword")));
+          if (!isSelf) actions.appendChild(el("button", {class:"btn danger", onclick: () => { state.manageTargetId = u.id; state.modal = "confirmDeactivate"; render(); }}, tr("deactivate")));
+        } else {
+          actions.appendChild(el("button", {class:"btn primary", onclick: async (ev) => {
+            if (ev.currentTarget.disabled) return;
+            ev.currentTarget.disabled = true;
+            try {
+              await api.reactivateUser(u.id);
+              hydrateFromDb(await api.db());
+              toast(tr("userReactivated"), {kind:"success", pill:"✓"});
+              render();
+            } catch (e) {
+              ev.currentTarget.disabled = false;
+              toastApiError(e, state.lang === "es" ? "No se pudo reactivar" : "Couldn't reactivate");
+            }
+          }}, tr("reactivate")));
+        }
+        row.appendChild(actions);
+        return row;
+      };
+      const list = el("div", {class:"manage-list"});
+      for (const u of active) list.appendChild(rowFor(u));
+      card.appendChild(list);
+      if (inactive.length) {
+        card.appendChild(el("div", {class:"manage-section-label"}, tr("deactivated")));
+        const dlist = el("div", {class:"manage-list"});
+        for (const u of inactive) dlist.appendChild(rowFor(u));
+        card.appendChild(dlist);
+      }
+      card.appendChild(el("div", {class:"actions"},
+        el("button", {class:"btn", onclick: close}, tr("cancel")),
+      ));
+    } else if (state.modal === "editEmployee") {
+      const target = users.find(x => x.id === state.manageTargetId);
+      if (!target) { state.modal = "manageEmployees"; render(); return; }
+      const nameIn = el("input", { value: target.displayName });
+      const roleSel = el("select", {},
+        el("option", { value: "employee" }, tr("employee")),
+        el("option", { value: "admin" }, tr("admin")),
+        el("option", { value: "readonly" }, tr("readonly")),
+        el("option", { value: "owner" }, tr("owner")),
+      );
+      roleSel.value = target.role;
+      const isSelf = target.id === state.currentUser.id;
+      if (isSelf) roleSel.disabled = true;
+      const err = el("div", {class:"err", style:"display:none"});
+      const labelStyle = "font-size:11px; color:var(--text-muted); letter-spacing:0.4px; text-transform:uppercase; font-weight:700; display:block; margin-bottom:4px;";
+      card.appendChild(el("h3", {}, tr("editEmployee")));
+      card.appendChild(el("p", {style:"color:var(--text-muted); margin:-4px 0 10px;"}, `@${target.username}`));
+      card.appendChild(el("label", {style: labelStyle}, tr("fullName")));
+      card.appendChild(nameIn);
+      card.appendChild(el("label", {style: labelStyle}, tr("role")));
+      card.appendChild(roleSel);
+      card.appendChild(err);
+      card.appendChild(el("div", {class:"actions"},
+        el("button", {class:"btn", onclick: () => { state.modal = "manageEmployees"; render(); }}, tr("cancel")),
+        el("button", {class:"btn primary", onclick: async (ev) => {
+          if (ev.currentTarget.disabled) return;
+          ev.currentTarget.disabled = true;
+          const patch = { id: target.id, displayName: nameIn.value.trim() };
+          if (!isSelf) patch.role = roleSel.value;
+          try {
+            await api.updateUser(patch);
+            hydrateFromDb(await api.db());
+            toast(tr("userUpdated"), {kind:"success", pill:"✓"});
+            state.modal = "manageEmployees";
+            render();
+          } catch (e) {
+            ev.currentTarget.disabled = false;
+            err.textContent = e.message || (state.lang === "es" ? "No se pudo guardar" : "Couldn't save");
+            err.style.display = "block";
+          }
+        }}, tr("saveChanges")),
+      ));
+    } else if (state.modal === "resetPasswordUser") {
+      const target = users.find(x => x.id === state.manageTargetId);
+      if (!target) { state.modal = "manageEmployees"; render(); return; }
+      const passIn = el("input", { type: "password", placeholder: tr("newPassword"), autocapitalize:"off", autocorrect:"off", spellcheck:"false" });
+      const err = el("div", {class:"err", style:"display:none"});
+      card.appendChild(el("h3", {}, tr("resetPassword")));
+      card.appendChild(el("p", {style:"color:var(--text-muted); margin:-4px 0 10px;"}, `${target.displayName} (@${target.username})`));
+      card.appendChild(passIn);
+      card.appendChild(err);
+      card.appendChild(el("div", {class:"actions"},
+        el("button", {class:"btn", onclick: () => { state.modal = "manageEmployees"; render(); }}, tr("cancel")),
+        el("button", {class:"btn primary", onclick: async (ev) => {
+          const pw = passIn.value.trim();
+          if (!pw) { err.textContent = tr("passwordRequired") || (state.lang === "es" ? "Contraseña obligatoria" : "Password required"); err.style.display = "block"; return; }
+          if (ev.currentTarget.disabled) return;
+          ev.currentTarget.disabled = true;
+          try {
+            await api.resetPassword(target.id, pw);
+            toast(tr("passwordChanged"), {kind:"success", pill:"✓"});
+            state.modal = "manageEmployees";
+            render();
+          } catch (e) {
+            ev.currentTarget.disabled = false;
+            err.textContent = e.message || (state.lang === "es" ? "No se pudo cambiar" : "Couldn't update");
+            err.style.display = "block";
+          }
+        }}, tr("saveChanges")),
+      ));
+    } else if (state.modal === "confirmDeactivate") {
+      const target = users.find(x => x.id === state.manageTargetId);
+      if (!target) { state.modal = "manageEmployees"; render(); return; }
+      card.appendChild(el("h3", {}, tr("deactivateConfirmTitle")));
+      card.appendChild(el("p", {}, tr("deactivateConfirmBody")(target.displayName)));
+      card.appendChild(el("div", {class:"actions"},
+        el("button", {class:"btn", onclick: () => { state.modal = "manageEmployees"; render(); }}, tr("cancel")),
+        el("button", {class:"btn danger", onclick: async (ev) => {
+          if (ev.currentTarget.disabled) return;
+          ev.currentTarget.disabled = true;
+          try {
+            await api.deactivateUser(target.id);
+            hydrateFromDb(await api.db());
+            toast(tr("userDeactivated"), {kind:"success", pill:"✓"});
+            state.modal = "manageEmployees";
+            render();
+          } catch (e) {
+            ev.currentTarget.disabled = false;
+            toastApiError(e, state.lang === "es" ? "No se pudo desactivar" : "Couldn't deactivate");
+          }
+        }}, tr("deactivate")),
       ));
     }
 

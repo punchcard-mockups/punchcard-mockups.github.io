@@ -6271,7 +6271,7 @@
       const target = users.find(x => x.id === state.manageTargetId);
       if (!target) { state.modal = "manageEmployees"; render(); return; }
       card.appendChild(el("h3", {}, tr("deactivateConfirmTitle")));
-      card.appendChild(el("p", {}, tr("deactivateConfirmBody")(target.displayName)));
+      card.appendChild(el("p", {}, tr("deactivateConfirmBody", target.displayName)));
       card.appendChild(el("div", {class:"actions"},
         el("button", {class:"btn", onclick: () => { state.modal = "manageEmployees"; render(); }}, tr("cancel")),
         el("button", {class:"btn danger", onclick: async (ev) => {

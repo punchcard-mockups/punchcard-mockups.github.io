@@ -3706,22 +3706,30 @@
   // =============================================================
   //
   // All runtime writes are persisted there (one commit per write into the
-  // private punchcard-data repo). CORS on the Worker allows this origin only;
-  // session is an HttpOnly cookie set by POST /login, so every request must
-  // carry credentials: "include".
+  // private punchcard-data repo). The Worker is on a different eTLD+1
+  // (workers.dev) from the page (github.io), so cross-site SameSite=None
+  // cookies get silently dropped by iOS Safari ITP. Session is therefore a
+  // bearer token in localStorage, sent in the Authorization header.
   const API_BASE = "https://app.punchcard-api.workers.dev";
+  const TOKEN_KEY = "pc_token";
+
+  function getToken() { try { return localStorage.getItem(TOKEN_KEY); } catch { return null; } }
+  function setToken(t) { try { t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY); } catch {} }
 
   class ApiError extends Error {
     constructor(status, message) { super(message); this.status = status; }
   }
 
   async function apiCall(method, path, body) {
+    const headers = {};
+    if (body !== undefined) headers["Content-Type"] = "application/json";
+    const token = getToken();
+    if (token) headers["Authorization"] = `Bearer ${token}`;
     let res;
     try {
       res = await fetch(API_BASE + path, {
         method,
-        credentials: "include",
-        headers: body !== undefined ? { "Content-Type": "application/json" } : undefined,
+        headers,
         body: body !== undefined ? JSON.stringify(body) : undefined,
       });
     } catch (e) {
@@ -3731,6 +3739,7 @@
     if (res.status === 401) {
       // Session expired or never existed. If we thought we were logged in,
       // drop to the login screen; otherwise (pre-login /me probe) just bubble.
+      setToken(null);
       if (state.currentUser) logout();
       throw new ApiError(401, data.error || "unauthenticated");
     }
@@ -4312,10 +4321,12 @@
     render();
   }
   function logout() {
-    // Fire-and-forget the Worker /logout — clearing local state is what matters
-    // for UX. Server-side cookie expiry + HMAC key rotation are the security
-    // guarantees; a failed POST here is fine.
+    // Fire-and-forget the Worker /logout — clearing local state + the stored
+    // bearer token is what matters for UX. Token rotation on the server (via
+    // SESSION_SECRET) is the real security guarantee; a failed POST here is
+    // fine.
     api.logout().catch(() => {});
+    setToken(null);
     state.currentUser = null;
     state.screen = "login";
     state.nav = [];
@@ -4775,7 +4786,8 @@
       if (goBtn.disabled) return;
       goBtn.disabled = true;
       try {
-        const { user } = await api.login(username, password);
+        const { user, token } = await api.login(username, password);
+        setToken(token);
         const dbResp = await api.db();
         hydrateFromDb(dbResp);
         login(user);

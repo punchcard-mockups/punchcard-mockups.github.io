@@ -4799,25 +4799,6 @@
     const form = el("form", {class:"login-form", onsubmit: (e) => { e.preventDefault(); attempt(userIn.value.trim(), passIn.value); }},
       userIn, passIn, goBtn);
 
-    const demo = el("div", {class:"demo-accounts"},
-      el("div", {class:"demo-title"}, state.lang === "es" ? "Cuentas de demostración" : "Demo accounts"),
-    );
-    [
-      { u:"alee",   p:"1234", label: s.owner,    kind:"owner" },
-      { u:"admin2", p:"1234", label: s.admin,    kind:"admin" },
-      { u:"acct1",  p:"1234", label: s.readonly, kind:"readonly" },
-      { u:"maria",  p:"1234", label: "Maria R.", kind:"emp" },
-      { u:"jose",   p:"1234", label: "Jose A.",  kind:"emp" },
-    ].forEach(({u,p,label,kind}) => {
-      demo.appendChild(el("button", {
-        class:"demo-chip",
-        onclick: (e) => { e.preventDefault(); attempt(u, p); }
-      },
-        el("span", {html: `<b>${u}</b> / ${p}`}),
-        el("span", {class:`tag ${kind}`}, label),
-      ));
-    });
-
     const langRow = el("div", {style:"display:flex; justify-content:flex-end; width:100%;"},
       langToggle()
     );
@@ -4827,7 +4808,6 @@
       el("div", {class:"brand"}, s.appName.slice(0,5), el("span", {class:"accent"}, s.appName.slice(5))),
       el("div", {class:"tag"}, s.tagline),
       form,
-      demo,
     ));
   }
 

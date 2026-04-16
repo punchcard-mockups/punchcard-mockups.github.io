@@ -4707,7 +4707,10 @@
       onclick: (e) => {
         e.stopPropagation();
         state.userMenuOpen = !state.userMenuOpen;
-        render();
+        // Just re-render the topbar — a full render() replays the
+        // screen-enter transition on the main content, which reads like a
+        // page flash every time you open the menu.
+        renderTopbar();
       },
     }, ICON("user"));
     if (state.userMenuOpen) {
@@ -6336,7 +6339,7 @@
   document.addEventListener("click", () => {
     if (state.userMenuOpen) {
       state.userMenuOpen = false;
-      render();
+      renderTopbar();
     }
   });
 

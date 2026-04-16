@@ -4134,8 +4134,7 @@
     return d.toISOString().slice(0, 10);
   }
   function thisWeekStart() {
-    // Pretend today is April 13, 2026 so the demo makes sense
-    return weekStartOf("2026-04-13");
+    return weekStartOf(isoDate(new Date()));
   }
   function shiftsForWeek(empId, weekStartStr) {
     const start = new Date(weekStartStr + "T00:00:00");
@@ -4269,7 +4268,7 @@
     // Calendar runs Mon–Sun: shift getDay() so Monday = 0, Sunday = 6.
     const startOffset = (firstOfMonth.getDay() + 6) % 7;
     const data = dataByDay(state.calYear, state.calMonth, scopeEmpId);
-    const today = new Date(2026, 3, 13); // fixed "today" for demo
+    const today = new Date();
 
     const dowKey = state.lang === "es"
       ? ["L","M","M","J","V","S","D"]
@@ -4751,9 +4750,9 @@
     }
 
     // Today's date + Clock-in (primary action, at the top)
-    const todayLabel = new Date(2026, 3, 13).toLocaleDateString(locale(),
+    const todayLabel = new Date().toLocaleDateString(locale(),
       { weekday:"long", month:"long", day:"numeric" }).replace(/^./, c => c.toUpperCase());
-    root.appendChild(el("div", {style:"text-align:center; font-size:12px; color:var(--text-secondary); letter-spacing:.4px; text-transform:uppercase; font-weight:700; margin-top:4px;"}, `${tr("today")} · ${todayLabel}`));
+    root.appendChild(el("div", {style:"text-align:center; font-size:16px; color:var(--text-secondary); letter-spacing:.4px; text-transform:uppercase; font-weight:700; margin-top:4px;"}, `${tr("today")} · ${todayLabel}`));
     root.appendChild(el("div", {style:"height:12px"}));
     root.appendChild(clockSection());
 

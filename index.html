@@ -2762,6 +2762,10 @@
     comment: "",
     // modals
     modal: null,        // "addEmployee" | "approvals" | "submitWeek"
+    // When a modal opens on top of another (e.g. "Edit shift" from inside
+    // shiftDetail), the outer modal is pushed onto this stack so popstate
+    // can restore it instead of nuking the whole stack.
+    modalStack: [],
     // drill-in: "empId:weekStart" of approval row currently expanded in approvals modal
     expandedApproval: null,
     // key of the approval row currently in rejection-reason entry mode
@@ -3252,7 +3256,6 @@
       weekRejectedToast: "Week sent back for edits",
       viewHistory: "View history",
       totalHrs: "Total hours",
-      shiftDetailTitle: "Shift detail",
       requestEdit: "Request edit",
       editShiftTitle: "Edit shift",
       requestEditTitle: "Request shift change",
@@ -3397,7 +3400,6 @@
       weekRejectedToast: "Semana devuelta para corregir",
       viewHistory: "Ver historial",
       totalHrs: "Horas totales",
-      shiftDetailTitle: "Detalle del turno",
       requestEdit: "Solicitar cambio",
       editShiftTitle: "Editar turno",
       requestEditTitle: "Solicitar cambio de turno",
@@ -3703,9 +3705,28 @@
     state.navDir = -1;
     render();
   }
+  function openModal(name, extras = {}) {
+    if (state.modal) {
+      state.modalStack.push({
+        modal: state.modal,
+        viewingShiftId: state.viewingShiftId,
+        viewingEmployeeId: state.viewingEmployeeId,
+        manageTargetId: state.manageTargetId,
+      });
+    }
+    state.modal = name;
+    Object.assign(state, extras);
+    history.pushState({ modal: true }, "");
+    render();
+  }
   window.addEventListener("popstate", () => {
     if (state.modal) {
-      state.modal = null;
+      if (state.modalStack.length) {
+        const prev = state.modalStack.pop();
+        Object.assign(state, prev);
+      } else {
+        state.modal = null;
+      }
       state.expandedApproval = null;
       render();
     } else if (state.nav.length) {
@@ -3735,6 +3756,7 @@
     state.screen = "login";
     state.nav = [];
     state.modal = null;
+    state.modalStack = [];
     state.expandedApproval = null;
     state.expandedHistoryWeeks = null;
     state.clock = "idle"; state.clockIn = state.clockOut = null; state.clockInTz = state.clockOutTz = null; state.comment = "";
@@ -3928,7 +3950,7 @@
         t.appendChild(el("div", {
           class:"trow",
           style:"cursor:pointer; touch-action:manipulation;",
-          onclick: () => navTo("shift_detail", { viewingShiftId: sh.id }),
+          onclick: () => openModal("shiftDetail", { viewingShiftId: sh.id }),
         },
           el("span", {class:"nm", style:`color:${emp.color}`},
             el("span", {class:"sw", style:`background:${emp.color}`}),
@@ -3984,8 +4006,6 @@
     if (state.screen === "admin_employee") {
       const emp = userById[state.viewingEmployeeId];
       root.appendChild(el("div", {class:"title"}, emp?.displayName || ""));
-    } else if (state.screen === "shift_detail") {
-      root.appendChild(el("div", {class:"title"}, tr("shiftDetailTitle")));
     } else {
       root.appendChild(el("div", {class:"title"}, ""));
     }
@@ -4066,8 +4086,9 @@
   // Bottom bar: tab bar for the role's root screens.
   //   Employee  → Home / History
   //   Admin/Owner/Readonly → Today (admin_home) / Roster / Inbox (badge=count)
-  // Drill-in screens (admin_employee, shift_detail) hide the bar so the user
-  // sees a back-arrow + content only.
+  // Drill-in screens (admin_employee, manage_users, edit_user) hide the
+  // bar so the user sees a back-arrow + content only. Shift detail is a
+  // bottom sheet, not a screen — the bar stays visible underneath it.
   function renderBottomBar() {
     const root = document.getElementById("bottomBarRoot");
     root.innerHTML = "";
@@ -4577,16 +4598,7 @@
       const hrsCls = sh.hours < 9 ? "h warn" : "h ok";
       const drow = el("div", {
         class: "drow tappable",
-        onclick: () => {
-          // Close any open modal (e.g. the weekly approvals sheet) before
-          // routing, otherwise shift-detail renders under the scrim.
-          if (state.modal) {
-            state.modal = null;
-            state.expandedApproval = null;
-            state.rejectingApproval = null;
-          }
-          navTo("shift_detail", { viewingShiftId: sh.id });
-        },
+        onclick: () => openModal("shiftDetail", { viewingShiftId: sh.id }),
       },
         el("div", {class:"d"}, fmtDateWD(sh.date)),
         el("div", {class:"t"},
@@ -5182,9 +5194,8 @@
   }
 
   // --- Shift detail screen ---
-  function renderShiftDetail() {
-    const root = document.getElementById("scrollRoot");
-    root.innerHTML = "";
+  function renderShiftDetail(rootEl) {
+    const root = rootEl;
     const sh = shifts.find(s => s.id === state.viewingShiftId);
     if (!sh) {
       root.appendChild(el("div", {style:"text-align:center; padding:40px; color:var(--text-muted);"}, "Shift not found"));
@@ -5327,7 +5338,7 @@
       root.appendChild(el("button", {
         class:"btn primary full",
         style: "margin-top:8px;",
-        onclick: () => { state.modal = "adminEditShift"; history.pushState({ modal: true }, ""); render(); },
+        onclick: () => openModal("adminEditShift"),
       }, tr("adminEditTitle")));
     } else if (!editReq && isEmployee(u) && u.id === sh.empId && !weekIsLocked) {
       // Employee actions on own shift in an active (not yet submitted,
@@ -5341,13 +5352,13 @@
         root.appendChild(el("button", {
           class:"btn full",
           style: "margin-top:8px;",
-          onclick: () => { state.modal = "editShiftComment"; history.pushState({ modal: true }, ""); render(); },
+          onclick: () => openModal("editShiftComment"),
         }, sh.comment ? tr("editShiftCommentAction") : tr("addNoteAction")));
       }
       root.appendChild(el("button", {
         class:"btn primary full",
         style: "margin-top:8px;",
-        onclick: () => { state.modal = "editShift"; history.pushState({ modal: true }, ""); render(); },
+        onclick: () => openModal("editShift"),
       }, tr("requestEdit")));
     } else if (!editReq && isEmployee(u) && u.id === sh.empId && weekIsLocked) {
       // Approved-week lock notice.
@@ -5394,7 +5405,7 @@
     return el("div", {
       class: `hist-shift-card ${editedN > 0 ? "edited" : ""}`,
       style:"cursor:pointer",
-      onclick: () => navTo("shift_detail", { viewingShiftId: sh.id }),
+      onclick: () => openModal("shiftDetail", { viewingShiftId: sh.id }),
     },
       el("div", {class:"top"},
         el("div", {class:"left"},
@@ -5709,6 +5720,13 @@
       state.modal = null;
       navTab("inbox");
       return;
+    } else if (state.modal === "shiftDetail") {
+      // A bottom-sheet variant of the old full-screen shift detail. The
+      // internal layout (header with avatar + hours, time rows, map, audit
+      // log, action buttons) is identical — we just render it into the
+      // modal card instead of scrollRoot. `renderShiftDetail` itself closes
+      // the sheet if the target shift has vanished.
+      renderShiftDetail(card);
     } else if (state.modal === "addShift") {
       const emp = userById[state.viewingEmployeeId];
       if (!emp) { close(); return; }
@@ -6043,8 +6061,6 @@
       renderInbox();
     } else if (state.screen === "admin_employee") {
       renderAdminEmployee();
-    } else if (state.screen === "shift_detail") {
-      renderShiftDetail();
     } else if (state.screen === "manage_users") {
       renderManageUsers();
     } else if (state.screen === "edit_user") {

@@ -2470,14 +2470,10 @@
   .week-card .wc-status.pending     { color: var(--accent-amber); }
   .week-card .wc-status.approved    { color: var(--accent-green); }
   .week-card .wc-status.rejected    { color: var(--accent-red-light, #fca5a5); }
-  /* Filled amber pseudo-status for past unsubmitted weeks. Filled (not just
-     outlined like the other statuses) so it reads as actionable at a glance
-     — this is the one the user has to do something about. */
-  .week-card .wc-status.unsubmitted {
-    color: var(--t-bg);
-    background: var(--accent-amber);
-    border-color: var(--accent-amber);
-  }
+  /* Pseudo-status for past unsubmitted weeks. Same outlined treatment as the
+     other status pills — color comes from the base .wc-status rule, this
+     just picks the hue. */
+  .week-card .wc-status.unsubmitted { color: var(--accent-amber); }
   /* Reused from .hist-week-head for Reopen menu — same affordance pattern. */
   .week-card .wc-status.has-menu {
     position: relative;

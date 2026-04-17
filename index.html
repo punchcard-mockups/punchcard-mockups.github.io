@@ -1114,7 +1114,7 @@
       max-width: 100%;
       /* `dvh` tracks the *visible* viewport height on iOS Safari — so the
          sheet can't extend under the URL bar the way `88vh` allowed. */
-      max-height: calc(88dvh - var(--kb-inset, 0px));
+      max-height: calc(80dvh - var(--kb-inset, 0px));
       border-radius: 22px 22px 0 0;
       padding-bottom: max(22px, calc(env(safe-area-inset-bottom) + 12px));
       animation: sheet-in 260ms cubic-bezier(.2,.8,.2,1) both;
@@ -5935,7 +5935,10 @@
               class:"top expandable",
               onclick: () => {
                 state.expandedApproval = isExpanded ? null : key;
-                render();
+                // Only rebuild the modal — a full render() also wipes and
+                // rebuilds scrollRoot behind the (translucent) scrim, and
+                // the brief blank frame flashes through as a bounce.
+                renderModal();
               },
             },
               el("div", {class:"who", style:`color:${emp.color}`}, emp.displayName),
@@ -6241,9 +6244,6 @@
         for (const u of inactive) dlist.appendChild(rowFor(u));
         card.appendChild(dlist);
       }
-      card.appendChild(el("div", {class:"actions"},
-        el("button", {class:"btn", onclick: close}, tr("cancel")),
-      ));
     } else if (state.modal === "editEmployee") {
       const target = users.find(x => x.id === state.manageTargetId);
       if (!target) { state.modal = "manageEmployees"; render(); return; }

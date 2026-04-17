@@ -2406,12 +2406,12 @@
     transition: background 150ms ease;
   }
   .week-card.urgent {
-    border: 1px solid rgba(245,158,11,.5);
-    background: color-mix(in oklab, var(--accent-amber) 5%, var(--surface-dark));
+    border: 1.5px solid var(--accent-amber);
+    background: color-mix(in oklab, var(--accent-amber) 9%, var(--surface-dark));
   }
   .week-card.rejected {
-    border: 1px solid rgba(239,68,68,.45);
-    background: color-mix(in oklab, var(--accent-red) 4%, var(--surface-dark));
+    border: 1.5px solid var(--accent-red);
+    background: color-mix(in oklab, var(--accent-red) 8%, var(--surface-dark));
   }
   .week-card .wc-head {
     display: flex; align-items: center; justify-content: space-between;
@@ -2467,9 +2467,17 @@
     background: transparent;
     border: 1px solid currentColor;
   }
-  .week-card .wc-status.pending  { color: var(--accent-amber); }
-  .week-card .wc-status.approved { color: var(--accent-green); }
-  .week-card .wc-status.rejected { color: var(--accent-red-light, #fca5a5); }
+  .week-card .wc-status.pending     { color: var(--accent-amber); }
+  .week-card .wc-status.approved    { color: var(--accent-green); }
+  .week-card .wc-status.rejected    { color: var(--accent-red-light, #fca5a5); }
+  /* Filled amber pseudo-status for past unsubmitted weeks. Filled (not just
+     outlined like the other statuses) so it reads as actionable at a glance
+     — this is the one the user has to do something about. */
+  .week-card .wc-status.unsubmitted {
+    color: var(--t-bg);
+    background: var(--accent-amber);
+    border-color: var(--accent-amber);
+  }
   /* Reused from .hist-week-head for Reopen menu — same affordance pattern. */
   .week-card .wc-status.has-menu {
     position: relative;
@@ -3310,6 +3318,7 @@
       inboxNothing: "Nothing pending — all caught up.",
       manageUsersTitle: "Manage users",
       backToManage: "All users",
+      weekUnsubmitted: "Unsubmitted",
     },
     es: {
       appName: "PunchCard",
@@ -3454,6 +3463,7 @@
       inboxNothing: "Nada pendiente — todo al día.",
       manageUsersTitle: "Administrar usuarios",
       backToManage: "Todos los usuarios",
+      weekUnsubmitted: "Sin enviar",
     },
   };
   function tr(k, ...args) {
@@ -4273,7 +4283,16 @@
 
     // ---- right side: hours + optional status pill + chevron ----
     const right = el("div", {class:"wc-right"});
-    if (status) {
+    // Past unsubmitted weeks get a filled amber "Unsubmitted" pseudo-pill
+    // wherever they appear (history + home-past). Same visual slot as the
+    // other status pills, so the eye learns "right side = state of this
+    // week" — there's never an empty/ambiguous past row.
+    const showUnsubmittedPill = !status
+      && isPastWeek
+      && (mode === "history" || mode === "home-past");
+    if (showUnsubmittedPill) {
+      right.appendChild(el("span", {class:"wc-status unsubmitted"}, tr("weekUnsubmitted")));
+    } else if (status) {
       const label = status === "approved" ? tr("weekApproved")
                   : status === "rejected" ? tr("weekRejected")
                   : tr("weekPending");

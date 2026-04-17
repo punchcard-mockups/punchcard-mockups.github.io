@@ -1247,33 +1247,36 @@
     font-variant-numeric: tabular-nums;
     font-weight: 600;
   }
-  /* Each week is wrapped in .week-group — week status is communicated by
-     the .w-status pill in the header, not a colored side rail. */
+  /* Each week is a substantial card (Manage-Users pattern): rounded,
+     surface-dark background, fat padding. The whole header row is the
+     tap target; expanded shifts render INSIDE the card so the week
+     reads as a single visual unit. Status comes from the .w-status pill. */
   .week-group {
-    margin-top: 18px;
+    margin-top: 12px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: var(--surface-dark);
   }
   .hist-week-head {
     display: flex; align-items: center; justify-content: space-between;
-    gap: 8px;
-    padding: 8px 10px;
-    background: var(--surface-dark);
-    border-radius: 10px;
+    gap: 10px;
   }
   .hist-week-head .w-title {
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.4px;
-    text-transform: uppercase;
+    font-family: var(--tf-display);
+    font-weight: 400;
+    font-size: var(--fs-lg);
+    letter-spacing: -0.2px;
     color: var(--text-primary);
     font-variant-numeric: tabular-nums;
   }
   .hist-week-head .w-right {
-    display: flex; align-items: center; gap: 8px;
+    display: flex; align-items: center; gap: 10px;
   }
   .hist-week-head .w-hrs {
-    font-size: 12px;
+    font-family: var(--tf-mono);
+    font-size: var(--fs-sm);
     font-weight: 700;
-    color: var(--accent-blue-bright);
+    color: var(--text-primary);
     font-variant-numeric: tabular-nums;
   }
   .hist-week-head .w-status {
@@ -1337,8 +1340,21 @@
     .w-status-menu-item:hover { background: var(--surface-dark); }
   }
   /* Shift cards inside an expanded week sit slightly inset from the rail */
-  .week-group .hist-shift-card { margin-top: 8px; }
-  .week-group .hist-shift-card:first-of-type { margin-top: 10px; }
+  /* Shifts inside an expanded week card sit below a dashed separator.
+     First shift gets the separator; subsequent shifts get a lighter
+     inter-shift rule so the week reads as one unit. */
+  .week-group .hist-shift-card {
+    margin-top: 0;
+    padding: 12px 0;
+    background: transparent;
+    border-bottom: 1px dotted var(--outline-soft);
+  }
+  .week-group .hist-shift-card:first-of-type {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--outline-soft);
+  }
+  .week-group .hist-shift-card:last-of-type { border-bottom: 0; padding-bottom: 0; }
 
   /* Map */
   /* Compact thumbnail variant for the clock-in/out card: shorter, no legend,
@@ -1752,12 +1768,8 @@
     border-radius: 12px 12px 0 0;
   }
   .approval-row .top.expandable:hover { background: rgba(255,255,255,.04); }
-  .hist-week-head.expandable {
-    padding: 4px 6px;
-    margin: 14px -2px 0;
-    border-radius: 8px;
-  }
-  .hist-week-head.expandable:hover { background: rgba(0,0,0,.03); }
+  /* The week card itself provides padding; the header just stretches
+     across it and lifts the cursor to hint tappability. */
   .approval-row .total { display: flex; align-items: center; gap: 8px; }
   .chevron {
     font-size: 10px; color: var(--text-muted);
@@ -2698,6 +2710,7 @@
       addShiftReasonRequired: "A reason is required — this add will be logged.",
       shiftAdded: "Shift added",
       date: "Date",
+      timezone: "Timezone",
       editCommentRequired: "A comment explaining the edit is required",
       editSubmitted: "Edit request sent for approval",
       editPending: "Edit request pending",
@@ -2829,6 +2842,7 @@
       addShiftReasonRequired: "Se requiere una explicación — este añadido quedará registrado.",
       shiftAdded: "Turno añadido",
       date: "Fecha",
+      timezone: "Zona horaria",
       editCommentRequired: "Se requiere un comentario explicando el cambio",
       editSubmitted: "Solicitud enviada",
       editPending: "Cambio pendiente",
@@ -4881,6 +4895,33 @@
       const emp = userById[state.viewingEmployeeId];
       if (!emp) { close(); return; }
       const todayStr = new Date().toISOString().slice(0, 10);
+      // Default the shift's timezone to this employee's most-recent shift
+      // (hospice nurses work in Peru; admin may be elsewhere). Fall back to
+      // admin's current zone if the employee has no prior shifts on file.
+      const recentShift = shifts
+        .filter(s => s.empId === emp.id && s.clockInTz)
+        .sort((a, b) => b.date.localeCompare(a.date) || b.start.localeCompare(a.start))[0];
+      const defaultTz = recentShift?.clockInTz || currentTimezone() || "America/Lima";
+      const tzOptions = [
+        { value: "America/Lima",        label: "Peru (PET)" },
+        { value: "America/New_York",    label: "US Eastern (EDT/EST)" },
+        { value: "America/Chicago",     label: "US Central (CDT/CST)" },
+        { value: "America/Denver",      label: "US Mountain (MDT/MST)" },
+        { value: "America/Los_Angeles", label: "US Pacific (PDT/PST)" },
+      ];
+      // If the admin's current zone isn't in the preset list, prepend it.
+      const adminTz = currentTimezone();
+      if (adminTz && !tzOptions.some(o => o.value === adminTz)) {
+        tzOptions.unshift({ value: adminTz, label: adminTz });
+      }
+      // If the defaultTz isn't already in the list, prepend it.
+      if (defaultTz && !tzOptions.some(o => o.value === defaultTz)) {
+        tzOptions.unshift({ value: defaultTz, label: defaultTz });
+      }
+      const tzIn = el("select", {},
+        ...tzOptions.map(o => el("option", { value: o.value }, o.label)),
+      );
+      tzIn.value = defaultTz;
       const dateIn  = el("input", { type: "date", value: todayStr });
       const startIn = el("input", { type: "time", value: "08:00" });
       const endIn   = el("input", { type: "time", value: "17:00" });
@@ -4891,6 +4932,8 @@
       card.appendChild(el("p", {style:"color:var(--text-muted); margin:-4px 0 10px;"}, emp.displayName));
       card.appendChild(el("label", {class:"field-label"}, tr("date")));
       card.appendChild(dateIn);
+      card.appendChild(el("label", {class:"field-label"}, tr("timezone")));
+      card.appendChild(tzIn);
       card.appendChild(el("label", {class:"field-label"}, tr("start")));
       card.appendChild(startIn);
       card.appendChild(el("label", {class:"field-label"}, tr("end")));
@@ -4929,6 +4972,8 @@
           try {
             const { shift } = await api.adminAddShift({
               empId: emp.id, date, start, end, hours,
+              clockInTz: tzIn.value || null,
+              clockOutTz: tzIn.value || null,
               comment: noteIn.value.trim(),
               reason,
             });

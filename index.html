@@ -4079,32 +4079,15 @@
       return node;
     };
 
-    // Employee: Home / History tabs. Optional unsigned-weeks nudge above
-    // the bar — taps scroll to the past-weeks section on Home.
+    // Employee: Home / History tabs. The History tab carries a badge
+    // with the count of unsubmitted/rejected past weeks — same pattern
+    // as the admin Inbox badge. Past weeks themselves live in History;
+    // the badge is the affordance that pulls users there.
     if (isEmployee(u) && (state.screen === "employee_home" || state.screen === "history")) {
       const unsignedCount = unsignedPastWeeks(u.id).length;
-      if (unsignedCount > 0) {
-        root.appendChild(el("div", {
-          class: "pinned-approvals",
-          onclick: () => {
-            if (state.screen !== "employee_home") navTab("employee_home");
-            requestAnimationFrame(() => {
-              const target = document.getElementById("past-weeks-section");
-              if (target) target.scrollIntoView({behavior: "smooth", block: "start"});
-            });
-          },
-        },
-          el("div", {class: "icon"}, ICON("inbox")),
-          el("div", {class: "body"},
-            el("div", {class: "title"}, tr("needsAttention")),
-            el("div", {class: "meta"}, tr("unsubmittedBanner", unsignedCount)),
-          ),
-          el("div", {class: "chev"}, ICON("chevRight")),
-        ));
-      }
       root.appendChild(el("div", {class: "tabbar"},
         tab("home", "home", "employee_home"),
-        tab("history", "history", "history"),
+        tab("history", "history", "history", unsignedCount),
       ));
       return;
     }
@@ -4203,17 +4186,14 @@
     root.appendChild(el("div", {class:"today-label"}, `${tr("today")} · ${todayLabel}`));
     root.appendChild(el("div", {style:"height:12px"}));
 
-    // Always: Clock In → Current week → Previous weeks. Order is fixed
-    // regardless of week state so the clock button doesn't visually jump
-    // when the week transitions from unsigned → pending → approved. The
-    // WeekRow's own footer (lock notice / Pull Back) handles the locked
-    // states without needing to reorder anything around it.
+    // Always: Clock In → Current week. Past weeks live on the History
+    // tab now (with their own urgent styling + rejection notice + Submit
+    // footer), so they don't get duplicated here. The History tab carries
+    // a numeric badge with the count of unsubmitted/rejected past weeks
+    // — that's the affordance that pulls users over.
     root.appendChild(clockSection());
     root.appendChild(el("div", {class:"signoff-label", style:"margin-top:14px"}, tr("weeklySignoff")));
     root.appendChild(weekSignoffCard());
-
-    const pastSection = pastWeeksSignoffSection();
-    if (pastSection) root.appendChild(pastSection);
 
     root.appendChild(el("div", {style:"height:40px"}));
   }
@@ -4271,8 +4251,13 @@
     }
 
     // ---- card classes ----
+    // Urgent/rejected styling applies wherever a past, unsubmitted-or-
+    // rejected week appears — home-past AND history. Drives the colored
+    // border so the eye lands on the weeks that need action first.
     const classes = ["week-card", "week-rollup"];
-    if (mode === "home-past") {
+    const isPastWeek = weekStart < thisWeekStart();
+    const needsAction = !status || status === "rejected";
+    if (mode === "home-past" || (mode === "history" && isPastWeek && needsAction)) {
       classes.push(rejectionComment ? "rejected" : "urgent");
     }
 
@@ -4356,8 +4341,10 @@
       card.appendChild(el("div", {class:"wc-attest"}, tr("signoffAttest")));
     }
 
-    // rejection notice (employee sees admin's reason)
-    if (rejectionComment && (mode === "home-current" || mode === "home-past")) {
+    // rejection notice (employee sees admin's reason). Visible everywhere
+    // except inbox (where the admin already sees the week and chose to
+    // reject — they don't need their own reason echoed back).
+    if (rejectionComment && mode !== "inbox") {
       card.appendChild(el("div", {style:"margin-top:10px"}, rejectionNotice(rejectionComment)));
     }
 
@@ -4420,9 +4407,23 @@
       );
     }
 
+    // History mode: a past unsubmitted/rejected week shown to its owning
+    // employee gets the same Submit/Resubmit footer that home-past used to
+    // show. Admins viewing the same row get no footer — they shouldn't be
+    // submitting on the employee's behalf from this surface (they have
+    // admin-edit and add-shift for that). Implemented by treating it as a
+    // home-past mode for the subsequent generic block.
+    let effectiveMode = mode;
+    if (mode === "history"
+        && weekStart < thisWeekStart()
+        && (!status || status === "rejected")
+        && isEmployee(u) && empId === u.id) {
+      effectiveMode = "home-past";
+    }
+
     // Unsigned current or past week (or rejected — same Submit affordance):
     // Submit / Resubmit. Disabled if user is currently clocked in.
-    if ((mode === "home-current" || mode === "home-past")
+    if ((effectiveMode === "home-current" || effectiveMode === "home-past")
         && (!status || status === "rejected")) {
       const openShift = state.clock === "in";
       const label = status === "rejected" ? tr("resubmit") : tr("submitWeek");

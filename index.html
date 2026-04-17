@@ -44,7 +44,7 @@
     --fs-lg:   18px;  /* small section titles */
     --fs-xl:   22px;  /* screen section headers (.section-header h3) */
     --fs-2xl:  28px;  /* modal titles */
-    --fs-3xl:  34px;  /* greeting, info-card metric values */
+    --fs-3xl:  34px;  /* greeting display */
     --fs-display: 52px; /* login brand only */
 
     /* Spacing scale — 4px base. */
@@ -408,56 +408,6 @@
     grid-column: 1 / -1;
     font-size: 11px; color: var(--text-secondary);
     font-style: italic; margin-top: 2px; opacity: .8;
-  }
-
-  /* Info card — flattened, ruled */
-  .info-card {
-    background: transparent;
-    border-top: 1.5px solid var(--text-primary);
-    border-bottom: 1px solid var(--outline-soft);
-    padding: 18px 2px 14px;
-    margin-top: 12px;
-  }
-  .info-card.clickable { cursor: pointer; transition: background 150ms ease; }
-  .info-card.clickable:hover { background: var(--surface-card-hi); }
-  .info-card .row {
-    display: flex; justify-content: space-evenly; gap: 8px;
-  }
-  .info-card .stat {
-    display: flex; flex-direction: column; align-items: center; gap: 2px;
-  }
-  /* Stats are informational, not actions — keep all neutral ink. */
-  .info-card .stat .value {
-    font-family: var(--tf-mono);
-    font-size: 34px;
-    font-weight: 400;
-    letter-spacing: -0.3px;
-    color: var(--text-primary);
-  }
-  .info-card .stat .label {
-    font-family: var(--tf-body);
-    font-style: italic;
-    font-size: 11px;
-    color: var(--text-secondary);
-  }
-
-  .info-card.legend .legend-list {
-    display: flex; flex-direction: column; gap: 8px;
-    margin-top: 10px;
-    border-top: 1px solid var(--outline-soft);
-    padding-top: 10px;
-  }
-  .emp-breakdown .brow {
-    display: flex; align-items: center; gap: 10px; padding: 4px 0;
-  }
-  .emp-breakdown .brow .swatch {
-    width: 10px; height: 10px; border-radius: 3px; flex: 0 0 auto;
-  }
-  .emp-breakdown .brow .name { flex: 1; font-size: 12px; }
-  .emp-breakdown .brow .hrs {
-    font-size: 11px; font-weight: 700;
-    min-width: 34px; text-align: right;
-    font-variant-numeric: tabular-nums;
   }
 
   /* Section header */
@@ -1312,6 +1262,29 @@
   .hist-week-head .w-status.pending  { background: rgba(245,158,11,.2); color: var(--accent-amber); }
   .hist-week-head .w-status.approved { background: rgba(16,185,129,.2); color: var(--accent-green-light); }
   .hist-week-head .w-status.rejected { background: rgba(239,68,68,.2); color: var(--accent-red-light, #fca5a5); }
+  /* Admin-only inline reopen action — small ghost button, no filter chrome. */
+  .hist-week-head .w-reopen {
+    -webkit-appearance: none;
+    appearance: none;
+    border: 1px solid var(--outline-soft);
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: var(--tf-body);
+    font-size: var(--fs-xs);
+    letter-spacing: 0.5px;
+    padding: 4px 10px;
+    border-radius: 2px;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background 120ms ease, color 120ms ease;
+  }
+  .hist-week-head .w-reopen:active { filter: brightness(.95); }
+  @media (hover: hover) {
+    .hist-week-head .w-reopen:hover {
+      background: var(--surface-card-hi);
+      color: var(--text-primary);
+    }
+  }
   /* Shift cards inside an expanded week sit slightly inset from the rail */
   .week-group .hist-shift-card { margin-top: 8px; }
   .week-group .hist-shift-card:first-of-type { margin-top: 10px; }
@@ -1452,8 +1425,20 @@
     display: flex; align-items: center; gap: 12px;
   }
   .week-submit .left { flex: 1; min-width: 0; }
-  .week-submit .title { font-size: 13px; font-weight: 700; }
-  .week-submit .sub { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+  /* Week date-range reads as a lede: Gloock display, sized up enough to
+     anchor the card without an "ESTA SEMANA / THIS WEEK" prefix. */
+  .week-submit .title {
+    font-family: var(--tf-display);
+    font-weight: 400;
+    font-size: var(--fs-lg);
+    letter-spacing: -0.2px;
+    line-height: 1.15;
+  }
+  .week-submit .sub {
+    font-size: var(--fs-xs);
+    color: var(--text-secondary);
+    margin-top: 4px;
+  }
   /* Week-submit / past-weeks buttons use the global .btn.primary system. */
   .week-submit .status-pill {
     font-size: 10px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase;
@@ -1736,12 +1721,22 @@
   }
   .breakdown .drow {
     display: grid;
-    grid-template-columns: 80px 1fr auto;
-    column-gap: 10px;
-    row-gap: 2px;
+    grid-template-columns: 84px 1fr auto;
+    column-gap: 12px;
+    row-gap: 4px;
     align-items: baseline;
-    font-size: 12px;
+    padding: 10px 4px;
+    font-size: var(--fs-sm);
+    border-bottom: 1px dotted var(--outline-soft);
   }
+  .breakdown .drow:last-child { border-bottom: 0; }
+  .breakdown .drow.tappable {
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background 120ms ease;
+  }
+  .breakdown .drow.tappable:hover { background: var(--surface-card-hi); }
+  .breakdown .drow.tappable:active { filter: brightness(.96); }
   .breakdown .drow .d {
     color: var(--text-secondary);
     font-variant-numeric: tabular-nums;
@@ -1761,7 +1756,7 @@
   .breakdown .drow .h.warn { color: var(--accent-red); }
   .breakdown .drow .c {
     grid-column: 2 / -1;
-    font-size: 11px;
+    font-size: var(--fs-xs);
     color: var(--text-muted);
     font-style: italic;
   }
@@ -1849,7 +1844,6 @@
     font-family: var(--tf-body); font-style: italic;
     color: var(--text-secondary); font-size: 14px;
   }
-  .info-card .stat .value,
   .cal .inner .num,
   .cal .pair,
   .dd-table .tm,
@@ -1858,7 +1852,6 @@
   .shift-summary .time,
   .shift-summary .total .value,
   .hist-shift-card .hrs,
-  .emp-breakdown .brow .hrs,
   .approval-row .total,
   .week-submit .sub {
     font-family: var(--tf-mono);
@@ -1871,12 +1864,6 @@
   .lang-toggle { background: oklch(93% 0.02 85); border: 1px solid var(--outline-soft); }
   .lang-toggle .slider { background: var(--accent-blue); box-shadow: none; }
   .lang-toggle .opt.active { color: oklch(96% 0.015 85); }
-  .info-card.legend .legend-list {
-    border-top: 1px solid var(--outline-soft); padding-top: 12px; margin-top: 14px;
-  }
-  .emp-breakdown .brow { padding: 7px 0; border-bottom: 1px dotted var(--outline-soft); }
-  .emp-breakdown .brow:last-child { border-bottom: 0; }
-  .emp-breakdown .brow .name { font-family: var(--tf-display); font-weight: 400; font-size: 14px; }
   /* Calendar */
   .cal .dows span {
     font-family: var(--tf-body);
@@ -2134,7 +2121,7 @@
   .dd-table .nm { min-width: 0; }
   .dd-table .tm { min-width: 0; white-space: nowrap; }
   /* Approval row, employee row, etc. all need the safety too */
-  .info-card, .emp-row, .hist-shift-card, .approvals-banner,
+  .emp-row, .hist-shift-card, .approvals-banner,
   .week-submit, .clock-card, .shift-summary { min-width: 0; }
 
   /* Toast / FAB / Modal stay anchored to the shell */
@@ -2185,7 +2172,6 @@
       color: var(--text-secondary);
     }
     .lang-toggle:hover { background: var(--surface-dark); }
-    .info-card.clickable:hover { background: var(--surface-card); }
     .emp-row:hover {
       background: var(--surface-card);
       border-color: var(--outline-soft);
@@ -2193,6 +2179,7 @@
     .demo-chip:hover { background: var(--surface-card); }
     .approval-row .top.expandable:hover { background: transparent; }
     .hist-week-head.expandable:hover { background: transparent; }
+    .breakdown .drow.tappable:hover { background: transparent; }
   }
 
 </style>
@@ -2431,11 +2418,13 @@
     logout:            ()              => apiCall("POST", "/logout"),
     db:                ()              => apiCall("GET",  "/db"),
     createShift:       (body)          => apiCall("POST", "/shifts",        body),
+    updateShiftComment: (shiftId, comment) => apiCall("POST", "/shifts/comment", { shiftId, comment }),
     setApproval:       (empId, ws, status, reason) =>
                                           apiCall("POST", "/approvals",     { empId, weekStart: ws, status, rejectionComment: reason }),
     createEditRequest: (body)          => apiCall("POST", "/edit-requests", body),
     decideEditRequest: (id, status)    => apiCall("POST", "/edit-requests", { action: "decide", id, status }),
     adminEdit:         (body)          => apiCall("POST", "/admin-edits",   body),
+    adminAddShift:     (body)          => apiCall("POST", "/admin-shifts",  body),
     createUser:        (body)          => apiCall("POST", "/users",         body),
     updateUser:        (body)          => apiCall("POST", "/users/update",          body),
     resetPassword:     (id, password)  => apiCall("POST", "/users/reset-password",  { id, password }),
@@ -2613,6 +2602,12 @@
       lockedAfterApproval: "Approved — locked for editing",
       weekClosedTitle: "This week is approved",
       weekClosedBody: "Your admin has already approved this week's timesheet. New shifts can't be added until next week. If something needs to change, ask your admin to reopen the week.",
+      weekPendingTitle: "Week submitted",
+      weekPendingBody: "You've submitted this week for review. Clock-in is paused until your admin approves it. If you need to add a shift, pull the week back first.",
+      pullBack: "Pull back",
+      weekPulledBack: "Week pulled back",
+      reopenWeek: "Reopen week",
+      weekReopened: "Week reopened",
       submitBlockedOpenShift: "Clock out before submitting the week.",
       adminEditTitle: "Edit shift",
       adminEditReason: "Why are you editing this shift?",
@@ -2639,6 +2634,16 @@
       requestEdit: "Request edit",
       editShiftTitle: "Edit shift",
       editComment: "Why are you requesting this edit?",
+      editShiftCommentAction: "Edit note",
+      editShiftCommentTitle: "Edit your note",
+      editShiftCommentPlaceholder: "Add or change a note about this shift…",
+      noteSaved: "Note saved",
+      addShiftAction: "Add shift",
+      addShiftTitle: "Add a shift",
+      addShiftReason: "Why are you adding this shift?",
+      addShiftReasonRequired: "A reason is required — this add will be logged.",
+      shiftAdded: "Shift added",
+      date: "Date",
       editCommentRequired: "A comment explaining the edit is required",
       editSubmitted: "Edit request sent for approval",
       editPending: "Edit request pending",
@@ -2728,6 +2733,12 @@
       lockedAfterApproval: "Aprobada — bloqueada para editar",
       weekClosedTitle: "Esta semana está aprobada",
       weekClosedBody: "Tu admin ya aprobó la planilla de esta semana. No se pueden añadir turnos hasta la próxima semana. Si algo debe cambiar, pide a tu admin que reabra la semana.",
+      weekPendingTitle: "Semana enviada",
+      weekPendingBody: "Has enviado esta semana para revisión. No puedes fichar hasta que tu admin la apruebe. Si necesitas añadir un turno, retira la semana primero.",
+      pullBack: "Retirar",
+      weekPulledBack: "Semana retirada",
+      reopenWeek: "Reabrir semana",
+      weekReopened: "Semana reabierta",
       submitBlockedOpenShift: "Termina tu turno antes de enviar la semana.",
       adminEditTitle: "Editar turno",
       adminEditReason: "¿Por qué editas este turno?",
@@ -2754,6 +2765,16 @@
       requestEdit: "Solicitar cambio",
       editShiftTitle: "Editar turno",
       editComment: "¿Por qué solicitas este cambio?",
+      editShiftCommentAction: "Editar nota",
+      editShiftCommentTitle: "Editar tu nota",
+      editShiftCommentPlaceholder: "Añade o cambia una nota sobre este turno…",
+      noteSaved: "Nota guardada",
+      addShiftAction: "Añadir turno",
+      addShiftTitle: "Añadir un turno",
+      addShiftReason: "¿Por qué añades este turno?",
+      addShiftReasonRequired: "Se requiere una explicación — este añadido quedará registrado.",
+      shiftAdded: "Turno añadido",
+      date: "Fecha",
       editCommentRequired: "Se requiere un comentario explicando el cambio",
       editSubmitted: "Solicitud enviada",
       editPending: "Cambio pendiente",
@@ -3254,62 +3275,6 @@
     return wrap;
   }
 
-  // Summary card
-  function monthStats(scopeEmpId=null) {
-    const data = dataByDay(state.calYear, state.calMonth, scopeEmpId);
-    let totalHours = 0, totalShifts = 0;
-    const days = new Set();
-    const empHours = {};
-    for (const [dayStr, arr] of Object.entries(data)) {
-      for (const sh of arr) {
-        totalHours += sh.hours; totalShifts++;
-        days.add(dayStr);
-        empHours[sh.empId] = (empHours[sh.empId] || 0) + sh.hours;
-      }
-    }
-    return {
-      totalHours, totalShifts,
-      activeDays: days.size,
-      employees: Object.keys(empHours).length,
-      avgPerDay: days.size ? totalHours / days.size : 0,
-      empHours,
-    };
-  }
-  function stat(kind, value, label) {
-    return el("div", {class:`stat ${kind}`},
-      el("div", {class:"value"}, value),
-      el("div", {class:"label"}, label),
-    );
-  }
-  function summaryCard(scopeEmpId=null) {
-    const st = monthStats(scopeEmpId);
-    if (scopeEmpId) {
-      return el("div", {class:"info-card"},
-        el("div", {class:"row"},
-          stat("plain", st.totalHours.toFixed(1), tr("hours")),
-          stat("plain", String(st.activeDays), tr("days")),
-        )
-      );
-    }
-    const card = el("div", {class:"info-card legend"});
-    card.appendChild(el("div", {class:"row"},
-      stat("blue",  st.totalHours.toFixed(0), tr("hours")),
-      stat("green", String(st.activeDays), tr("days")),
-    ));
-    const sorted = Object.entries(st.empHours).sort((a,b)=>b[1]-a[1]);
-    const list = el("div", {class:"legend-list emp-breakdown"});
-    for (const [empIdStr, hrs] of sorted) {
-      const emp = userById[Number(empIdStr)];
-      list.appendChild(el("div", {class:"brow"},
-        el("div", {class:"swatch", style:`background:${emp.color}`}),
-        el("div", {class:"name"}, emp.displayName),
-        el("div", {class:"hrs", style:`color:${emp.color}`}, hrs.toFixed(1)),
-      ));
-    }
-    card.appendChild(list);
-    return card;
-  }
-
   // =============================================================
   // LANG TOGGLE
   // =============================================================
@@ -3590,7 +3555,10 @@
     for (const sh of sorted) {
       const shDate = new Date(sh.date + "T00:00:00");
       const hrsCls = sh.hours < 9 ? "h warn" : "h ok";
-      const drow = el("div", {class:"drow"},
+      const drow = el("div", {
+        class: "drow tappable",
+        onclick: () => navTo("shift_detail", { viewingShiftId: sh.id }),
+      },
         el("div", {class:"d"}, fmtDateWD(sh.date)),
         el("div", {class:"t"},
           timeRangeWithTz(sh.start, sh.end, sh.clockInTz, sh.clockOutTz, shDate),
@@ -3615,7 +3583,7 @@
     const rejectionComment = weekRejectionComment(u.id, wkStart);
 
     const left = el("div", {class:"left"},
-      el("div", {class:"title"}, `${tr("thisWeek")} · ${fmtDateWD(wkStart)} – ${fmtDateWD(wkEnd)}`),
+      el("div", {class:"title"}, `${fmtDateWD(wkStart)} – ${fmtDateWD(wkEnd)}`),
       el("div", {class:"sub"}, `${wkHours.toFixed(1)} ${tr("hours").toLowerCase()} · ${wkShifts.length} ${tr("shifts").toLowerCase()}`),
     );
     if (!status || status === "rejected") {
@@ -3757,12 +3725,14 @@
 
   function clockSection() {
     const readonly = false; // employees are never readonly here
-    // If the current week has been approved by an admin, new shifts must
-    // not be silently added to it. Block clock-in entirely until next week.
-    const currentWeekApproved =
-      state.clock === "idle" &&
-      weekStatus(state.currentUser.id, thisWeekStart()) === "approved";
-    if (currentWeekApproved) {
+    const u = state.currentUser;
+    // If the current week is approved OR pending review, new shifts must
+    // not be silently added — the audit trail would include work that
+    // wasn't part of the submission. Approved weeks need an admin reopen;
+    // pending weeks the employee can pull back themselves.
+    const wkStart = thisWeekStart();
+    const wkSt = state.clock === "idle" ? weekStatus(u.id, wkStart) : null;
+    if (wkSt === "approved") {
       return el("div", {class:"week-closed-card"},
         el("div", {class:"icon"}, ICON("eye", 20)),
         el("div", {class:"body"},
@@ -3770,6 +3740,36 @@
           el("div", {class:"meta"}, tr("weekClosedBody")),
         ),
       );
+    }
+    if (wkSt === "pending") {
+      const card = el("div", {class:"week-closed-card"},
+        el("div", {class:"icon"}, ICON("eye", 20)),
+        el("div", {class:"body"},
+          el("div", {class:"title"}, tr("weekPendingTitle")),
+          el("div", {class:"meta"}, tr("weekPendingBody")),
+          el("div", {class:"actions", style:"margin-top:12px;"},
+            el("button", {
+              class: "btn",
+              onclick: async (ev) => {
+                if (ev.currentTarget.disabled) return;
+                ev.currentTarget.disabled = true;
+                try {
+                  await api.setApproval(u.id, wkStart, "unsubmitted");
+                  // Pull the row out of local state and re-render.
+                  const i = weekApprovals.findIndex(w => w.empId === u.id && w.weekStart === wkStart);
+                  if (i >= 0) weekApprovals.splice(i, 1);
+                  toast(tr("weekPulledBack"), {kind:"warn", pill:"↺"});
+                  render();
+                } catch (e) {
+                  ev.currentTarget.disabled = false;
+                  toastApiError(e, state.lang === "es" ? "No se pudo retirar" : "Couldn't pull back");
+                }
+              },
+            }, tr("pullBack")),
+          ),
+        ),
+      );
+      return card;
     }
     if (state.clock === "idle") {
       return el("button", {
@@ -3987,6 +3987,15 @@
       ),
     ));
 
+    // Admin action: add a missed shift for this employee.
+    if (canApprove(state.currentUser)) {
+      root.appendChild(el("button", {
+        class: "btn primary full",
+        style: "margin-top:12px;",
+        onclick: () => { state.modal = "addShift"; history.pushState({ modal: true }, ""); render(); },
+      }, tr("addShiftAction")));
+    }
+
     // Admin view: show employee history (shift list + map)
     const empShifts = shifts.filter(s => s.empId === e.id)
       .sort((a,b) => b.date.localeCompare(a.date) || b.start.localeCompare(a.start));
@@ -4180,9 +4189,23 @@
         onclick: () => { state.modal = "adminEditShift"; history.pushState({ modal: true }, ""); render(); },
       }, tr("adminEditTitle")));
     } else if (!editReq && isEmployee(u) && u.id === sh.empId && !weekIsLocked) {
-      // Employee can request edit only if week isn't locked by approval.
+      // Employee actions on own shift in an active (not yet submitted,
+      // not approved) week:
+      //   - Edit note: direct save, no admin approval needed.
+      //   - Request edit: time changes still go through the edit-request queue.
+      // If the week is "pending" or "approved", both of these are hidden
+      // via the weekIsLocked and !pending checks.
+      const weekIsOpen = weekSt !== "pending";
+      if (weekIsOpen) {
+        root.appendChild(el("button", {
+          class:"btn full",
+          style: "margin-top:8px;",
+          onclick: () => { state.modal = "editShiftComment"; history.pushState({ modal: true }, ""); render(); },
+        }, tr("editShiftCommentAction")));
+      }
       root.appendChild(el("button", {
         class:"btn primary full",
+        style: "margin-top:8px;",
         onclick: () => { state.modal = "editShift"; history.pushState({ modal: true }, ""); render(); },
       }, tr("requestEdit")));
     } else if (!editReq && isEmployee(u) && u.id === sh.empId && weekIsLocked) {
@@ -4308,6 +4331,29 @@
                       : status === "rejected" ? tr("weekRejected")
                       : tr("weekPending");
           right.appendChild(el("span", {class:`w-status ${status}`}, label));
+        }
+        // Admin-only: reopen an approved week (flip it back to unsubmitted
+        // so the employee can add a missed shift). Click must not bubble to
+        // the row's expand/collapse handler.
+        if (status === "approved" && canApprove(state.currentUser)) {
+          right.appendChild(el("button", {
+            class: "w-reopen",
+            onclick: async (ev) => {
+              ev.stopPropagation();
+              if (ev.currentTarget.disabled) return;
+              ev.currentTarget.disabled = true;
+              try {
+                await api.setApproval(empId, wkStart, "unsubmitted");
+                const i = weekApprovals.findIndex(w => w.empId === empId && w.weekStart === wkStart);
+                if (i >= 0) weekApprovals.splice(i, 1);
+                toast(tr("weekReopened"), {kind:"warn", pill:"↺"});
+                render();
+              } catch (e) {
+                ev.currentTarget.disabled = false;
+                toastApiError(e, state.lang === "es" ? "No se pudo reabrir" : "Couldn't reopen");
+              }
+            },
+          }, tr("reopenWeek")));
         }
         right.appendChild(el("span", {class: `chevron ${isOpen ? "up" : ""}`}, "▾"));
 
@@ -4483,7 +4529,6 @@
     state.lastAnim = 0;
     const newBlock = el("div", { class: `cal-block ${animClass}`.trim() });
     newBlock.appendChild(renderCalendar(scopeEmpId));
-    newBlock.appendChild(summaryCard(scopeEmpId));
     oldBlock.replaceWith(newBlock);
   }
 
@@ -4737,6 +4782,99 @@
           card.appendChild(row);
         }
       }
+    } else if (state.modal === "addShift") {
+      const emp = userById[state.viewingEmployeeId];
+      if (!emp) { close(); return; }
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const dateIn  = el("input", { type: "date", value: todayStr });
+      const startIn = el("input", { type: "time", value: "08:00" });
+      const endIn   = el("input", { type: "time", value: "17:00" });
+      const noteIn  = el("textarea", { rows: 2, placeholder: tr("editShiftCommentPlaceholder") });
+      const reasonIn = el("textarea", { rows: 2, placeholder: tr("addShiftReason") });
+      const err = el("div", {class:"err", style:"display:none"});
+      card.appendChild(el("h3", {}, tr("addShiftTitle")));
+      card.appendChild(el("p", {style:"color:var(--text-muted); margin:-4px 0 10px;"}, emp.displayName));
+      card.appendChild(el("label", {class:"field-label"}, tr("date")));
+      card.appendChild(dateIn);
+      card.appendChild(el("label", {class:"field-label"}, tr("start")));
+      card.appendChild(startIn);
+      card.appendChild(el("label", {class:"field-label"}, tr("end")));
+      card.appendChild(endIn);
+      card.appendChild(el("label", {class:"field-label"}, tr("commentLabel")));
+      card.appendChild(noteIn);
+      card.appendChild(el("label", {class:"field-label"}, tr("addShiftReason")));
+      card.appendChild(reasonIn);
+      card.appendChild(err);
+      card.appendChild(el("div", {class:"actions"},
+        el("button", {class:"btn", onclick: close}, tr("cancel")),
+        el("button", {class:"btn primary", onclick: async (ev) => {
+          const reason = reasonIn.value.trim();
+          if (!reason) {
+            err.textContent = tr("addShiftReasonRequired");
+            err.style.display = "block";
+            reasonIn.focus();
+            return;
+          }
+          const date = dateIn.value;
+          const start = startIn.value;
+          const end = endIn.value;
+          if (!date || !start || !end) {
+            err.textContent = state.lang === "es" ? "Fecha y horas son obligatorias" : "Date, start, and end are required";
+            err.style.display = "block";
+            return;
+          }
+          // Compute hours the same way clockSection does (end - start in minutes → hours).
+          const [sh1, sm1] = start.split(":").map(Number);
+          const [sh2, sm2] = end.split(":").map(Number);
+          let mins = (sh2 * 60 + sm2) - (sh1 * 60 + sm1);
+          if (mins < 0) mins += 24 * 60;
+          const hours = Math.round((mins / 60) * 10) / 10;
+          if (ev.currentTarget.disabled) return;
+          ev.currentTarget.disabled = true;
+          try {
+            const { shift } = await api.adminAddShift({
+              empId: emp.id, date, start, end, hours,
+              comment: noteIn.value.trim(),
+              reason,
+            });
+            shifts.push(shift);
+            nextShiftId = Math.max(nextShiftId, shift.id + 1);
+            toast(tr("shiftAdded"), {kind:"success", pill:"✓"});
+            close();
+          } catch (e) {
+            ev.currentTarget.disabled = false;
+            err.textContent = e.message || (state.lang === "es" ? "No se pudo añadir" : "Couldn't add shift");
+            err.style.display = "block";
+          }
+        }}, tr("saveChanges")),
+      ));
+    } else if (state.modal === "editShiftComment") {
+      const sh = shifts.find(s => s.id === state.viewingShiftId);
+      if (!sh) { close(); return; }
+      const noteIn = el("textarea", { rows: 4, placeholder: tr("editShiftCommentPlaceholder") });
+      noteIn.value = sh.comment || "";
+      const err = el("div", {class:"err", style:"display:none"});
+      card.appendChild(el("h3", {}, tr("editShiftCommentTitle")));
+      card.appendChild(el("p", {style:"color:var(--text-muted); margin:-4px 0 10px;"}, fmtDateLong(sh.date)));
+      card.appendChild(noteIn);
+      card.appendChild(err);
+      card.appendChild(el("div", {class:"actions"},
+        el("button", {class:"btn", onclick: close}, tr("cancel")),
+        el("button", {class:"btn primary", onclick: async (ev) => {
+          if (ev.currentTarget.disabled) return;
+          ev.currentTarget.disabled = true;
+          try {
+            const { shift: updated } = await api.updateShiftComment(sh.id, noteIn.value);
+            Object.assign(sh, updated);
+            toast(tr("noteSaved"), {kind:"success", pill:"✓"});
+            close();
+          } catch (e) {
+            ev.currentTarget.disabled = false;
+            err.textContent = e.message || (state.lang === "es" ? "No se pudo guardar" : "Couldn't save");
+            err.style.display = "block";
+          }
+        }}, tr("saveChanges")),
+      ));
     } else if (state.modal === "editShift") {
       const sh = shifts.find(s => s.id === state.viewingShiftId);
       if (!sh) { close(); return; }

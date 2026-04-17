@@ -1339,6 +1339,14 @@
   @media (hover: hover) {
     .w-status-menu-item:hover { background: var(--surface-dark); }
   }
+  .w-status-menu-item.confirm {
+    background: var(--accent-red);
+    color: var(--t-bg);
+  }
+  .w-status-menu-item.confirm:active { background: var(--accent-red); }
+  @media (hover: hover) {
+    .w-status-menu-item.confirm:hover { background: var(--accent-red); }
+  }
   /* Shift cards inside an expanded week sit slightly inset from the rail */
   /* Shifts inside an expanded week card sit below a dashed separator.
      First shift gets the separator; subsequent shifts get a lighter
@@ -2296,6 +2304,9 @@
     // admin-only: which approved-week pill dropdown is open. Format:
     // `${empId}|${wkStart}` or null.
     weekMenuKey: null,
+    // whether the open reopen-menu is primed for confirm (first tap
+    // switched the button into "tap again" state).
+    weekReopenConfirm: false,
     // flashing toast for banner animation
   };
 
@@ -2673,6 +2684,7 @@
       pullBack: "Pull back",
       weekPulledBack: "Week pulled back",
       reopenWeek: "Reopen",
+      reopenWeekConfirm: "Tap again to confirm",
       weekReopened: "Week reopened",
       submitBlockedOpenShift: "Clock out before submitting the week.",
       adminEditTitle: "Edit shift",
@@ -2805,6 +2817,7 @@
       pullBack: "Retirar",
       weekPulledBack: "Semana retirada",
       reopenWeek: "Reabrir",
+      reopenWeekConfirm: "Toca de nuevo para confirmar",
       weekReopened: "Semana reabierta",
       submitBlockedOpenShift: "Termina tu turno antes de enviar la semana.",
       adminEditTitle: "Editar turno",
@@ -4435,14 +4448,21 @@
             pill.addEventListener("click", (ev) => {
               ev.stopPropagation();
               state.weekMenuKey = isMenuOpen ? null : menuKey;
+              state.weekReopenConfirm = false;
               render();
             });
             if (isMenuOpen) {
+              const primed = state.weekReopenConfirm;
               const menu = el("div", {class: "w-status-menu"},
                 el("button", {
-                  class: "w-status-menu-item",
+                  class: `w-status-menu-item${primed ? " confirm" : ""}`,
                   onclick: async (ev) => {
                     ev.stopPropagation();
+                    if (!primed) {
+                      state.weekReopenConfirm = true;
+                      render();
+                      return;
+                    }
                     if (ev.currentTarget.disabled) return;
                     ev.currentTarget.disabled = true;
                     try {
@@ -4450,6 +4470,7 @@
                       const i = weekApprovals.findIndex(w => w.empId === empId && w.weekStart === wkStart);
                       if (i >= 0) weekApprovals.splice(i, 1);
                       state.weekMenuKey = null;
+                      state.weekReopenConfirm = false;
                       toast(tr("weekReopened"), {kind:"warn", pill:"↺"});
                       render();
                     } catch (e) {
@@ -4457,7 +4478,7 @@
                       toastApiError(e, state.lang === "es" ? "No se pudo reabrir" : "Couldn't reopen");
                     }
                   },
-                }, tr("reopenWeek")),
+                }, primed ? tr("reopenWeekConfirm") : tr("reopenWeek")),
               );
               pill.appendChild(menu);
             }
@@ -4925,8 +4946,7 @@
       const dateIn  = el("input", { type: "date", value: todayStr });
       const startIn = el("input", { type: "time", value: "08:00" });
       const endIn   = el("input", { type: "time", value: "17:00" });
-      const noteIn  = el("textarea", { rows: 2, placeholder: tr("editShiftCommentPlaceholder") });
-      const reasonIn = el("textarea", { rows: 2, placeholder: tr("addShiftReason") });
+      const noteIn  = el("textarea", { rows: 2, placeholder: tr("addShiftReason") });
       const err = el("div", {class:"err", style:"display:none"});
       card.appendChild(el("h3", {}, tr("addShiftTitle")));
       card.appendChild(el("p", {style:"color:var(--text-muted); margin:-4px 0 10px;"}, emp.displayName));
@@ -4940,17 +4960,15 @@
       card.appendChild(endIn);
       card.appendChild(el("label", {class:"field-label"}, tr("commentLabel")));
       card.appendChild(noteIn);
-      card.appendChild(el("label", {class:"field-label"}, tr("addShiftReason")));
-      card.appendChild(reasonIn);
       card.appendChild(err);
       card.appendChild(el("div", {class:"actions"},
         el("button", {class:"btn", onclick: close}, tr("cancel")),
         el("button", {class:"btn primary", onclick: async (ev) => {
-          const reason = reasonIn.value.trim();
-          if (!reason) {
+          const note = noteIn.value.trim();
+          if (!note) {
             err.textContent = tr("addShiftReasonRequired");
             err.style.display = "block";
-            reasonIn.focus();
+            noteIn.focus();
             return;
           }
           const date = dateIn.value;
@@ -4974,8 +4992,8 @@
               empId: emp.id, date, start, end, hours,
               clockInTz: tzIn.value || null,
               clockOutTz: tzIn.value || null,
-              comment: noteIn.value.trim(),
-              reason,
+              comment: note,
+              reason: note,
             });
             shifts.push(shift);
             nextShiftId = Math.max(nextShiftId, shift.id + 1);
@@ -5350,6 +5368,7 @@
     }
     if (state.weekMenuKey) {
       state.weekMenuKey = null;
+      state.weekReopenConfirm = false;
       needsRender = true;
     }
     if (needsRender) render();

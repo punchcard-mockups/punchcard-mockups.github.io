@@ -10,24 +10,52 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <style>
+  /* ============================================================
+     Design tokens — warm white, deep oxblood, big serif.
+     Magazine-typographic. Gloock display + Vollkorn body.
+     ============================================================ */
   :root {
-    --navy: #0D1B2A;
-    --deep-blue: #1B2838;
-    --slate: #2C3E50;
-    --surface-dark: #1E293B;
-    --surface-card: #263548;
-    --surface-card-hi: #2e4058;
-    --accent-blue: #3B82F6;
-    --accent-blue-bright: #60A5FA;
-    --accent-green: #10B981;
-    --accent-green-light: #34D399;
-    --accent-red: #EF4444;
-    --accent-red-light: #F87171;
-    --accent-amber: #F59E0B;
-    --text-primary: #F1F5F9;
-    --text-secondary: #94A3B8;
-    --text-muted: #64748B;
-    --outline-soft: rgba(148,163,184,.15);
+    --t-bg: oklch(96% 0.015 85);
+    --surface-dark: oklch(93% 0.02 85);
+    --surface-card: oklch(99% 0.008 85);
+    --surface-card-hi: oklch(95% 0.018 85);
+    --accent-blue: oklch(48% 0.11 58);         /* caramel default */
+    --accent-blue-bright: oklch(54% 0.13 58);
+    --accent-green: oklch(40% 0.1 155);
+    --accent-green-light: oklch(44% 0.11 155);
+    --accent-red: oklch(42% 0.18 25);
+    --accent-red-light: oklch(45% 0.18 25);
+    --accent-amber: oklch(55% 0.15 60);
+    --text-primary: oklch(16% 0.015 30);       /* ink */
+    --text-secondary: oklch(40% 0.018 30);
+    --text-muted: oklch(58% 0.015 30);
+    --outline-soft: oklch(82% 0.018 85);
+
+    --tf-display: "Gloock", Georgia, serif;
+    --tf-body: "Vollkorn", Georgia, serif;
+    --tf-mono: "Azeret Mono", ui-monospace, monospace;
+
+    /* Type scale — one source of truth. No text below --fs-xs (12px).
+       Android at arm's length, end-of-shift readability is the bar. */
+    --fs-xs:   12px;  /* metadata, captions, pill labels */
+    --fs-sm:   13px;  /* secondary text, hint copy */
+    --fs-base: 14px;  /* default body */
+    --fs-md:   16px;  /* inputs (iOS no-zoom minimum), emphasized body */
+    --fs-lg:   18px;  /* small section titles */
+    --fs-xl:   22px;  /* screen section headers (.section-header h3) */
+    --fs-2xl:  28px;  /* modal titles */
+    --fs-3xl:  34px;  /* greeting, info-card metric values */
+    --fs-display: 52px; /* login brand only */
+
+    /* Spacing scale — 4px base. */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-7: 32px;
+    --space-8: 48px;
 
     /* Employee colors — deep jewel tones, not pastel.
        Each sits in a distinct hue band, avoiding the semantic
@@ -48,61 +76,13 @@
   html, body {
     margin: 0;
     padding: 0;
-    background: #0A1220;
+    background: var(--t-bg);
     color: var(--text-primary);
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif;
+    font-family: var(--tf-body);
+    font-weight: 400;
     -webkit-font-smoothing: antialiased;
   }
 
-  header.page {
-    padding: 24px 32px 12px;
-    display: flex;
-    align-items: baseline;
-    gap: 16px;
-    flex-wrap: wrap;
-  }
-  header.page h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; margin: 0; }
-  header.page p { margin: 0; color: var(--text-secondary); font-size: 13px; }
-
-  .stage {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-    gap: 28px;
-    padding: 12px 32px 60px;
-    align-items: start;
-  }
-
-  /* Phone shell */
-  .phone {
-    justify-self: center;
-    width: 380px;
-    height: 780px;
-    border-radius: 44px;
-    background: var(--navy);
-    padding: 14px;
-    box-shadow: 0 30px 80px rgba(0,0,0,.5), 0 0 0 10px #0a0f1a, 0 0 0 11px #1e293b;
-    position: relative;
-  }
-  .phone::before {
-    content: "";
-    position: absolute;
-    top: 18px; left: 50%;
-    transform: translateX(-50%);
-    width: 110px; height: 26px;
-    background: #000;
-    border-radius: 14px;
-    z-index: 5;
-  }
-  .screen {
-    border-radius: 32px;
-    background: var(--navy);
-    overflow: hidden;
-    position: relative;
-    height: 100%;
-    padding: 56px 18px 24px;
-    display: flex;
-    flex-direction: column;
-  }
   .scroll {
     flex: 1;
     overflow-y: auto;
@@ -118,8 +98,17 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    height: 38px;
-    margin-bottom: 6px;
+    padding: 14px 18px 4px;
+    min-height: 44px;
+    flex: 0 0 auto;
+    margin-bottom: 0;
+    border-bottom: 1px solid var(--outline-soft);
+    box-sizing: content-box;
+    /* The scroll area below gets transform-based screen-enter animations
+       which create a stacking context — without this, dropdowns anchored
+       inside the topbar (account menu) would paint behind the scroll. */
+    position: relative;
+    z-index: 10;
   }
   .topbar .spacer { flex: 1; }
   .topbar .back {
@@ -168,7 +157,6 @@
     background: var(--accent-blue);
     border-radius: 999px;
     transition: transform 220ms cubic-bezier(.2,.8,.2,1);
-    box-shadow: 0 2px 6px rgba(59,130,246,.3);
   }
   .lang-toggle.es .slider { transform: translateX(100%); }
   .lang-toggle .opt {
@@ -263,17 +251,36 @@
 
   /* Greeting */
   .greeting { padding: 2px 6px 10px; }
-  .greeting .hello { font-size: 15px; color: var(--text-secondary); }
+  .greeting .hello {
+    font-family: var(--tf-body);
+    font-style: italic;
+    color: var(--text-secondary);
+    font-size: 15px;
+  }
+  /* font-family/weight come from the display-face multi-selector below */
   .greeting .name {
-    font-size: 26px; font-weight: 700; letter-spacing: -0.4px;
+    font-size: 34px;
+    line-height: 1.05;
+    letter-spacing: -0.5px;
   }
   .greeting .role {
+    display: inline-block;
     margin-top: 4px;
-    font-size: 12px; font-weight: 700; letter-spacing: 0.4px;
-    color: var(--accent-blue-bright);
+    padding: 3px 10px;
+    background: transparent;
+    border: 1px solid var(--text-secondary);
+    border-radius: 2px;
+    font-family: var(--tf-body);
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    letter-spacing: 2px;
     text-transform: uppercase;
+    color: var(--text-secondary);
   }
-  .greeting .role.readonly { color: var(--accent-amber); }
+  .greeting .role.readonly {
+    color: var(--accent-amber);
+    border-color: var(--accent-amber);
+  }
 
   /* Month nav */
   .month-nav {
@@ -403,11 +410,12 @@
     font-style: italic; margin-top: 2px; opacity: .8;
   }
 
-  /* Info card */
+  /* Info card — flattened, ruled */
   .info-card {
-    background: var(--surface-card);
-    border-radius: 16px;
-    padding: 16px;
+    background: transparent;
+    border-top: 1.5px solid var(--text-primary);
+    border-bottom: 1px solid var(--outline-soft);
+    padding: 18px 2px 14px;
     margin-top: 12px;
   }
   .info-card.clickable { cursor: pointer; transition: background 150ms ease; }
@@ -418,18 +426,20 @@
   .info-card .stat {
     display: flex; flex-direction: column; align-items: center; gap: 2px;
   }
+  /* Stats are informational, not actions — keep all neutral ink. */
   .info-card .stat .value {
-    font-size: 24px; font-weight: 700; letter-spacing: -0.3px;
+    font-family: var(--tf-mono);
+    font-size: 34px;
+    font-weight: 400;
+    letter-spacing: -0.3px;
+    color: var(--text-primary);
   }
   .info-card .stat .label {
-    font-size: 10px; letter-spacing: 0.5px;
-    text-transform: uppercase;
-    color: var(--text-secondary); font-weight: 600;
+    font-family: var(--tf-body);
+    font-style: italic;
+    font-size: 11px;
+    color: var(--text-secondary);
   }
-  .info-card .stat.blue .value { color: var(--accent-blue-bright); }
-  .info-card .stat.green .value { color: var(--accent-green-light); }
-  .info-card .stat.amber .value { color: var(--accent-amber); }
-  .info-card .stat.plain .value { color: var(--text-primary); }
 
   .info-card.legend .legend-list {
     display: flex; flex-direction: column; gap: 8px;
@@ -452,19 +462,34 @@
 
   /* Section header */
   .section-header {
-    display: flex; align-items: baseline; justify-content: space-between;
-    margin: 16px 4px 8px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin: 24px 4px 8px;
+    padding-bottom: 4px;
+    border-bottom: 1.5px solid var(--text-primary);
   }
-  .section-header h3 { margin: 0; font-size: 16px; font-weight: 600; }
-  .section-header small { font-size: 11px; color: var(--text-secondary); }
+  .section-header h3 {
+    margin: 0;
+    font-size: 22px;
+    letter-spacing: -0.3px;
+  }
+  .section-header small {
+    font-family: var(--tf-body);
+    font-style: italic;
+    font-size: 11px;
+    letter-spacing: 0.2px;
+    color: var(--text-secondary);
+  }
 
   /* Employee row card */
   .emp-row {
-    display: flex; align-items: center; gap: 14px;
-    padding: 14px 16px;
-    background: var(--surface-card);
-    border-radius: 16px;
-    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 4px;
+    background: transparent;
+    border-bottom: 1px solid var(--outline-soft);
     cursor: pointer;
     transition: background 150ms ease;
   }
@@ -494,13 +519,13 @@
     position: absolute;
     right: 28px; bottom: 28px;
     width: 56px; height: 56px;
-    border-radius: 18px;
+    border-radius: 50%;
     background: var(--accent-blue);
-    color: #fff;
+    color: var(--t-bg);
     border: 0;
     display: grid; place-items: center;
     cursor: pointer;
-    box-shadow: 0 10px 24px rgba(59,130,246,.3);
+    box-shadow: 0 10px 24px oklch(48% 0.11 58 / .35);
     transition: transform 120ms ease, filter 150ms ease;
     z-index: 5;
   }
@@ -538,24 +563,27 @@
     display: flex; flex-direction: column; gap: 10px;
   }
   .login-form input {
-    background: var(--surface-card);
-    border: 1px solid var(--outline-soft);
-    border-radius: 12px;
-    padding: 12px 14px;
+    background: transparent;
+    border: 0;
+    border-bottom: 1.5px solid var(--outline-soft);
+    padding: 12px 4px;
     color: var(--text-primary);
-    font-size: 14px;
-    font-family: inherit;
+    font-family: var(--tf-body);
+    font-size: 16px;
     outline: none;
     transition: border-color 150ms ease;
   }
   .login-form input:focus { border-color: var(--accent-blue); }
   .login-form .go {
-    background: linear-gradient(180deg, var(--accent-blue), #1d4ed8);
-    color: #fff;
+    background: var(--accent-blue);
+    color: var(--t-bg);
     border: 0;
-    border-radius: 12px;
+    border-radius: 2px;
     padding: 13px;
-    font-size: 14px; font-weight: 700; letter-spacing: 0.3px;
+    font-family: var(--tf-display);
+    font-size: 16px;
+    font-weight: 400;
+    letter-spacing: 0.5px;
     cursor: pointer;
     margin-top: 6px;
     transition: transform 100ms ease, filter 150ms ease;
@@ -563,53 +591,12 @@
   .login-form .go:hover { filter: brightness(1.1); }
   .login-form .go:active { transform: scale(.98); }
   .login-form .err {
-    font-size: 12px; color: var(--accent-red-light);
-    background: rgba(239,68,68,.08);
-    border-radius: 10px;
+    font-size: 12px;
+    color: var(--accent-red);
+    background: oklch(92% 0.05 25);
+    border-radius: 2px;
     padding: 8px 10px;
   }
-  .demo-accounts {
-    width: 100%;
-    padding: 12px;
-    background: var(--surface-dark);
-    border-radius: 12px;
-    margin-top: auto;
-  }
-  .demo-accounts .demo-title {
-    font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    margin-bottom: 8px;
-  }
-  .demo-chip {
-    display: block;
-    width: 100%;
-    text-align: left;
-    background: var(--surface-card);
-    color: var(--text-primary);
-    border: 1px solid var(--outline-soft);
-    border-radius: 10px;
-    padding: 8px 12px;
-    margin-top: 6px;
-    font-size: 12px;
-    cursor: pointer;
-    font-family: inherit;
-    transition: background 150ms ease;
-  }
-  .demo-chip:hover { background: var(--surface-card-hi); }
-  .demo-chip b { color: var(--accent-blue-bright); }
-  .demo-chip .tag {
-    float: right;
-    font-size: 10px; font-weight: 700;
-    padding: 2px 6px;
-    border-radius: 999px;
-    letter-spacing: 0.3px;
-  }
-  .demo-chip .tag.owner { background: rgba(139,92,246,.2); color: #c4b5fd; }
-  .demo-chip .tag.admin { background: rgba(59,130,246,.2); color: var(--accent-blue-bright); }
-  .demo-chip .tag.emp { background: rgba(16,185,129,.2); color: var(--accent-green-light); }
-  .demo-chip .tag.readonly { background: rgba(245,158,11,.2); color: var(--accent-amber); }
-
   /* ========================================================================
      Buttons — one system.
        .btn                default ghost: transparent, uppercase Vollkorn
@@ -694,9 +681,10 @@
 
   .clock-card {
     display: flex; align-items: center; gap: 14px;
-    padding: 18px 20px;
-    background: var(--surface-card);
-    border-radius: 18px;
+    padding: 14px 4px;
+    background: transparent;
+    border-top: 1.5px solid var(--text-primary);
+    border-bottom: 1px solid var(--outline-soft);
   }
   .clock-card .pulse {
     width: 14px; height: 14px;
@@ -719,11 +707,16 @@
     100% { transform: scale(.85); opacity: 0; }
   }
   .clock-card .label {
-    font-size: 11px; color: var(--text-secondary);
-    letter-spacing: 0.4px; text-transform: uppercase; font-weight: 700;
+    font-family: var(--tf-body);
+    font-style: italic;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
   }
   .clock-card .time {
-    font-size: 22px; font-weight: 700; color: var(--accent-green-light);
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--accent-green);
   }
   .tz-tag {
     display: inline-block;
@@ -903,9 +896,10 @@
 
 
   .shift-summary {
-    background: var(--surface-card);
-    border-radius: 18px;
-    padding: 16px 18px;
+    background: transparent;
+    border-top: 1.5px solid var(--text-primary);
+    border-bottom: 1px solid var(--outline-soft);
+    padding: 16px 4px;
   }
   .shift-summary .row {
     display: flex; justify-content: space-between; align-items: flex-end;
@@ -913,8 +907,11 @@
   .shift-summary .col { display: flex; flex-direction: column; gap: 2px; }
   .shift-summary .col.r { align-items: flex-end; }
   .shift-summary .l-label {
-    font-size: 10px; color: var(--text-secondary);
-    letter-spacing: 0.4px; text-transform: uppercase; font-weight: 700;
+    font-family: var(--tf-body);
+    font-style: italic;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
   }
   .shift-summary .time { font-size: 22px; font-weight: 700; }
   .shift-summary .total {
@@ -924,23 +921,27 @@
   }
   .shift-summary .total .value {
     font-size: 40px; font-weight: 800;
-    color: var(--accent-green-light);
+    color: var(--accent-green);
     letter-spacing: -1px;
   }
-  .shift-summary .total .value.warn { color: var(--accent-red-light); }
+  .shift-summary .total .value.warn { color: var(--accent-red); }
   .shift-summary .total .unit {
-    font-size: 14px; color: var(--text-secondary); margin-left: 6px;
+    font-family: var(--tf-body);
+    font-style: italic;
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-left: 6px;
   }
   .comment-field {
     margin-top: 12px;
-    padding: 10px 12px;
-    background: var(--surface-dark);
-    border: 1px solid var(--outline-soft);
-    border-radius: 10px;
+    padding: 10px 0;
+    background: transparent;
+    border: 0;
+    border-bottom: 1.5px solid var(--outline-soft);
     color: var(--text-primary);
+    font-family: var(--tf-body);
     font-size: 13px;
     width: 100%;
-    font-family: inherit;
     resize: none;
     outline: none;
     min-height: 52px;
@@ -1042,16 +1043,16 @@
   .modal-scrim {
     position: absolute;
     inset: 0;
-    background: rgba(5, 10, 20, .7);
-    border-radius: 32px;
+    background: oklch(16% 0.015 30 / .45);
     display: grid; place-items: center;
     z-index: 20;
     animation: fade-in 180ms ease both;
   }
   @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
   .modal-card {
-    background: var(--surface-card);
-    border-radius: 22px;
+    background: var(--t-bg);
+    border: 1px solid var(--outline-soft);
+    border-radius: 2px;
     padding: 22px 20px;
     width: calc(100% - 36px);
     max-height: calc(100% - 40px);
@@ -1074,7 +1075,7 @@
   }
   .status-pill.pop-in,
   .w-status.pop-in {
-    animation: pillPop 360ms cubic-bezier(.34, 1.56, .64, 1);
+    animation: pillPop 360ms cubic-bezier(.22, 1, .36, 1);
     transform-origin: center;
   }
   .modal-card h3 {
@@ -1143,6 +1144,17 @@
     margin-top: 6px;
   }
   /* Modal buttons use the global .btn system — no overrides needed. */
+
+  /* Small field labels above inputs — one class, consistent spacing. */
+  .field-label {
+    display: block;
+    margin-bottom: var(--space-1);
+    font-family: var(--tf-body);
+    font-style: italic;
+    font-size: var(--fs-xs);
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+  }
   .modal-card .err {
     font-size: 12px; color: var(--accent-red-light);
     background: rgba(239,68,68,.08);
@@ -1192,10 +1204,10 @@
 
   /* History screen */
   .hist-shift-card {
-    background: var(--surface-card);
-    border-radius: 16px;
-    padding: 14px 16px;
-    margin-top: 10px;
+    background: transparent;
+    border-bottom: 1px solid var(--outline-soft);
+    padding: 14px 4px;
+    margin-top: 0;
   }
   .hist-shift-card .top {
     display: flex; justify-content: space-between; align-items: center;
@@ -1209,22 +1221,25 @@
   .hist-shift-card .status-dot.ok { background: var(--accent-green); }
   .hist-shift-card .status-dot.warn { background: var(--accent-red); }
   .hist-shift-card .date {
-    font-size: 13px; font-weight: 600;
+    font-family: var(--tf-display);
+    font-weight: 400;
+    font-size: 16px;
   }
   .hist-shift-card .hrs {
     font-size: 16px; font-weight: 700;
     font-variant-numeric: tabular-nums;
   }
-  .hist-shift-card .hrs.ok { color: var(--accent-green-light); }
-  .hist-shift-card .hrs.warn { color: var(--accent-red-light); }
+  .hist-shift-card .hrs.ok { color: var(--accent-green); }
+  .hist-shift-card .hrs.warn { color: var(--accent-red); }
   .hist-shift-card .chips {
     display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;
   }
   .hist-shift-card .chip {
     font-size: 11px;
-    background: var(--surface-dark);
+    background: transparent;
     padding: 4px 8px;
-    border-radius: 999px;
+    border-radius: 2px;
+    border: 1px solid var(--outline-soft);
     color: var(--text-secondary);
     display: inline-flex; align-items: center; gap: 5px;
   }
@@ -1392,34 +1407,44 @@
 
   /* Weekly approvals banner */
   .approvals-banner {
-    background: linear-gradient(180deg, rgba(245,158,11,.18), rgba(245,158,11,.08));
-    border: 1px solid rgba(245,158,11,.25);
-    border-radius: 16px;
-    padding: 12px 14px;
+    background: transparent;
+    border-top: 1.5px solid var(--accent-amber);
+    border-bottom: 1px solid var(--accent-amber);
+    padding: 14px 4px;
     margin-top: 12px;
     display: flex; align-items: center; gap: 10px;
     cursor: pointer;
     transition: background 150ms ease;
   }
-  .approvals-banner:hover { background: rgba(245,158,11,.15); }
+  .approvals-banner:hover { background: rgba(245,158,11,.08); }
   .approvals-banner .icon {
     width: 36px; height: 36px;
-    border-radius: 12px;
-    background: rgba(245,158,11,.25);
-    color: var(--accent-amber);
+    border-radius: 2px;
+    background: var(--accent-amber);
+    color: var(--t-bg);
     display: grid; place-items: center;
     flex: 0 0 auto;
   }
   .approvals-banner .icon svg { width: 20px; height: 20px; }
   .approvals-banner .body { flex: 1; }
-  .approvals-banner .title { font-size: 13px; font-weight: 700; }
-  .approvals-banner .meta { font-size: 11px; color: var(--text-secondary); margin-top: 1px; }
+  .approvals-banner .title {
+    font-family: var(--tf-display);
+    font-size: 18px;
+    color: var(--accent-amber);
+  }
+  .approvals-banner .meta {
+    font-family: var(--tf-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 1px;
+  }
 
   /* Week submission card */
   .week-submit {
-    background: var(--surface-card);
-    border-radius: 16px;
-    padding: 14px 16px;
+    background: transparent;
+    border-top: 1.5px solid var(--text-primary);
+    border-bottom: 1px solid var(--outline-soft);
+    padding: 14px 4px;
     margin-top: 12px;
     display: flex; flex-direction: column; gap: 10px;
   }
@@ -1758,12 +1783,13 @@
 
   /* Read-only badge */
   .readonly-banner {
-    background: rgba(245,158,11,.1);
-    border: 1px dashed rgba(245,158,11,.35);
+    background: transparent;
+    border-top: 1px solid var(--accent-amber);
+    border-bottom: 1px solid var(--accent-amber);
     color: var(--accent-amber);
+    font-family: var(--tf-body);
     font-size: 11px;
     padding: 6px 10px;
-    border-radius: 10px;
     margin-top: 6px;
     font-weight: 600;
     letter-spacing: 0.3px;
@@ -1805,104 +1831,7 @@
     margin-top: 4px;
   }
 
-  /* Sidebar */
-  .side {
-    padding: 0 8px;
-  }
-  .phone-caption {
-    text-align: center;
-    color: var(--text-secondary);
-    font-size: 12px;
-    margin-top: 10px;
-    font-weight: 600;
-  }
-  .phone-caption b { color: var(--text-primary); }
-  .info-panel {
-    margin-top: 16px;
-    background: var(--surface-dark);
-    border-radius: 16px;
-    padding: 16px;
-    color: var(--text-secondary);
-    font-size: 13px;
-    line-height: 1.55;
-  }
-  .info-panel h3 {
-    margin: 0 0 8px;
-    color: var(--text-primary);
-    font-size: 14px;
-    font-weight: 700;
-  }
-  .info-panel ul { margin: 0; padding-left: 18px; }
-  .info-panel li { margin: 4px 0; }
-  .info-panel code {
-    background: var(--surface-card);
-    padding: 1px 5px; border-radius: 4px;
-    font-size: 12px;
-  }
-
-  .todo-list { display: flex; flex-direction: column; gap: 6px; }
-  .todo-list .item {
-    display: flex; gap: 8px; align-items: flex-start;
-  }
-  .todo-list .check {
-    flex: 0 0 auto;
-    width: 16px; height: 16px; border-radius: 4px;
-    display: grid; place-items: center;
-    margin-top: 2px;
-  }
-  .todo-list .check.done { background: var(--accent-green); }
-  .todo-list .check.done::after { content: "✓"; color: #fff; font-size: 11px; font-weight: 700; }
-  .todo-list .check.discuss { background: rgba(148,163,184,.2); color: var(--text-secondary); border: 1px dashed var(--outline-soft); }
-  .todo-list .check.discuss::after { content: "?"; font-size: 11px; font-weight: 700; }
-  .todo-list .txt { font-size: 12px; }
-  .todo-list .txt b { color: var(--text-primary); }
-
-  /* =========================================================
-     Design tokens — warm white, deep oxblood, big serif.
-     Magazine-typographic. Gloock display + Vollkorn body.
-     ========================================================= */
-  :root {
-    --t-bg: oklch(96% 0.015 85);
-    --navy: oklch(98% 0.01 85);
-    --deep-blue: oklch(92% 0.02 85);
-    --slate: oklch(55% 0.03 30);
-    --surface-dark: oklch(93% 0.02 85);
-    --surface-card: oklch(99% 0.008 85);
-    --surface-card-hi: oklch(95% 0.018 85);
-    --accent-blue: oklch(48% 0.11 58);         /* caramel default */
-    --accent-blue-bright: oklch(54% 0.13 58);
-    --accent-green: oklch(40% 0.1 155);
-    --accent-green-light: oklch(44% 0.11 155);
-    --accent-red: oklch(42% 0.18 25);
-    --accent-red-light: oklch(45% 0.18 25);
-    --accent-amber: oklch(55% 0.15 60);
-    --text-primary: oklch(16% 0.015 30);        /* ink */
-    --text-secondary: oklch(40% 0.018 30);
-    --text-muted: oklch(58% 0.015 30);
-    --outline-soft: oklch(82% 0.018 85);
-
-    --tf-display: "Gloock", Georgia, serif;
-    --tf-body: "Vollkorn", Georgia, serif;
-    --tf-mono: "Azeret Mono", ui-monospace, monospace;
-
-    font-family: var(--tf-body);
-    font-weight: 400;
-    color: var(--text-primary);
-  }
-  .phone {
-    background: var(--t-bg);
-    box-shadow:
-      0 28px 60px oklch(16% 0.015 30 / .18),
-      0 0 0 10px oklch(92% 0.02 85),
-      0 0 0 11px oklch(82% 0.025 85);
-  }
-  .phone::before { background: oklch(16% 0.015 30); }
-  .screen { background: var(--t-bg); padding: 56px 22px 24px; }
-  .topbar {
-    border-bottom: 1px solid var(--outline-soft);
-    padding-bottom: 4px;
-    margin-bottom: 8px;
-  }
+  /* Display-face family — every heading and brand element uses Gloock. */
   .topbar .title,
   .greeting .name,
   .month-nav .label,
@@ -1910,39 +1839,15 @@
   .modal-card h3,
   .login-wrap .brand,
   .approvals-banner .title,
-  .week-submit .title,
-  .info-panel h3 {
+  .week-submit .title {
     font-family: var(--tf-display);
     font-weight: 400;
   }
-  .greeting .name { font-size: 34px; line-height: 1.05; letter-spacing: -0.5px; }
   .login-wrap .brand { font-size: 52px; letter-spacing: -1.5px; line-height: .95; }
   .login-wrap .brand .accent { color: var(--accent-blue); }
   .login-wrap .tag {
     font-family: var(--tf-body); font-style: italic;
     color: var(--text-secondary); font-size: 14px;
-  }
-  .greeting .hello {
-    font-family: var(--tf-body);
-    font-style: italic;
-    color: var(--text-secondary);
-    font-size: 15px;
-  }
-  .greeting .role {
-    background: transparent;
-    border: 1px solid var(--text-secondary);
-    color: var(--text-secondary);
-    font-family: var(--tf-body);
-    font-weight: 700;
-    padding: 3px 10px;
-    border-radius: 2px;
-    font-size: 10px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    display: inline-block;
-  }
-  .greeting .role.readonly {
-    color: var(--accent-amber); border-color: var(--accent-amber);
   }
   .info-card .stat .value,
   .cal .inner .num,
@@ -1966,31 +1871,6 @@
   .lang-toggle { background: oklch(93% 0.02 85); border: 1px solid var(--outline-soft); }
   .lang-toggle .slider { background: var(--accent-blue); box-shadow: none; }
   .lang-toggle .opt.active { color: oklch(96% 0.015 85); }
-  /* Info card — flattened, ruled */
-  .info-card {
-    background: transparent;
-    border: 0;
-    border-top: 1.5px solid var(--text-primary);
-    border-bottom: 1px solid var(--outline-soft);
-    border-radius: 0;
-    padding: 18px 2px 14px;
-    box-shadow: none;
-  }
-  .info-card .stat .value { font-size: 34px; font-weight: 400; font-family: var(--tf-display); font-family: var(--tf-mono); }
-  .info-card .stat .label {
-    font-family: var(--tf-body);
-    font-style: italic;
-    font-weight: 400;
-    text-transform: none;
-    letter-spacing: 0;
-    font-size: 11px;
-    color: var(--text-secondary);
-  }
-  /* Stats are informational, not actions — keep all neutral ink. */
-  .info-card .stat.blue .value,
-  .info-card .stat.green .value,
-  .info-card .stat.amber .value,
-  .info-card .stat.plain .value { color: var(--text-primary); }
   .info-card.legend .legend-list {
     border-top: 1px solid var(--outline-soft); padding-top: 12px; margin-top: 14px;
   }
@@ -2051,154 +1931,30 @@
   }
   .dd-table .trow { border-bottom: 1px dotted var(--outline-soft); }
   .dd-table .nm { font-family: var(--tf-display); font-weight: 400; font-size: 14px; }
-  /* Section / emp */
-  .section-header {
-    border-bottom: 1.5px solid var(--text-primary);
-    padding-bottom: 4px; margin-top: 24px;
-  }
-  .section-header h3 { font-size: 22px; letter-spacing: -0.3px; }
-  .section-header small {
-    font-family: var(--tf-body);
-    font-style: italic;
-    font-weight: 400;
-    text-transform: none;
-    letter-spacing: 0.2px;
-    font-size: 11px;
-  }
-  .emp-row {
-    background: transparent;
-    border: 0;
-    border-bottom: 1px solid var(--outline-soft);
-    border-radius: 0;
-    padding: 14px 4px;
-    margin-top: 0;
-  }
-  .emp-row:hover { background: oklch(94% 0.02 85); }
+  /* Emp-row typography — ex-editorial overrides to the base rules above */
   .emp-row .name { font-family: var(--tf-display); font-weight: 400; font-size: 17px; }
   .emp-row .meta { font-family: var(--tf-mono); font-size: 11px; color: var(--text-muted); }
   .emp-row .badge {
-    background: transparent; color: var(--accent-amber); border: 1px solid var(--accent-amber);
-    border-radius: 2px; letter-spacing: 1.2px; font-family: var(--tf-body);
-  }
-  .fab {
-    background: var(--accent-blue); color: var(--t-bg);
-    border-radius: 50%;
-    box-shadow: 0 10px 24px oklch(48% 0.11 58 / .35);
-  }
-  /* Buttons live in the global .btn system — see top of stylesheet. */
-  .clock-card {
-    background: transparent; border: 0;
-    border-top: 1.5px solid var(--text-primary);
-    border-bottom: 1px solid var(--outline-soft);
-    border-radius: 0; padding: 14px 4px;
-  }
-  .clock-card .label {
-    font-family: var(--tf-body); font-style: italic; font-weight: 400;
-    letter-spacing: 0.5px; text-transform: none; color: var(--text-muted);
-  }
-  .clock-card .time { color: var(--accent-green); font-weight: 500; }
-  .shift-summary {
-    background: transparent; border: 0;
-    border-top: 1.5px solid var(--text-primary);
-    border-bottom: 1px solid var(--outline-soft);
-    border-radius: 0; padding: 16px 4px;
-  }
-  .shift-summary .l-label {
-    font-family: var(--tf-body); font-style: italic;
-    letter-spacing: 0.5px; text-transform: none; font-weight: 400;
-    color: var(--text-muted);
-  }
-  .shift-summary .total .value { color: var(--accent-green); }
-  .shift-summary .total .value.warn { color: var(--accent-red); }
-  .shift-summary .total .unit { font-family: var(--tf-body); font-style: italic; font-size: 14px; }
-  .comment-field {
-    background: transparent; border: 0;
-    border-bottom: 1.5px solid var(--outline-soft);
-    border-radius: 0; padding: 10px 0;
-    font-family: var(--tf-body);
-  }
-  .comment-field:focus { border-color: var(--accent-blue); }
-  /* Login */
-  .login-form input {
-    background: transparent; border: 0;
-    border-bottom: 1.5px solid var(--outline-soft);
-    border-radius: 0; padding: 12px 4px;
-    font-family: var(--tf-body);
-  }
-  .login-form input:focus { border-color: var(--accent-blue); }
-  .login-form .go {
-    background: var(--accent-blue); color: var(--t-bg);
-    border-radius: 2px;
-    font-family: var(--tf-display); font-weight: 400; letter-spacing: 0.5px;
-    font-size: 16px;
-  }
-  .login-form .err { background: oklch(92% 0.05 25); color: var(--accent-red); border-radius: 2px; }
-  .demo-accounts { background: transparent; border: 0; border-top: 1.5px solid var(--text-primary); padding: 12px 0 0; border-radius: 0; }
-  .demo-accounts .demo-title {
-    font-family: var(--tf-body); font-style: italic; font-weight: 400;
-    letter-spacing: 0.5px; text-transform: none;
-  }
-  .demo-chip {
-    background: transparent; border: 0;
-    border-bottom: 1px dotted var(--outline-soft);
-    border-radius: 0; font-family: var(--tf-mono);
-  }
-  .demo-chip:hover { background: oklch(94% 0.02 85); }
-  .demo-chip b { color: var(--accent-blue); }
-  .demo-chip .tag {
     background: transparent;
-    border: 1px solid var(--text-secondary);
-    color: var(--text-secondary);
+    color: var(--accent-amber);
+    border: 1px solid var(--accent-amber);
     border-radius: 2px;
     letter-spacing: 1.2px;
     font-family: var(--tf-body);
   }
-  .demo-chip .tag.admin,
-  .demo-chip .tag.emp,
-  .demo-chip .tag.readonly { color: var(--text-secondary); border-color: var(--text-secondary); }
-  /* Approvals */
-  .approvals-banner {
-    background: transparent; border: 0;
-    border-top: 1.5px solid var(--accent-amber);
-    border-bottom: 1px solid var(--accent-amber);
-    border-radius: 0; padding: 14px 4px;
-  }
-  .approvals-banner .icon {
-    background: var(--accent-amber); color: var(--t-bg); border-radius: 2px;
-  }
-  .approvals-banner .title {
-    font-family: var(--tf-display); font-size: 18px; color: var(--accent-amber);
-  }
-  .approvals-banner .meta { font-family: var(--tf-mono); color: var(--text-muted); }
-  /* Week submit */
-  .week-submit {
-    background: transparent; border: 0;
-    border-top: 1.5px solid var(--text-primary);
-    border-bottom: 1px solid var(--outline-soft);
-    border-radius: 0; padding: 14px 4px;
-  }
+  /* Buttons live in the global .btn system — see top of stylesheet. */
+
+  /* Status pills in week-submit: outlined, no fill, editorial letter-spacing */
   .week-submit .status-pill {
-    background: transparent; border: 1px solid currentColor; border-radius: 2px; letter-spacing: 1.2px; font-family: var(--tf-body);
+    background: transparent;
+    border: 1px solid currentColor;
+    border-radius: 2px;
+    letter-spacing: 1.2px;
+    font-family: var(--tf-body);
   }
   .week-submit .status-pill.pending { color: var(--accent-amber); }
   .week-submit .status-pill.approved { color: var(--accent-green); }
-  .readonly-banner {
-    background: transparent; border: 0;
-    border-top: 1px solid var(--accent-amber);
-    border-bottom: 1px solid var(--accent-amber);
-    color: var(--accent-amber); border-radius: 0;
-    font-family: var(--tf-body);
-  }
-  /* History */
-  .hist-shift-card {
-    background: transparent; border: 0;
-    border-bottom: 1px solid var(--outline-soft);
-    border-radius: 0; padding: 14px 4px;
-  }
-  .hist-shift-card .date { font-family: var(--tf-display); font-weight: 400; font-size: 16px; }
-  .hist-shift-card .hrs.ok { color: var(--accent-green); }
-  .hist-shift-card .hrs.warn { color: var(--accent-red); }
-  .hist-shift-card .chip { background: transparent; border: 1px solid var(--outline-soft); color: var(--text-secondary); border-radius: 2px; }
+  /* History shift comment + week-status typography */
   .hist-shift-card .comment { font-family: var(--tf-body); font-style: italic; font-size: 13px; }
   .hist-shift-card .week-status { background: transparent; border: 1px solid currentColor; border-radius: 2px; letter-spacing: 1.2px; font-family: var(--tf-body); }
   .hist-shift-card .week-status.pending { color: var(--accent-amber); }
@@ -2209,8 +1965,6 @@
   .mini-map .leaflet-tile { filter: sepia(0.22) saturate(0.8) brightness(0.95) contrast(1.05); }
   .mini-map .legend { background: oklch(16% 0.015 30 / .85); color: oklch(96% 0.015 85); border-radius: 2px; font-family: var(--tf-body); }
   /* Modal */
-  .modal-scrim { background: oklch(16% 0.015 30 / .45); }
-  .modal-card { background: var(--t-bg); border: 1px solid var(--outline-soft); border-radius: 2px; }
   /* On narrow viewports the modal is a bottom sheet — the rounded top
      corners are the affordance that tells the user "this is a sheet,"
      so the editorial border-radius:2px override has to give way here. */
@@ -2226,13 +1980,6 @@
   }
   .approval-row { background: transparent; border: 0; border-bottom: 1px dotted var(--outline-soft); border-radius: 0; padding: 14px 4px; }
   .approval-row .who { font-family: var(--tf-display); font-weight: 400; font-size: 16px; }
-  .info-panel {
-    background: transparent; border: 0;
-    border-top: 1.5px solid var(--text-primary); border-bottom: 1px solid var(--outline-soft);
-    border-radius: 0; color: var(--text-secondary);
-  }
-  .phone-caption b { color: var(--text-primary); }
-  .todo-list .check.done { background: var(--accent-green); }
   .toast { background: var(--text-primary); color: var(--t-bg); border: 1px solid var(--text-primary); border-radius: 2px; font-family: var(--tf-body); }
   .toast .pill { background: var(--accent-blue); color: var(--t-bg); border-radius: 2px; font-family: var(--tf-body); }
   .toast.success .pill { background: var(--accent-green); color: var(--t-bg); }
@@ -2241,24 +1988,18 @@
 
 
   /* =========================================================
-     APP SHELL — overrides for real app page
-     Fixed to viewport edges so it can never overflow.
+     APP SHELL — fixed to viewport edges so it can never overflow.
      Works on any device by definition.
      ========================================================= */
   html, body {
-    margin: 0;
-    padding: 0;
     overflow: hidden;
     overscroll-behavior: none;
-  }
-  body {
-    background: var(--navy);
   }
 
   .app-root {
     position: fixed;
     inset: 0;
-    background: var(--navy);
+    background: var(--t-bg);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -2278,19 +2019,6 @@
     z-index: 50;
   }
 
-  .topbar {
-    padding: 14px 18px 0;
-    height: auto;
-    min-height: 44px;
-    box-sizing: content-box;
-    flex: 0 0 auto;
-    margin-bottom: 0;
-    /* The scroll area below gets transform-based screen-enter animations
-       which create a stacking context — without this, dropdowns anchored
-       inside the topbar (account menu) would paint behind the scroll. */
-    position: relative;
-    z-index: 10;
-  }
   /* On the login screen renderTopbar() leaves the container empty. Collapse
      it so the login content doesn't look pushed down by a ghost 44px bar. */
   .topbar:empty {
@@ -2417,14 +2145,8 @@
     bottom: 20px;
   }
   .fab {
-    position: absolute;
     right: 20px;
     bottom: 24px;
-  }
-  .modal-scrim {
-    position: absolute;
-    inset: 0;
-    border-radius: 0;
   }
 
   /* Safe-area respect on iOS phones (notch / home indicator) */
@@ -5024,11 +4746,11 @@
       const err = el("div", {class:"err", style:"display:none"});
       card.appendChild(el("h3", {}, tr("editShiftTitle")));
       card.appendChild(el("p", {}, fmtDateLong(sh.date)));
-      card.appendChild(el("label", {style:"font-size:11px; color:var(--text-muted); letter-spacing:0.4px; text-transform:uppercase; font-weight:700; display:block; margin-bottom:4px;"}, tr("start")));
+      card.appendChild(el("label", {class:"field-label"}, tr("start")));
       card.appendChild(startIn);
-      card.appendChild(el("label", {style:"font-size:11px; color:var(--text-muted); letter-spacing:0.4px; text-transform:uppercase; font-weight:700; display:block; margin-bottom:4px;"}, tr("end")));
+      card.appendChild(el("label", {class:"field-label"}, tr("end")));
       card.appendChild(endIn);
-      card.appendChild(el("label", {style:"font-size:11px; color:var(--text-muted); letter-spacing:0.4px; text-transform:uppercase; font-weight:700; display:block; margin-bottom:4px;"}, tr("commentLabel")));
+      card.appendChild(el("label", {class:"field-label"}, tr("commentLabel")));
       card.appendChild(noteIn);
       card.appendChild(err);
       card.appendChild(el("div", {class:"actions"},
@@ -5075,14 +4797,13 @@
       const endIn   = el("input", { type: "time", value: sh.end });
       const noteIn  = el("textarea", { rows: 3, placeholder: tr("adminEditReason") });
       const err = el("div", {class:"err", style:"display:none"});
-      const labelStyle = "font-size:11px; color:var(--text-muted); letter-spacing:0.4px; text-transform:uppercase; font-weight:700; display:block; margin-bottom:4px;";
       card.appendChild(el("h3", {}, tr("adminEditTitle")));
       card.appendChild(el("p", {}, fmtDateLong(sh.date)));
-      card.appendChild(el("label", {style: labelStyle}, tr("start")));
+      card.appendChild(el("label", {class:"field-label"}, tr("start")));
       card.appendChild(startIn);
-      card.appendChild(el("label", {style: labelStyle}, tr("end")));
+      card.appendChild(el("label", {class:"field-label"}, tr("end")));
       card.appendChild(endIn);
-      card.appendChild(el("label", {style: labelStyle}, tr("adminEditReason")));
+      card.appendChild(el("label", {class:"field-label"}, tr("adminEditReason")));
       card.appendChild(noteIn);
       card.appendChild(err);
       card.appendChild(el("div", {class:"actions"},
@@ -5198,13 +4919,12 @@
       const isSelf = target.id === state.currentUser.id;
       if (isSelf) roleSel.disabled = true;
       const err = el("div", {class:"err", style:"display:none"});
-      const labelStyle = "font-size:11px; color:var(--text-muted); letter-spacing:0.4px; text-transform:uppercase; font-weight:700; display:block; margin-bottom:4px;";
       card.appendChild(el("h3", {style:"margin-bottom:10px;"}, tr("editEmployee")));
-      card.appendChild(el("label", {style: labelStyle}, tr("username")));
+      card.appendChild(el("label", {class:"field-label"}, tr("username")));
       card.appendChild(userIn);
-      card.appendChild(el("label", {style: labelStyle}, tr("fullName")));
+      card.appendChild(el("label", {class:"field-label"}, tr("fullName")));
       card.appendChild(nameIn);
-      card.appendChild(el("label", {style: labelStyle}, tr("role")));
+      card.appendChild(el("label", {class:"field-label"}, tr("role")));
       card.appendChild(roleSel);
       card.appendChild(err);
       // Admin actions (Reset password, Deactivate) sit in their own row

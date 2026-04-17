@@ -2150,7 +2150,7 @@
   .version-tag {
     position: absolute;
     top: max(6px, env(safe-area-inset-top, 0px));
-    left: max(8px, env(safe-area-inset-left, 0px));
+    right: max(8px, env(safe-area-inset-right, 0px));
     font-size: 9px;
     font-family: ui-monospace, Menlo, monospace;
     color: var(--text-muted);
@@ -2342,6 +2342,382 @@
     .breakdown .drow.tappable:hover { background: transparent; }
   }
 
+  /* =========================================================
+     TAB BADGE — small numeric overlay on a bottom-bar tab.
+     Used for the admin Inbox tab to show pending count.
+     ========================================================= */
+  .tabbar .tab { position: relative; }
+  .tabbar .tab .tab-badge {
+    position: absolute;
+    top: 6px;
+    right: calc(50% - 22px);
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: var(--accent-amber);
+    color: var(--t-bg);
+    font-family: var(--tf-body);
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 16px;
+    text-align: center;
+    letter-spacing: 0;
+    box-shadow: 0 0 0 2px var(--t-bg);
+  }
+
+  /* Forward / back screen transitions. The previous .screen-enter is kept
+     for the initial mount; nav now picks fwd/back based on push vs pop. */
+  .screen-enter-fwd { animation: slide-from-right 280ms cubic-bezier(.2,.8,.2,1) both; }
+  .screen-enter-back { animation: slide-from-left 280ms cubic-bezier(.2,.8,.2,1) both; }
+  @keyframes slide-from-right {
+    from { opacity: 0; transform: translateX(20px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes slide-from-left {
+    from { opacity: 0; transform: translateX(-20px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  /* Tab swap should fade, not slide — siblings, not parent/child. */
+  .screen-enter-tab { animation: fade-in 200ms ease both; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .screen-enter, .screen-enter-fwd, .screen-enter-back, .screen-enter-tab,
+    .month-anim-next, .month-anim-prev,
+    .modal-card, .modal-scrim,
+    .toast, .lang-toggle .slider, .clock-card .pulse::after {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+
+  /* =========================================================
+     UNIFIED WEEK CARD — used on Home, History, and Inbox.
+     Single visual treatment for "a week" so users learn one
+     mental model. Header (always visible) + body (when expanded)
+     + footer (contextual actions/notice).
+     ========================================================= */
+  .week-card {
+    margin-top: 12px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: var(--surface-dark);
+    box-sizing: border-box;
+    transition: background 150ms ease;
+  }
+  .week-card.urgent {
+    border: 1px solid rgba(245,158,11,.5);
+    background: color-mix(in oklab, var(--accent-amber) 5%, var(--surface-dark));
+  }
+  .week-card.rejected {
+    border: 1px solid rgba(239,68,68,.45);
+    background: color-mix(in oklab, var(--accent-red) 4%, var(--surface-dark));
+  }
+  .week-card .wc-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px;
+    min-width: 0;
+  }
+  .week-card .wc-head.tappable {
+    cursor: pointer;
+    touch-action: manipulation;
+    user-select: none;
+  }
+  .week-card .wc-title-block { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .week-card .wc-title {
+    font-family: var(--tf-display);
+    font-weight: 400;
+    font-size: var(--fs-xl);
+    letter-spacing: -0.4px;
+    line-height: 1.1;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+  .week-card .wc-employee {
+    font-family: var(--tf-body);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    line-height: 1.1;
+  }
+  .week-card .wc-sub {
+    font-family: var(--tf-mono);
+    font-size: var(--fs-xs);
+    font-weight: 500;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .week-card .wc-right {
+    display: flex; align-items: center; gap: 10px; flex: 0 0 auto;
+  }
+  .week-card .wc-hrs {
+    font-family: var(--tf-mono);
+    font-size: var(--fs-base);
+    font-weight: 700;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+  .week-card .wc-status {
+    font-family: var(--tf-body);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    padding: 3px 8px;
+    border-radius: 2px;
+    text-transform: uppercase;
+    background: transparent;
+    border: 1px solid currentColor;
+  }
+  .week-card .wc-status.pending  { color: var(--accent-amber); }
+  .week-card .wc-status.approved { color: var(--accent-green); }
+  .week-card .wc-status.rejected { color: var(--accent-red-light, #fca5a5); }
+  /* Reused from .hist-week-head for Reopen menu — same affordance pattern. */
+  .week-card .wc-status.has-menu {
+    position: relative;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .week-card .wc-status.has-menu::after {
+    content: "▾"; margin-left: 4px; opacity: .7;
+  }
+  .week-card .wc-status.has-menu.open::after { transform: rotate(180deg); }
+  .week-card .wc-attest {
+    font-family: var(--tf-body);
+    font-style: italic;
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+    margin-top: 8px;
+    line-height: 1.4;
+  }
+  .week-card .wc-warn {
+    font-family: var(--tf-body);
+    font-style: italic;
+    font-size: var(--fs-xs);
+    color: var(--accent-amber);
+    margin-top: 8px;
+    line-height: 1.4;
+  }
+  .week-card .wc-footer {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--outline-soft);
+  }
+  .week-card .wc-footer-actions {
+    display: flex; gap: 8px;
+  }
+  .week-card .wc-footer-actions > .btn { flex: 1; min-width: 0; }
+  /* Lock notice replaces the old week-closed-card banner. Lives inside the
+     week card itself — the week IS the locked thing. */
+  .week-card .wc-lock {
+    display: flex; align-items: center; gap: 10px;
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: color-mix(in oklab, var(--accent-amber) 8%, transparent);
+    border: 1px dashed color-mix(in oklab, var(--accent-amber) 40%, transparent);
+    color: var(--text-secondary);
+    font-family: var(--tf-body);
+    font-size: var(--fs-sm);
+    line-height: 1.4;
+  }
+  .week-card .wc-lock.approved {
+    background: color-mix(in oklab, var(--accent-green) 6%, transparent);
+    border-color: color-mix(in oklab, var(--accent-green) 35%, transparent);
+  }
+  .week-card .wc-lock svg { width: 16px; height: 16px; flex: 0 0 auto; color: var(--accent-amber); }
+  .week-card .wc-lock.approved svg { color: var(--accent-green); }
+
+  /* The shift cards inside a week-card share the .week-rollup compact treatment
+     (already defined for .week-rollup .hist-shift-card up above). */
+
+  /* Inbox screen — section headers between week-cards and edit-requests. */
+  .inbox-empty {
+    margin: 40px 4px;
+    padding: 24px 16px;
+    text-align: center;
+    font-family: var(--tf-body);
+    font-style: italic;
+    font-size: var(--fs-base);
+    color: var(--text-muted);
+    background: var(--surface-card);
+    border: 1px dashed var(--outline-soft);
+    border-radius: 14px;
+  }
+  .inbox-section-label {
+    font-family: var(--tf-body);
+    font-size: var(--fs-xs);
+    font-weight: 500;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 18px 4px 6px;
+  }
+  .edit-req-card {
+    margin-top: 8px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: var(--surface-dark);
+  }
+  .edit-req-card .er-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 10px; margin-bottom: 6px;
+  }
+  .edit-req-card .er-name {
+    font-family: var(--tf-display);
+    font-weight: 400;
+    font-size: var(--fs-lg);
+    line-height: 1.1;
+  }
+  .edit-req-card .er-date {
+    font-family: var(--tf-mono);
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .edit-req-card .er-times {
+    font-family: var(--tf-mono);
+    font-size: var(--fs-sm);
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+  .edit-req-card .er-times .strike {
+    color: var(--text-muted);
+    text-decoration: line-through;
+    margin-right: 8px;
+  }
+  .edit-req-card .er-times .arrow { color: var(--text-muted); margin: 0 6px; }
+  .edit-req-card .er-times .new { color: var(--text-primary); font-weight: 700; }
+  .edit-req-card .er-reason {
+    font-family: var(--tf-body);
+    font-style: italic;
+    font-size: var(--fs-sm);
+    color: var(--text-secondary);
+    line-height: 1.4;
+    margin-top: 6px;
+  }
+  .edit-req-card .er-actions {
+    display: flex; gap: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--outline-soft);
+  }
+  .edit-req-card .er-actions > .btn { flex: 1; }
+
+  /* =========================================================
+     MANAGE USERS — full screen (was a stack of modals).
+     Reuses .emp-row visuals so the surface feels consistent
+     with the admin Roster tab.
+     ========================================================= */
+  .mu-screen .mu-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 4px;
+    border-bottom: 1px solid var(--outline-soft);
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background 120ms ease;
+  }
+  .mu-screen .mu-row.inactive { cursor: default; opacity: .65; }
+  .mu-screen .mu-row:active { background: var(--surface-card-hi); }
+  .mu-screen .mu-row .mu-body { flex: 1; min-width: 0; }
+  .mu-screen .mu-row .mu-name {
+    font-family: var(--tf-display);
+    font-weight: 400;
+    font-size: 17px;
+    line-height: 1.1;
+  }
+  .mu-screen .mu-row .mu-meta {
+    font-family: var(--tf-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 3px;
+    letter-spacing: 0.2px;
+  }
+  .mu-screen .mu-row .chev { color: var(--text-muted); flex: 0 0 auto; }
+  .mu-screen .mu-section-label {
+    font-family: var(--tf-body);
+    font-size: var(--fs-xs);
+    font-weight: 500;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 22px 4px 6px;
+  }
+  .mu-screen .add-user-btn {
+    display: flex; align-items: center; justify-content: center;
+    gap: 8px;
+    width: 100%; min-height: 52px;
+    margin: 8px 0 4px;
+    background: transparent;
+    border: 1px dashed var(--outline-soft);
+    border-radius: 14px;
+    color: var(--text-secondary);
+    font-family: var(--tf-body);
+    font-size: var(--fs-base);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
+  }
+  .mu-screen .add-user-btn:hover { background: var(--surface-card-hi); color: var(--text-primary); border-color: var(--text-secondary); }
+  .mu-screen .add-user-btn:active { filter: brightness(.94); }
+  .mu-screen .add-user-btn svg { width: 18px; height: 18px; }
+
+  /* Edit User screen — form scaffolding shared with sheets but laid out
+     full-page. Uses .field-label and the common input/select treatment. */
+  .eu-screen .eu-form {
+    display: flex; flex-direction: column;
+    margin-top: 8px;
+  }
+  .eu-screen input,
+  .eu-screen select,
+  .eu-screen textarea {
+    display: block; width: 100%;
+    background: transparent;
+    border: 0;
+    border-bottom: 1.5px solid var(--outline-soft);
+    border-radius: 0;
+    padding: 10px 4px;
+    color: var(--text-primary);
+    font-family: var(--tf-body);
+    font-size: var(--fs-md);
+    margin-bottom: 14px;
+    outline: none;
+    transition: border-color 150ms ease;
+  }
+  @media (pointer: coarse) {
+    .eu-screen input, .eu-screen select, .eu-screen textarea { font-size: 16px; }
+  }
+  .eu-screen input:focus,
+  .eu-screen select:focus,
+  .eu-screen textarea:focus { border-color: var(--accent-blue); }
+  .eu-screen .eu-actions {
+    display: flex; gap: 10px;
+    margin-top: 16px;
+  }
+  .eu-screen .eu-actions > .btn { flex: 1; }
+  .eu-screen .eu-admin-actions {
+    display: flex; gap: 10px;
+    margin: 22px 0 0;
+    padding-top: 16px;
+    border-top: 1px dashed var(--outline-soft);
+  }
+  .eu-screen .eu-admin-actions > .btn { flex: 1; }
+  .eu-screen .eu-err {
+    font-family: var(--tf-body);
+    font-size: var(--fs-sm);
+    color: var(--accent-red-light);
+    background: rgba(239,68,68,.06);
+    padding: 8px 10px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+  }
+
+  /* Roster screen — same emp-row visuals, no extra wrapper. */
+  .roster-screen .section-header { margin-top: 8px; }
+
+  /* Inbox tab badge contrast tweak for active tab. */
+  .tabbar .tab.active .tab-badge { box-shadow: 0 0 0 2px var(--surface-card); }
+
 </style>
 </head>
 <body>
@@ -2386,8 +2762,12 @@
     expandedApproval: null,
     // key of the approval row currently in rejection-reason entry mode
     rejectingApproval: null,
-    // history week-expansion: Set<weekStart>. Lazy-init to { thisWeekStart() }.
+    // history week-expansion: Set<weekStart>. Lazy-init.
     expandedHistoryWeeks: null,
+    // inbox week-expansion: Set<`${empId}|${weekStart}`>
+    expandedInboxWeeks: null,
+    // direction tracker for screen transitions: 1 = forward push, -1 = back
+    navDir: 0,
     // user menu (account dropdown) open state
     userMenuOpen: false,
     // admin-only: which approved-week pill dropdown is open. Format:
@@ -2874,6 +3254,12 @@
       employee: "Employee",
       needsAttention: "Previous weeks",
       unsubmittedBanner: (n) => `${n} unsubmitted week${n > 1 ? "s" : ""} — tap to view`,
+      inbox: "Inbox",
+      roster: "Roster",
+      inboxPendingWeeks: "Weeks awaiting approval",
+      inboxNothing: "Nothing pending — all caught up.",
+      manageUsersTitle: "Manage users",
+      backToManage: "All users",
     },
     es: {
       appName: "PunchCard",
@@ -3012,6 +3398,12 @@
       employee: "Empleado",
       needsAttention: "Semanas anteriores",
       unsubmittedBanner: (n) => `${n} semana${n > 1 ? "s" : ""} sin enviar — toca para ver`,
+      inbox: "Bandeja",
+      roster: "Equipo",
+      inboxPendingWeeks: "Semanas por aprobar",
+      inboxNothing: "Nada pendiente — todo al día.",
+      manageUsersTitle: "Administrar usuarios",
+      backToManage: "Todos los usuarios",
     },
   };
   function tr(k, ...args) {
@@ -3229,17 +3621,20 @@
     state.screen = screen;
     Object.assign(state, extra);
     state.lastAnim = 0;
+    state.navDir = 1;
     history.pushState({ depth: state.nav.length }, "");
     render();
   }
   // Tabs are sibling roots — switching between Home/History does NOT push
   // a nav entry, so no back button appears. Any prior drill-in navigation
-  // is cleared on tab switch.
+  // is cleared on tab switch. Use a fade transition (siblings, not parent/
+  // child), distinct from the slide used for push/pop.
   function navTab(screen) {
     if (state.screen === screen) return;
     state.nav = [];
     state.screen = screen;
     state.lastAnim = 0;
+    state.navDir = 0;
     render();
   }
   function navBack() {
@@ -3249,6 +3644,7 @@
       state.selectedDay = prev.selectedDay ?? state.selectedDay;
       state.viewingEmployeeId = prev.viewingEmployeeId ?? null;
     }
+    state.navDir = -1;
     render();
   }
   window.addEventListener("popstate", () => {
@@ -3581,9 +3977,7 @@
               class: "user-menu-add",
               onclick: () => {
                 state.userMenuOpen = false;
-                state.modal = "manageEmployees";
-                history.pushState({ modal: true }, "");
-                render();
+                navTo("manage_users");
               },
             },
               ICON("user", 14),
@@ -3610,22 +4004,37 @@
     // This slot is kept around for future per-screen primary actions.
   }
 
-  // Bottom bar: Home/History tabs for employees, pinned approvals banner for
-  // the admin home. Both live in the same slot — only one renders at a time,
-  // and it stays on-screen while the scroll area scrolls above it.
+  // Bottom bar: tab bar for the role's root screens.
+  //   Employee  → Home / History
+  //   Admin/Owner/Readonly → Today (admin_home) / Roster / Inbox (badge=count)
+  // Drill-in screens (admin_employee, shift_detail) hide the bar so the user
+  // sees a back-arrow + content only.
   function renderBottomBar() {
     const root = document.getElementById("bottomBarRoot");
     root.innerHTML = "";
     const u = state.currentUser;
     if (!u) return;
 
+    const tab = (iconName, labelKey, screen, badge=null) => {
+      const node = el("div", {
+        class: `tab ${state.screen === screen ? "active" : ""}`,
+        onclick: () => navTab(screen),
+      }, ICON(iconName), el("span", {class: "tab-label"}, tr(labelKey)));
+      if (badge != null && badge > 0) {
+        node.appendChild(el("div", {class:"tab-badge"}, String(badge > 99 ? "99+" : badge)));
+      }
+      return node;
+    };
+
+    // Employee: Home / History tabs. Optional unsigned-weeks nudge above
+    // the bar — taps scroll to the past-weeks section on Home.
     if (isEmployee(u) && (state.screen === "employee_home" || state.screen === "history")) {
       const unsignedCount = unsignedPastWeeks(u.id).length;
       if (unsignedCount > 0) {
         root.appendChild(el("div", {
           class: "pinned-approvals",
           onclick: () => {
-            if (state.screen !== "employee_home") navTo("employee_home");
+            if (state.screen !== "employee_home") navTab("employee_home");
             requestAnimationFrame(() => {
               const target = document.getElementById("past-weeks-section");
               if (target) target.scrollIntoView({behavior: "smooth", block: "start"});
@@ -3640,30 +4049,23 @@
           el("div", {class: "chev"}, ICON("chevRight")),
         ));
       }
-      const tab = (name, iconName, labelKey, screen) => el("div", {
-        class: `tab ${state.screen === screen ? "active" : ""}`,
-        onclick: () => navTab(screen),
-      }, ICON(iconName), el("span", {class: "tab-label"}, tr(labelKey)));
       root.appendChild(el("div", {class: "tabbar"},
-        tab("home", "home", "home", "employee_home"),
-        tab("history", "history", "history", "history"),
+        tab("home", "home", "employee_home"),
+        tab("history", "history", "history"),
       ));
       return;
     }
 
-    if (state.screen === "admin_home" && canApprove(u)) {
-      const totalPending = pendingApprovals().length + pendingEditRequests().length;
-      if (totalPending === 0) return;
-      root.appendChild(el("div", {
-        class: "pinned-approvals",
-        onclick: () => { state.modal = "approvals"; history.pushState({ modal: true }, ""); render(); },
-      },
-        el("div", {class: "icon"}, ICON("inbox")),
-        el("div", {class: "body"},
-          el("div", {class: "title"}, tr("pendingApprovals")),
-          el("div", {class: "meta"}, tr("nPending", totalPending)),
-        ),
-        el("div", {class: "chev"}, ICON("chevRight")),
+    // Admin / owner / readonly: Home / Inbox. Inbox carries a badge with
+    // the count of pending weeks + edit requests. (The roster lives inside
+    // Home — having a dedicated tab for it left both screens too thin.)
+    if (isAdminLike(u) && (state.screen === "admin_home" || state.screen === "inbox")) {
+      const inboxCount = canApprove(u)
+        ? (pendingApprovals().length + pendingEditRequests().length)
+        : 0;
+      root.appendChild(el("div", {class: "tabbar"},
+        tab("home", "home", "admin_home"),
+        tab("inbox", "inbox", "inbox", inboxCount),
       ));
     }
   }
@@ -3747,15 +4149,348 @@
       { weekday:"long", month:"long", day:"numeric" }).replace(/^./, c => c.toUpperCase());
     root.appendChild(el("div", {class:"today-label"}, `${tr("today")} · ${todayLabel}`));
     root.appendChild(el("div", {style:"height:12px"}));
-    root.appendChild(clockSection());
 
-    // Weekly submission
+    // Always: Clock In → Current week → Previous weeks. Order is fixed
+    // regardless of week state so the clock button doesn't visually jump
+    // when the week transitions from unsigned → pending → approved. The
+    // WeekRow's own footer (lock notice / Pull Back) handles the locked
+    // states without needing to reorder anything around it.
+    root.appendChild(clockSection());
     root.appendChild(el("div", {class:"signoff-label", style:"margin-top:14px"}, tr("weeklySignoff")));
     root.appendChild(weekSignoffCard());
+
     const pastSection = pastWeeksSignoffSection();
     if (pastSection) root.appendChild(pastSection);
 
     root.appendChild(el("div", {style:"height:40px"}));
+  }
+
+  // ============================================================
+  // UNIFIED WEEK CARD — used on Home (current + past weeks),
+  // History, and Inbox. Header (range + hours + status) +
+  // optional body (shift cards) + optional footer (actions).
+  // Variants:
+  //   mode "home-current"  — always-expanded, footer = Submit/Resubmit
+  //                          or Pull-back, or lock notice if approved.
+  //   mode "home-past"     — always-expanded, footer = Submit/Resubmit.
+  //   mode "history"       — collapsible, status pill (Reopen menu for admin
+  //                          on approved). No primary footer action.
+  //   mode "inbox"         — collapsible. Footer = Approve / Reject (or
+  //                          a reject-reason form when in rejecting mode).
+  // ============================================================
+  function renderWeekRow(opts) {
+    const {
+      empId, weekStart, mode,
+      showEmployee = false,
+      forceExpanded = false,
+    } = opts;
+
+    const wkShifts = shiftsForWeek(empId, weekStart);
+    const wkHours = wkShifts.reduce((s, x) => s + x.hours, 0);
+    const status = weekStatus(empId, weekStart);
+    const rejectionComment = weekRejectionComment(empId, weekStart);
+    const wkEnd = weekEndOf(weekStart);
+    const emp = userById[empId];
+    const u = state.currentUser;
+
+    // ---- expansion state ----
+    let expanded;
+    let toggleExpand = null;
+    if (forceExpanded || mode === "home-current" || mode === "home-past") {
+      expanded = true;
+    } else if (mode === "history") {
+      if (state.expandedHistoryWeeks == null) state.expandedHistoryWeeks = new Set();
+      const set = state.expandedHistoryWeeks;
+      expanded = set.has(weekStart);
+      toggleExpand = () => {
+        if (expanded) set.delete(weekStart); else set.add(weekStart);
+        render();
+      };
+    } else if (mode === "inbox") {
+      if (state.expandedInboxWeeks == null) state.expandedInboxWeeks = new Set();
+      const key = `${empId}|${weekStart}`;
+      const set = state.expandedInboxWeeks;
+      expanded = set.has(key);
+      toggleExpand = () => {
+        if (expanded) set.delete(key); else set.add(key);
+        render();
+      };
+    }
+
+    // ---- card classes ----
+    const classes = ["week-card", "week-rollup"];
+    if (mode === "home-past") {
+      classes.push(rejectionComment ? "rejected" : "urgent");
+    }
+
+    // ---- title + meta block ----
+    const titleBlock = el("div", {class:"wc-title-block"});
+    if (showEmployee && emp) {
+      titleBlock.appendChild(el("div", {class:"wc-employee", style:`color:${emp.color}`}, emp.displayName));
+    }
+    titleBlock.appendChild(el("div", {class:"wc-title"},
+      `${fmtDateShort(weekStart)} – ${fmtDateShort(wkEnd)}`));
+    titleBlock.appendChild(el("div", {class:"wc-sub"},
+      `${wkHours.toFixed(1)}${tr("hoursShort")} · ${wkShifts.length} ${tr("shifts").toLowerCase()}`));
+
+    // ---- right side: hours + optional status pill + chevron ----
+    const right = el("div", {class:"wc-right"});
+    if (status) {
+      const label = status === "approved" ? tr("weekApproved")
+                  : status === "rejected" ? tr("weekRejected")
+                  : tr("weekPending");
+      const canReopen = mode === "history"
+        && status === "approved"
+        && canApprove(u);
+      const menuKey = `${empId}|${weekStart}`;
+      const isMenuOpen = canReopen && state.weekMenuKey === menuKey;
+      const pill = el("span", {
+        class: `wc-status ${status}${canReopen ? " has-menu" : ""}${isMenuOpen ? " open" : ""}`,
+      }, label);
+      if (canReopen) {
+        pill.addEventListener("click", (ev) => {
+          ev.stopPropagation();
+          state.weekMenuKey = isMenuOpen ? null : menuKey;
+          state.weekReopenConfirm = false;
+          render();
+        });
+        if (isMenuOpen) {
+          const primed = state.weekReopenConfirm;
+          const menu = el("div", {class:"w-status-menu"},
+            el("button", {
+              class: `w-status-menu-item${primed ? " confirm" : ""}`,
+              onclick: async (ev) => {
+                ev.stopPropagation();
+                if (!primed) { state.weekReopenConfirm = true; render(); return; }
+                if (ev.currentTarget.disabled) return;
+                ev.currentTarget.disabled = true;
+                try {
+                  await api.setApproval(empId, weekStart, "unsubmitted");
+                  const i = weekApprovals.findIndex(w => w.empId === empId && w.weekStart === weekStart);
+                  if (i >= 0) weekApprovals.splice(i, 1);
+                  state.weekMenuKey = null;
+                  state.weekReopenConfirm = false;
+                  toast(tr("weekReopened"), {kind:"warn", pill:"↺"});
+                  render();
+                } catch (e) {
+                  ev.currentTarget.disabled = false;
+                  toastApiError(e, state.lang === "es" ? "No se pudo reabrir" : "Couldn't reopen");
+                }
+              },
+            }, primed ? tr("reopenWeekConfirm") : tr("reopenWeek")),
+          );
+          pill.appendChild(menu);
+        }
+      }
+      right.appendChild(pill);
+    } else {
+      right.appendChild(el("span", {class:"wc-hrs"}, `${wkHours.toFixed(1)}${tr("hoursShort")}`));
+    }
+    if (toggleExpand) {
+      right.appendChild(el("span", {class:`chevron ${expanded ? "up" : ""}`}, "›"));
+    }
+
+    // ---- header (tappable when collapsible) ----
+    const head = el("div", {
+      class: "wc-head" + (toggleExpand ? " tappable" : ""),
+      onclick: toggleExpand || null,
+    }, titleBlock, right);
+
+    const card = el("div", {class: classes.join(" ")}, head);
+
+    // attestation line for unsigned/rejected current week
+    if (mode === "home-current" && (!status || status === "rejected")) {
+      card.appendChild(el("div", {class:"wc-attest"}, tr("signoffAttest")));
+    }
+
+    // rejection notice (employee sees admin's reason)
+    if (rejectionComment && (mode === "home-current" || mode === "home-past")) {
+      card.appendChild(el("div", {style:"margin-top:10px"}, rejectionNotice(rejectionComment)));
+    }
+
+    // expanded body — list of shift cards
+    if (expanded && wkShifts.length > 0) {
+      const sorted = [...wkShifts].sort((a,b) =>
+        a.date.localeCompare(b.date) || a.start.localeCompare(b.start));
+      for (const sh of sorted) card.appendChild(renderShiftCard(sh));
+    }
+
+    // footer: contextual actions / lock notice
+    const footer = renderWeekFooter({ mode, empId, weekStart, status, wkShifts });
+    if (footer) card.appendChild(footer);
+
+    return card;
+  }
+
+  // Builds the contextual footer for a week-card. Returns null if the week
+  // has nothing to do at the moment (e.g., approved week in history).
+  function renderWeekFooter(opts) {
+    const { mode, empId, weekStart, status, wkShifts } = opts;
+    const u = state.currentUser;
+
+    // Approved week on home: a calm "approved & locked" notice. No action.
+    if (mode === "home-current" && status === "approved") {
+      return el("div", {class:"wc-footer"},
+        el("div", {class:"wc-lock approved"},
+          ICON("lock", 16),
+          el("span", {}, tr("weekClosedBody")),
+        ),
+      );
+    }
+    // Pending week on home (employee submitted, awaiting admin):
+    // lock notice + Pull Back action.
+    if (mode === "home-current" && status === "pending") {
+      return el("div", {class:"wc-footer"},
+        el("div", {class:"wc-lock"},
+          ICON("eye", 16),
+          el("span", {}, tr("weekPendingBody")),
+        ),
+        el("div", {class:"wc-footer-actions", style:"margin-top:10px;"},
+          el("button", {
+            class:"btn",
+            onclick: async (ev) => {
+              if (ev.currentTarget.disabled) return;
+              ev.currentTarget.disabled = true;
+              try {
+                await api.setApproval(empId, weekStart, "unsubmitted");
+                const i = weekApprovals.findIndex(w => w.empId === empId && w.weekStart === weekStart);
+                if (i >= 0) weekApprovals.splice(i, 1);
+                toast(tr("weekPulledBack"), {kind:"warn", pill:"↺"});
+                render();
+              } catch (e) {
+                ev.currentTarget.disabled = false;
+                toastApiError(e, state.lang === "es" ? "No se pudo retirar" : "Couldn't pull back");
+              }
+            },
+          }, tr("pullBack")),
+        ),
+      );
+    }
+
+    // Unsigned current or past week (or rejected — same Submit affordance):
+    // Submit / Resubmit. Disabled if user is currently clocked in.
+    if ((mode === "home-current" || mode === "home-past")
+        && (!status || status === "rejected")) {
+      const openShift = state.clock === "in";
+      const label = status === "rejected" ? tr("resubmit") : tr("submitWeek");
+      const wrap = el("div", {class:"wc-footer"});
+      if (openShift) {
+        wrap.appendChild(el("div", {class:"wc-warn"}, tr("submitBlockedOpenShift")));
+      }
+      wrap.appendChild(el("div", {class:"wc-footer-actions", style: openShift ? "margin-top:8px;" : ""},
+        el("button", {
+          class:"btn primary",
+          disabled: openShift || undefined,
+          onclick: async (ev) => {
+            if (ev.currentTarget.disabled) return;
+            const btn = ev.currentTarget;
+            btn.disabled = true;
+            const cardNode = btn.closest(".week-card");
+            try {
+              const { entry } = await api.setApproval(empId, weekStart, "pending");
+              if (mode === "home-past") {
+                animateOutAndThen(cardNode, () => {
+                  upsertWeekApproval(entry);
+                  toast(tr("weekSubmitted"), {kind:"success", pill:"✓"});
+                  render();
+                });
+              } else {
+                upsertWeekApproval(entry);
+                animateShrinkAndThen(btn, () => {
+                  toast(tr("weekSubmitted"), {kind:"success", pill:"✓"});
+                  render();
+                  const pill = document.querySelector(".week-card .wc-status.pending");
+                  if (pill) pill.classList.add("pop-in");
+                });
+              }
+            } catch (e) {
+              btn.disabled = false;
+              toastApiError(e, state.lang === "es" ? "No se pudo enviar la semana" : "Couldn't submit week");
+            }
+          },
+        }, label),
+      ));
+      return wrap;
+    }
+
+    // Inbox row: Approve / Reject. If currently in rejecting-reason mode
+    // for this row, swap actions for the textarea + danger-confirm submit.
+    if (mode === "inbox" && status === "pending" && canApprove(u)) {
+      const key = `${empId}|${weekStart}`;
+      const isRejecting = state.rejectingApproval === key;
+      const wrap = el("div", {class:"wc-footer"});
+      if (isRejecting) {
+        let submitBtn;
+        const reasonField = el("textarea", {
+          class:"reject-reason-field",
+          placeholder: tr("rejectReasonPlaceholder"),
+          rows: 3,
+          oninput: () => { if (submitBtn) submitBtn.disabled = !reasonField.value.trim(); },
+        });
+        wrap.appendChild(el("div", {class:"reject-reason-title"}, tr("rejectReasonTitle")));
+        wrap.appendChild(reasonField);
+        submitBtn = el("button", {
+          class:"btn danger-confirm",
+          disabled: true,
+          onclick: async (ev) => {
+            const reason = reasonField.value.trim();
+            if (!reason) { reasonField.focus(); return; }
+            if (ev.currentTarget.disabled) return;
+            ev.currentTarget.disabled = true;
+            const cardNode = ev.currentTarget.closest(".week-card");
+            try {
+              const { entry } = await api.setApproval(empId, weekStart, "rejected", reason);
+              animateOutAndThen(cardNode, () => {
+                upsertWeekApproval(entry);
+                state.rejectingApproval = null;
+                state.expandedInboxWeeks?.delete(key);
+                toast(tr("weekRejectedToast"), {kind:"warn", pill:"↺"});
+                render();
+              });
+            } catch (e) {
+              ev.currentTarget.disabled = false;
+              toastApiError(e, state.lang === "es" ? "No se pudo rechazar" : "Couldn't reject");
+            }
+          },
+        }, tr("reject"));
+        const cancelBtn = el("button", {
+          class:"btn",
+          onclick: () => { state.rejectingApproval = null; render(); },
+        }, tr("cancel"));
+        wrap.appendChild(el("div", {class:"wc-footer-actions", style:"margin-top:10px;"}, submitBtn, cancelBtn));
+        setTimeout(() => reasonField.focus(), 0);
+      } else {
+        wrap.appendChild(el("div", {class:"wc-footer-actions"},
+          el("button", {
+            class:"btn danger",
+            onclick: () => { state.rejectingApproval = key; render(); },
+          }, tr("reject")),
+          el("button", {
+            class:"btn primary",
+            onclick: async (ev) => {
+              if (ev.currentTarget.disabled) return;
+              ev.currentTarget.disabled = true;
+              const cardNode = ev.currentTarget.closest(".week-card");
+              try {
+                const { entry } = await api.setApproval(empId, weekStart, "approved");
+                animateOutAndThen(cardNode, () => {
+                  upsertWeekApproval(entry);
+                  state.expandedInboxWeeks?.delete(key);
+                  toast(tr("weekApprovedToast"), {kind:"success", pill:"✓"});
+                  render();
+                });
+              } catch (e) {
+                ev.currentTarget.disabled = false;
+                toastApiError(e, state.lang === "es" ? "No se pudo aprobar" : "Couldn't approve");
+              }
+            },
+          }, tr("approve")),
+        ));
+      }
+      return wrap;
+    }
+
+    return null;
   }
 
   // Shared compact shift list used by admin approvals drill-in,
@@ -3800,71 +4535,11 @@
 
   function weekSignoffCard() {
     const u = state.currentUser;
-    const wkStart = thisWeekStart();
-    const wkEnd = weekEndOf(wkStart);
-    const wkShifts = shiftsForWeek(u.id, wkStart);
-    const wkHours = wkShifts.reduce((s,x)=>s+x.hours,0);
-    const status = weekStatus(u.id, wkStart);
-    const rejectionComment = weekRejectionComment(u.id, wkStart);
-
-    const left = el("div", {class:"left"},
-      el("div", {class:"title"}, `${fmtDateWD(wkStart)} – ${fmtDateWD(wkEnd)}`),
-      el("div", {class:"sub"}, `${wkHours.toFixed(1)} ${tr("hours").toLowerCase()} · ${wkShifts.length} ${tr("shifts").toLowerCase()}`),
-    );
-    if (!status || status === "rejected") {
-      left.appendChild(el("div", {class:"attest"}, tr("signoffAttest")));
-    }
-
-    const head = el("div", {class:"head"}, left);
-    if (status === "approved") {
-      head.appendChild(el("span", {class:"status-pill approved"}, tr("weekApproved")));
-    } else if (status === "pending") {
-      head.appendChild(el("span", {class:"status-pill pending"}, tr("weekPending")));
-    } else {
-      // Unsigned OR rejected — both show the submit button, rejected also shows the reason below.
-      // Disabled while the user is clocked in: the open shift hasn't been
-      // captured yet, so submitting now would short the week's hours.
-      const openShift = state.clock === "in";
-      const label = status === "rejected" ? tr("resubmit") : tr("submitWeek");
-      head.appendChild(el("button", {
-        class:"btn primary",
-        disabled: openShift || undefined,
-        onclick: async (ev) => {
-          if (ev.currentTarget.disabled) return;
-          const btn = ev.currentTarget;
-          btn.disabled = true;
-          try {
-            const { entry } = await api.setApproval(u.id, wkStart, "pending");
-            upsertWeekApproval(entry);
-            animateShrinkAndThen(btn, () => {
-              toast(tr("weekSubmitted"), {kind:"success", pill:"✓"});
-              render();
-              const pill = document.querySelector(".week-submit .status-pill.pending");
-              if (pill) pill.classList.add("pop-in");
-            });
-          } catch (e) {
-            btn.disabled = false;
-            toastApiError(e, state.lang === "es" ? "No se pudo enviar la semana" : "Couldn't submit week");
-          }
-        },
-      }, label));
-      if (openShift) {
-        left.appendChild(el("div", {class:"attest", style:"color: var(--accent-amber);"}, tr("submitBlockedOpenShift")));
-      }
-    }
-
-    const card = el("div", {class:"week-submit week-rollup"}, head);
-    if (status === "rejected" && rejectionComment) {
-      card.appendChild(rejectionNotice(rejectionComment));
-    }
-    // Use the same shift card the history page uses, so the home/current-week
-    // and history/past-week views look identical when listing shifts. The
-    // `.week-rollup` marker on the parent triggers the inside-week treatment
-    // (compact date, dotted separators) defined once in CSS.
-    const sortedWkShifts = [...wkShifts].sort((a,b) =>
-      a.date.localeCompare(b.date) || a.start.localeCompare(b.start));
-    for (const sh of sortedWkShifts) card.appendChild(renderShiftCard(sh));
-    return card;
+    return renderWeekRow({
+      empId: u.id,
+      weekStart: thisWeekStart(),
+      mode: "home-current",
+    });
   }
 
   // Amber-outlined banner showing the admin's rejection reason.
@@ -3908,104 +4583,32 @@
       id: "past-weeks-section",
       class: "signoff-label signoff-label--urgent",
     }, tr("needsAttention")));
-    const openShift = state.clock === "in";
-    const list = el("div", {class:"past-weeks past-weeks--urgent"});
     for (const w of past) {
-      const wkShifts = shiftsForWeek(u.id, w.wkStart);
-      const btnLabel = w.rejectionComment ? tr("resubmit") : tr("submitWeek");
-      const leftCol = el("div", {class:"left"},
-        el("div", {class:"title"}, `${fmtDateWD(w.wkStart)} – ${fmtDateWD(weekEndOf(w.wkStart))}`),
-        el("div", {class:"sub"}, `${w.hours.toFixed(1)} ${tr("hours").toLowerCase()} · ${w.count} ${tr("shifts").toLowerCase()}`),
-      );
-      if (openShift) {
-        leftCol.appendChild(el("div", {class:"sub", style:"color: var(--accent-amber); margin-top: 4px;"}, tr("submitBlockedOpenShift")));
-      }
-      const prow = el("div", {class: `prow week-rollup ${w.rejectionComment ? "rejected" : ""}`},
-        el("div", {class:"head"}, leftCol,
-          el("button", {
-            class:"btn primary",
-            disabled: openShift || undefined,
-            onclick: async (ev) => {
-              if (ev.currentTarget.disabled) return;
-              ev.currentTarget.disabled = true;
-              const rowNode = ev.currentTarget.closest(".prow");
-              try {
-                const { entry } = await api.setApproval(u.id, w.wkStart, "pending");
-                animateOutAndThen(rowNode, () => {
-                  upsertWeekApproval(entry);
-                  toast(tr("weekSubmitted"), {kind:"success", pill:"✓"});
-                  render();
-                });
-              } catch (e) {
-                ev.currentTarget.disabled = false;
-                toastApiError(e, state.lang === "es" ? "No se pudo enviar la semana" : "Couldn't submit week");
-              }
-            },
-          }, btnLabel),
-        ),
-        w.rejectionComment ? rejectionNotice(w.rejectionComment) : null,
-      );
-      const sortedPastShifts = [...wkShifts].sort((a,b) =>
-        a.date.localeCompare(b.date) || a.start.localeCompare(b.start));
-      for (const sh of sortedPastShifts) prow.appendChild(renderShiftCard(sh));
-      list.appendChild(prow);
+      wrap.appendChild(renderWeekRow({
+        empId: u.id,
+        weekStart: w.wkStart,
+        mode: "home-past",
+      }));
     }
-    wrap.appendChild(list);
     return wrap;
   }
 
   function clockSection() {
-    const readonly = false; // employees are never readonly here
     const u = state.currentUser;
-    // If the current week is approved OR pending review, new shifts must
-    // not be silently added — the audit trail would include work that
-    // wasn't part of the submission. Approved weeks need an admin reopen;
-    // pending weeks the employee can pull back themselves.
+    // Three states only — Idle / In progress / Just finished. Week-locked
+    // signaling (approved / pending) lives on the WeekRow below: the week
+    // IS the locked thing. When the week is locked AND the user is idle,
+    // we render the Clock In button disabled with a calm explanation; the
+    // weekRow's footer carries the actionable lock notice + Pull Back.
     const wkStart = thisWeekStart();
     const wkSt = state.clock === "idle" ? weekStatus(u.id, wkStart) : null;
-    if (wkSt === "approved") {
-      return el("div", {class:"week-closed-card"},
-        el("div", {class:"icon"}, ICON("eye", 20)),
-        el("div", {class:"body"},
-          el("div", {class:"title"}, tr("weekClosedTitle")),
-          el("div", {class:"meta"}, tr("weekClosedBody")),
-        ),
-      );
-    }
-    if (wkSt === "pending") {
-      const card = el("div", {class:"week-closed-card"},
-        el("div", {class:"icon"}, ICON("eye", 20)),
-        el("div", {class:"body"},
-          el("div", {class:"title"}, tr("weekPendingTitle")),
-          el("div", {class:"meta"}, tr("weekPendingBody")),
-          el("div", {class:"actions", style:"margin-top:12px;"},
-            el("button", {
-              class: "btn",
-              onclick: async (ev) => {
-                if (ev.currentTarget.disabled) return;
-                ev.currentTarget.disabled = true;
-                try {
-                  await api.setApproval(u.id, wkStart, "unsubmitted");
-                  // Pull the row out of local state and re-render.
-                  const i = weekApprovals.findIndex(w => w.empId === u.id && w.weekStart === wkStart);
-                  if (i >= 0) weekApprovals.splice(i, 1);
-                  toast(tr("weekPulledBack"), {kind:"warn", pill:"↺"});
-                  render();
-                } catch (e) {
-                  ev.currentTarget.disabled = false;
-                  toastApiError(e, state.lang === "es" ? "No se pudo retirar" : "Couldn't pull back");
-                }
-              },
-            }, tr("pullBack")),
-          ),
-        ),
-      );
-      return card;
-    }
+    const weekIsLocked = wkSt === "approved" || wkSt === "pending";
+
     if (state.clock === "idle") {
-      return el("button", {
-        class:"btn hero clock-in",
-        onclick: async () => {
+      const btn = el("button", {
+        class: `btn hero clock-in${weekIsLocked ? " disabled" : ""}`,
+        disabled: weekIsLocked || undefined,
+        onclick: weekIsLocked ? null : async () => {
           state.clock = "in";
           state.clockIn = new Date();
           state.clockInCoord = null;
@@ -4016,8 +4619,9 @@
           const t = gpsToast(c, "Clock-in");
           toast(t.msg, { kind: t.kind, pill: t.pill });
           render();
-        }
+        },
       }, ICON("play", 32), el("div", {}, tr("clockIn")));
+      return btn;
     }
     if (state.clock === "in") {
       const wrap = el("div", {});
@@ -4157,6 +4761,10 @@
     return wrap;
   }
 
+  // Admin "Home" tab — greeting, month calendar, then the Employees roster.
+  // Pending approvals live on the Inbox tab. The roster used to be its own
+  // tab but Today + Roster on their own each felt thin; reuniting them
+  // gives this screen a real reason to exist (operational glance + drill-in).
   function renderAdminHome() {
     const u = state.currentUser;
     const root = document.getElementById("scrollRoot");
@@ -4175,7 +4783,7 @@
     block.appendChild(renderCalendar(null));
     root.appendChild(block);
 
-    // Employees list
+    // Employees roster
     root.appendChild(el("div", {class:"section-header"},
       el("h3", {}, tr("employees")),
       el("small", {}, `${employees().length} ${tr("registered")}`),
@@ -4197,6 +4805,231 @@
         el("div", {class:"chev"}, ICON("chevRight")),
       ));
     }
+    root.appendChild(el("div", {style:"height:60px"}));
+  }
+
+  // Admin "Inbox" tab — pending weeks + edit requests in a single feed.
+  // Replaces the old `state.modal === "approvals"` pop-up. Each week is a
+  // unified WeekRow (mode "inbox") with Approve/Reject in the footer.
+  function renderInbox() {
+    const u = state.currentUser;
+    const root = document.getElementById("scrollRoot");
+    root.innerHTML = "";
+
+    root.appendChild(greetingBlock(u, { showRole: true }));
+
+    const pending = pendingApprovals();
+    const pendingEdits = pendingEditRequests();
+
+    if (!pending.length && !pendingEdits.length) {
+      root.appendChild(el("div", {class:"inbox-empty"}, tr("inboxNothing")));
+      root.appendChild(el("div", {style:"height:60px"}));
+      return;
+    }
+
+    if (pending.length) {
+      root.appendChild(el("div", {class:"inbox-section-label"}, tr("inboxPendingWeeks")));
+      for (const w of pending) {
+        root.appendChild(renderWeekRow({
+          empId: w.empId,
+          weekStart: w.weekStart,
+          mode: "inbox",
+          showEmployee: true,
+        }));
+      }
+    }
+
+    if (pendingEdits.length) {
+      root.appendChild(el("div", {class:"inbox-section-label", style:"margin-top:24px"}, tr("editRequests")));
+      for (const r of pendingEdits) {
+        const emp = userById[r.empId];
+        const sh = shifts.find(s => s.id === r.shiftId);
+        const shDate = sh ? new Date(sh.date + "T00:00:00") : null;
+        root.appendChild(el("div", {class:"edit-req-card"},
+          el("div", {class:"er-head"},
+            el("span", {class:"er-name", style:`color:${emp.color}`}, emp.displayName),
+            el("span", {class:"er-date"}, sh ? fmtDateWD(sh.date) : ""),
+          ),
+          el("div", {class:"er-times"},
+            sh ? el("span", {class:"strike"},
+              timeRangeWithTz(sh.start, sh.end, sh.clockInTz, sh.clockOutTz, shDate)) : null,
+            el("span", {class:"arrow"}, "→"),
+            el("span", {class:"new"},
+              timeRangeWithTz(r.start, r.end, sh?.clockInTz, sh?.clockOutTz, shDate)),
+          ),
+          el("div", {class:"er-reason"}, `"${r.comment}"`),
+          canApprove(u) ? el("div", {class:"er-actions"},
+            el("button", {
+              class:"btn danger",
+              onclick: (ev) => {
+                const cardNode = ev.currentTarget.closest(".edit-req-card");
+                animateOutAndThen(cardNode, () => rejectEditRequest(r.id));
+              },
+            }, tr("rejectEdit")),
+            el("button", {
+              class:"btn primary",
+              onclick: (ev) => {
+                const cardNode = ev.currentTarget.closest(".edit-req-card");
+                animateOutAndThen(cardNode, () => approveEditRequest(r.id));
+              },
+            }, tr("approveEdit")),
+          ) : null,
+        ));
+      }
+    }
+
+    root.appendChild(el("div", {style:"height:60px"}));
+  }
+
+  // Owner-only: full-page list of users. Tap an active user to edit them
+  // (push to `edit_user`); tap Add user to open the "addEmployee" sheet
+  // (which still lives in renderModal as a form sheet — the right pattern
+  // for a one-shot create form). Deactivated users sit in their own
+  // section with an inline Reactivate button.
+  function renderManageUsers() {
+    const root = document.getElementById("scrollRoot");
+    root.innerHTML = "";
+    root.classList.add("mu-screen");
+
+    root.appendChild(el("div", {class:"section-header"},
+      el("h3", {}, tr("manageUsersTitle")),
+      el("small", {}, `${users.filter(u => u.active !== false).length} ${tr("registered")}`),
+    ));
+
+    const me = state.currentUser;
+    const active = users.filter(u => u.active !== false);
+    const inactive = users.filter(u => u.active === false);
+
+    for (const u of active) {
+      const isSelf = u.id === me.id;
+      root.appendChild(el("div", {
+        class: "mu-row",
+        onclick: () => navTo("edit_user", { manageTargetId: u.id }),
+      },
+        el("div", {class:"av", style:`background:color-mix(in oklab, ${u.color || "var(--text-secondary)"} 22%, transparent); color:${u.color || "var(--text-secondary)"}; width:36px; height:36px; border-radius:50%; display:grid; place-items:center; font-weight:700; font-size:14px; flex:0 0 auto;`},
+          u.displayName.charAt(0)),
+        el("div", {class:"mu-body"},
+          el("div", {class:"mu-name", style:`color:${u.color || "var(--text-primary)"}`},
+            u.displayName + (isSelf ? " (you)" : "")),
+          el("div", {class:"mu-meta"}, `@${u.username} · ${tr(u.role)}`),
+        ),
+        el("div", {class:"chev"}, ICON("chevRight")),
+      ));
+    }
+
+    root.appendChild(el("button", {
+      class:"add-user-btn",
+      onclick: () => { state.modal = "addEmployee"; history.pushState({ modal: true }, ""); render(); },
+    }, ICON("addUser", 18), el("span", {}, tr("addUser"))));
+
+    if (inactive.length) {
+      root.appendChild(el("div", {class:"mu-section-label"}, tr("deactivated")));
+      for (const u of inactive) {
+        const row = el("div", {class:"mu-row inactive"},
+          el("div", {class:"mu-body"},
+            el("div", {class:"mu-name"}, u.displayName),
+            el("div", {class:"mu-meta"}, `@${u.username} · ${tr(u.role)}`),
+          ),
+        );
+        row.appendChild(el("button", {class:"btn primary", style:"padding:8px 14px;", onclick: async (ev) => {
+          if (ev.currentTarget.disabled) return;
+          ev.currentTarget.disabled = true;
+          try {
+            await api.reactivateUser(u.id);
+            hydrateFromDb(await api.db());
+            toast(tr("userReactivated"), {kind:"success", pill:"✓"});
+            render();
+          } catch (e) {
+            ev.currentTarget.disabled = false;
+            toastApiError(e, state.lang === "es" ? "No se pudo reactivar" : "Couldn't reactivate");
+          }
+        }}, tr("reactivate")));
+        root.appendChild(row);
+      }
+    }
+
+    root.appendChild(el("div", {style:"height:60px"}));
+  }
+
+  // Owner-only: edit a single user. Sub-screen of Manage users.
+  // Reset password / Deactivate stay as confirmation sheets — single-action
+  // flows are best as bottom sheets; multi-step nav becomes screens.
+  function renderEditUser() {
+    const root = document.getElementById("scrollRoot");
+    root.innerHTML = "";
+    root.classList.add("eu-screen");
+
+    const target = users.find(x => x.id === state.manageTargetId);
+    if (!target) { navBack(); return; }
+    const isSelf = target.id === state.currentUser.id;
+
+    root.appendChild(el("div", {class:"section-header"},
+      el("h3", {}, tr("editEmployee")),
+    ));
+
+    const userIn = el("input", {
+      value: target.username,
+      autocapitalize:"off", autocorrect:"off", spellcheck:"false",
+    });
+    const nameIn = el("input", { value: target.displayName });
+    const roleSel = el("select", {},
+      el("option", { value: "employee" }, tr("employee")),
+      el("option", { value: "admin" }, tr("admin")),
+      el("option", { value: "readonly" }, tr("readonly")),
+      el("option", { value: "owner" }, tr("owner")),
+    );
+    roleSel.value = target.role;
+    if (isSelf) roleSel.disabled = true;
+    const err = el("div", {class:"eu-err", style:"display:none"});
+
+    const form = el("div", {class:"eu-form"},
+      el("label", {class:"field-label"}, tr("username")),
+      userIn,
+      el("label", {class:"field-label"}, tr("fullName")),
+      nameIn,
+      el("label", {class:"field-label"}, tr("role")),
+      roleSel,
+      err,
+      el("div", {class:"eu-actions"},
+        el("button", {class:"btn", onclick: navBack}, tr("cancel")),
+        el("button", {class:"btn primary", onclick: async (ev) => {
+          if (ev.currentTarget.disabled) return;
+          ev.currentTarget.disabled = true;
+          const patch = {
+            id: target.id,
+            username: userIn.value.trim().toLowerCase(),
+            displayName: nameIn.value.trim(),
+          };
+          if (!isSelf) patch.role = roleSel.value;
+          try {
+            await api.updateUser(patch);
+            hydrateFromDb(await api.db());
+            toast(tr("userUpdated"), {kind:"success", pill:"✓"});
+            navBack();
+          } catch (e) {
+            ev.currentTarget.disabled = false;
+            err.textContent = e.message || (state.lang === "es" ? "No se pudo guardar" : "Couldn't save");
+            err.style.display = "block";
+          }
+        }}, tr("saveChanges")),
+      ),
+    );
+    root.appendChild(form);
+
+    const adminActions = el("div", {class:"eu-admin-actions"},
+      el("button", {
+        class:"btn",
+        onclick: () => { state.modal = "resetPasswordUser"; history.pushState({ modal: true }, ""); render(); },
+      }, tr("resetPassword")),
+    );
+    if (!isSelf) {
+      adminActions.appendChild(el("button", {
+        class:"btn danger",
+        onclick: () => { state.modal = "confirmDeactivate"; history.pushState({ modal: true }, ""); render(); },
+      }, tr("deactivate")));
+    }
+    root.appendChild(adminActions);
+
     root.appendChild(el("div", {style:"height:60px"}));
   }
 
@@ -4515,7 +5348,6 @@
     if (state.expandedHistoryWeeks == null) {
       state.expandedHistoryWeeks = new Set();
     }
-    const expanded = state.expandedHistoryWeeks;
 
     const byMonth = new Map();
     for (const sh of sortedShifts) {
@@ -4547,89 +5379,12 @@
       }
       const wKeys = [...byWeek.keys()].sort().reverse();
       for (const wkStart of wKeys) {
-        const wShifts = byWeek.get(wkStart);
-        const wHours = wShifts.reduce((s,x)=>s+x.hours,0);
-        const status = weekStatus(empId, wkStart);
-        const isOpen = expanded.has(wkStart);
-
-        const right = el("div", {class:"w-right"},
-          el("span", {class:"w-hrs"}, `${wHours.toFixed(1)}${tr("hoursShort")}`),
-        );
-        if (status) {
-          const label = status === "approved" ? tr("weekApproved")
-                      : status === "rejected" ? tr("weekRejected")
-                      : tr("weekPending");
-          const menuKey = `${empId}|${wkStart}`;
-          const canReopen = status === "approved" && canApprove(state.currentUser);
-          const isMenuOpen = canReopen && state.weekMenuKey === menuKey;
-          const pill = el("span", {
-            class: `w-status ${status}${canReopen ? " has-menu" : ""}${isMenuOpen ? " open" : ""}`,
-          }, label);
-          if (canReopen) {
-            // Admin-only: tapping an approved-week pill opens a small
-            // dropdown with the Reopen action. Click must not bubble to
-            // the row's expand/collapse handler.
-            pill.addEventListener("click", (ev) => {
-              ev.stopPropagation();
-              state.weekMenuKey = isMenuOpen ? null : menuKey;
-              state.weekReopenConfirm = false;
-              render();
-            });
-            if (isMenuOpen) {
-              const primed = state.weekReopenConfirm;
-              const menu = el("div", {class: "w-status-menu"},
-                el("button", {
-                  class: `w-status-menu-item${primed ? " confirm" : ""}`,
-                  onclick: async (ev) => {
-                    ev.stopPropagation();
-                    if (!primed) {
-                      state.weekReopenConfirm = true;
-                      render();
-                      return;
-                    }
-                    if (ev.currentTarget.disabled) return;
-                    ev.currentTarget.disabled = true;
-                    try {
-                      await api.setApproval(empId, wkStart, "unsubmitted");
-                      const i = weekApprovals.findIndex(w => w.empId === empId && w.weekStart === wkStart);
-                      if (i >= 0) weekApprovals.splice(i, 1);
-                      state.weekMenuKey = null;
-                      state.weekReopenConfirm = false;
-                      toast(tr("weekReopened"), {kind:"warn", pill:"↺"});
-                      render();
-                    } catch (e) {
-                      ev.currentTarget.disabled = false;
-                      toastApiError(e, state.lang === "es" ? "No se pudo reabrir" : "Couldn't reopen");
-                    }
-                  },
-                }, primed ? tr("reopenWeekConfirm") : tr("reopenWeek")),
-              );
-              pill.appendChild(menu);
-            }
-          }
-          right.appendChild(pill);
-        }
-        right.appendChild(el("span", {class: `chevron ${isOpen ? "up" : ""}`}, "›"));
-
-        const group = el("div", {class: `week-group week-rollup ${status || ""}`});
-        group.appendChild(el("div", {
-          class:"hist-week-head expandable",
-          onclick: () => {
-            if (isOpen) expanded.delete(wkStart);
-            else expanded.add(wkStart);
-            render();
-          },
-        },
-          el("div", {class:"w-title"},
-            `${fmtDateShort(wkStart)} – ${fmtDateShort(weekEndOf(wkStart))}`),
-          right,
-        ));
-        if (isOpen) {
-          for (const sh of wShifts) {
-            group.appendChild(renderShiftCard(sh));
-          }
-        }
-        root.appendChild(group);
+        // History uses the unified WeekRow (mode "history") — collapsible
+        // header, status pill (with Reopen menu for admin/owner on approved
+        // weeks), and shift cards inside when expanded.
+        root.appendChild(renderWeekRow({
+          empId, weekStart: wkStart, mode: "history",
+        }));
       }
     }
   }
@@ -4831,10 +5586,11 @@
       card.appendChild(el("label", {class:"field-label"}, tr("role")));
       card.appendChild(roleSel);
       card.appendChild(err);
-      // Add user is always opened from inside Manage users — Cancel/Save
-      // return the user to the list rather than closing the modal stack.
+      // Add user is opened as a sheet from the Manage users screen.
+      // Cancel = dismiss the sheet (history.back). Save = dismiss + refresh
+      // the list underneath.
       card.appendChild(el("div", {class:"actions"},
-        el("button", {class:"btn", onclick: () => { state.modal = "manageEmployees"; render(); }}, tr("cancel")),
+        el("button", {class:"btn", onclick: close}, tr("cancel")),
         el("button", {class:"btn primary", onclick: async (ev) => {
           const name = nameIn.value.trim(), u = userIn.value.trim(), p = passIn.value;
           const role = roleSel.value;
@@ -4864,8 +5620,7 @@
             users.push(added);
             userById[added.id] = added;
             toast(state.lang === "es" ? "Usuario agregado" : "User added", {kind:"success", pill:"+"});
-            state.modal = "manageEmployees";
-            render();
+            close();
           } catch (e) {
             ev.currentTarget.disabled = false;
             err.textContent = e.message || (state.lang === "es" ? "No se pudo agregar" : "Couldn't add user");
@@ -4874,171 +5629,12 @@
         }}, tr("add")),
       ));
     } else if (state.modal === "approvals") {
-      card.appendChild(el("h3", {}, tr("approvalsTitle")));
-      const pending = pendingApprovals();
-      const pendingEdits = pendingEditRequests();
-      if (!pending.length && !pendingEdits.length) {
-        card.appendChild(el("p", {}, tr("noPending")));
-      } else if (pending.length) {
-        for (const w of pending) {
-          const emp = userById[w.empId];
-          const wkShifts = shiftsForWeek(w.empId, w.weekStart);
-          const wkHours = wkShifts.reduce((s,x)=>s+x.hours,0);
-          const key = `${w.empId}:${w.weekStart}`;
-          const isExpanded = state.expandedApproval === key;
-          const row = el("div", {class:"approval-row"},
-            el("div", {
-              class:"top expandable",
-              onclick: () => {
-                state.expandedApproval = isExpanded ? null : key;
-                // Only rebuild the modal — a full render() also wipes and
-                // rebuilds scrollRoot behind the (translucent) scrim, and
-                // the brief blank frame flashes through as a bounce.
-                renderModal();
-              },
-            },
-              el("div", {class:"who", style:`color:${emp.color}`}, emp.displayName),
-              el("div", {class:"total"},
-                `${wkHours.toFixed(1)}${tr("hoursShort")}`,
-                el("span", {class: `chevron ${isExpanded ? "up" : ""}`}, "›"),
-              ),
-            ),
-            el("div", {class:"week"}, `${fmtDateWD(w.weekStart)} – ${fmtDateWD(weekEndOf(w.weekStart))} · ${wkShifts.length} ${tr("shifts").toLowerCase()}`),
-          );
-          if (isExpanded) {
-            row.appendChild(weekShiftBreakdown(wkShifts));
-          }
-          if (canApprove(state.currentUser)) {
-            // When Reject is tapped, the row enters "typing a reason" mode:
-            // the textarea appears above the buttons, the Reject button stays
-            // on the left but turns into the destructive submit (filled red),
-            // and the Approve slot on the right becomes a plain Cancel. The
-            // reject submit stays disabled until the textarea has content —
-            // an admin can't reject without a reason.
-            const isRejecting = state.rejectingApproval === key;
-            let submitBtn;
-            if (isRejecting) {
-              const reasonField = el("textarea", {
-                class: "reject-reason-field",
-                placeholder: tr("rejectReasonPlaceholder"),
-                rows: 3,
-                oninput: () => { if (submitBtn) submitBtn.disabled = !reasonField.value.trim(); },
-              });
-              const err = el("div", {class:"reject-reason-err", style:"display:none;"});
-              row.appendChild(el("div", {class:"reject-form"},
-                el("div", {class:"reject-reason-title"}, tr("rejectReasonTitle")),
-                reasonField,
-                err,
-              ));
-              submitBtn = el("button", {
-                class: "btn danger-confirm",
-                disabled: true,
-                onclick: async (ev) => {
-                  const reason = reasonField.value.trim();
-                  if (!reason) { reasonField.focus(); return; }
-                  if (ev.currentTarget.disabled) return;
-                  ev.currentTarget.disabled = true;
-                  const rowNode = ev.currentTarget.closest(".approval-row");
-                  try {
-                    const { entry } = await api.setApproval(w.empId, w.weekStart, "rejected", reason);
-                    animateOutAndThen(rowNode, () => {
-                      upsertWeekApproval(entry);
-                      state.expandedApproval = null;
-                      state.rejectingApproval = null;
-                      toast(tr("weekRejectedToast"), {kind:"warn", pill:"↺"});
-                      render();
-                    });
-                  } catch (e) {
-                    ev.currentTarget.disabled = false;
-                    toastApiError(e, state.lang === "es" ? "No se pudo rechazar" : "Couldn't reject");
-                  }
-                },
-              }, tr("reject"));
-              const cancelBtn = el("button", {
-                class: "btn",
-                onclick: () => { state.rejectingApproval = null; renderModal(); },
-              }, tr("cancel"));
-              const actions = el("div", {class:"actions"}, submitBtn, cancelBtn);
-              row.appendChild(actions);
-              // Focus the textarea after the current tick so it's attached.
-              setTimeout(() => reasonField.focus(), 0);
-            } else {
-              const actions = el("div", {class:"actions"},
-                el("button", {
-                  class:"btn danger",
-                  onclick: () => { state.rejectingApproval = key; renderModal(); },
-                }, tr("reject")),
-                el("button", {
-                  class:"btn primary",
-                  onclick: async (ev) => {
-                    if (ev.currentTarget.disabled) return;
-                    ev.currentTarget.disabled = true;
-                    const rowNode = ev.currentTarget.closest(".approval-row");
-                    try {
-                      const { entry } = await api.setApproval(w.empId, w.weekStart, "approved");
-                      animateOutAndThen(rowNode, () => {
-                        upsertWeekApproval(entry);
-                        state.expandedApproval = null;
-                        toast(tr("weekApprovedToast"), {kind:"success", pill:"✓"});
-                        render();
-                      });
-                    } catch (e) {
-                      ev.currentTarget.disabled = false;
-                      toastApiError(e, state.lang === "es" ? "No se pudo aprobar" : "Couldn't aprove");
-                    }
-                  },
-                }, tr("approve")),
-              );
-              row.appendChild(actions);
-            }
-          }
-          card.appendChild(row);
-        }
-      }
-      // Show pending edit requests inline
-      if (pendingEdits.length > 0) {
-        card.appendChild(el("div", {
-          style:"margin-top:18px; padding-top:12px; border-top:1px solid var(--outline-soft); font-size:11px; text-transform:uppercase; letter-spacing:0.4px; color:var(--text-muted); font-weight:700;"
-        }, tr("editRequests")));
-        for (const r of pendingEdits) {
-          const emp = userById[r.empId];
-          const sh = shifts.find(s => s.id === r.shiftId);
-          const shDate = sh ? new Date(sh.date + "T00:00:00") : null;
-          const row = el("div", {class:"approval-row", style:"margin-top:8px;"},
-            el("div", {class:"top"},
-              el("div", {class:"who", style:`color:${emp.color}`}, emp.displayName),
-              el("div", {class:"total"}, fmtDateShort(sh?.date || "")),
-            ),
-            el("div", {class:"week", style:"margin-top:4px;"},
-              el("span", {style:"color:var(--text-muted); text-decoration:line-through"},
-                timeRangeWithTz(sh?.start || "00:00", sh?.end || "00:00", sh?.clockInTz, sh?.clockOutTz, shDate)),
-              el("span", {style:"margin: 0 6px;"}, "→"),
-              el("span", {style:"color:var(--text-primary); font-weight:600;"},
-                timeRangeWithTz(r.start, r.end, sh?.clockInTz, sh?.clockOutTz, shDate)),
-            ),
-            el("div", {class:"week", style:"margin-top:6px; font-style:italic;"}, `"${r.comment}"`),
-          );
-          if (canApprove(state.currentUser)) {
-            row.appendChild(el("div", {class:"actions"},
-              el("button", {
-                class:"btn danger",
-                onclick: (ev) => {
-                  const rowNode = ev.currentTarget.closest(".approval-row");
-                  animateOutAndThen(rowNode, () => { rejectEditRequest(r.id); close(); });
-                },
-              }, tr("rejectEdit")),
-              el("button", {
-                class:"btn primary",
-                onclick: (ev) => {
-                  const rowNode = ev.currentTarget.closest(".approval-row");
-                  animateOutAndThen(rowNode, () => { approveEditRequest(r.id); close(); });
-                },
-              }, tr("approveEdit")),
-            ));
-          }
-          card.appendChild(row);
-        }
-      }
+      // Legacy approvals modal — replaced by the Inbox tab (renderInbox).
+      // Kept guarded as a no-op in case any in-flight history entry asks
+      // for it; close immediately and route to inbox.
+      state.modal = null;
+      navTab("inbox");
+      return;
     } else if (state.modal === "addShift") {
       const emp = userById[state.viewingEmployeeId];
       if (!emp) { close(); return; }
@@ -5265,137 +5861,11 @@
           }
         }}, tr("save")),
       ));
-    } else if (state.modal === "manageEmployees") {
-      // Owner-only: list every user, offer per-row Edit / Reset password /
-      // Deactivate (or Reactivate) actions plus a top-right Add user button.
-      // Deactivated users are moved to a separate section at the bottom so
-      // the default view only shows people who can currently sign in.
-      card.appendChild(el("div", { style: "display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px;" },
-        el("h3", { style: "margin:0;" }, tr("manageEmployees")),
-        el("button", {
-          class: "btn primary",
-          onclick: () => { state.modal = "addEmployee"; render(); },
-        }, tr("addUser")),
-      ));
-      const me = state.currentUser;
-      const active = users.filter(u => u.active !== false);
-      const inactive = users.filter(u => u.active === false);
-      const rowFor = (u) => {
-        const isSelf = u.id === me.id;
-        const isActive = u.active !== false;
-        // Active rows are tap-to-edit (name + role + chevron). Deactivated
-        // rows show an inline Reactivate button since they aren't editable.
-        if (isActive) {
-          return el("div", {
-            class: "manage-row tappable",
-            onclick: () => { state.manageTargetId = u.id; state.modal = "editEmployee"; render(); },
-          },
-            el("div", {class:"left"},
-              el("div", {class:"name"}, u.displayName + (isSelf ? " (you)" : "")),
-              el("div", {class:"sub"}, `@${u.username} · ${tr(u.role)}`),
-            ),
-            el("div", {class:"chev"}, ICON("chevRight")),
-          );
-        }
-        const row = el("div", {class:"manage-row"},
-          el("div", {class:"left"},
-            el("div", {class:"name"}, u.displayName),
-            el("div", {class:"sub"}, `@${u.username} · ${tr(u.role)}`),
-          ),
-        );
-        row.appendChild(el("button", {class:"btn primary", onclick: async (ev) => {
-          if (ev.currentTarget.disabled) return;
-          ev.currentTarget.disabled = true;
-          try {
-            await api.reactivateUser(u.id);
-            hydrateFromDb(await api.db());
-            toast(tr("userReactivated"), {kind:"success", pill:"✓"});
-            render();
-          } catch (e) {
-            ev.currentTarget.disabled = false;
-            toastApiError(e, state.lang === "es" ? "No se pudo reactivar" : "Couldn't reactivate");
-          }
-        }}, tr("reactivate")));
-        return row;
-      };
-      const list = el("div", {class:"manage-list"});
-      for (const u of active) list.appendChild(rowFor(u));
-      card.appendChild(list);
-      if (inactive.length) {
-        card.appendChild(el("div", {class:"manage-section-label"}, tr("deactivated")));
-        const dlist = el("div", {class:"manage-list"});
-        for (const u of inactive) dlist.appendChild(rowFor(u));
-        card.appendChild(dlist);
-      }
-    } else if (state.modal === "editEmployee") {
-      const target = users.find(x => x.id === state.manageTargetId);
-      if (!target) { state.modal = "manageEmployees"; render(); return; }
-      const userIn = el("input", {
-        value: target.username,
-        autocapitalize: "off", autocorrect: "off", spellcheck: "false",
-      });
-      const nameIn = el("input", { value: target.displayName });
-      const roleSel = el("select", {},
-        el("option", { value: "employee" }, tr("employee")),
-        el("option", { value: "admin" }, tr("admin")),
-        el("option", { value: "readonly" }, tr("readonly")),
-        el("option", { value: "owner" }, tr("owner")),
-      );
-      roleSel.value = target.role;
-      const isSelf = target.id === state.currentUser.id;
-      if (isSelf) roleSel.disabled = true;
-      const err = el("div", {class:"err", style:"display:none"});
-      card.appendChild(el("h3", {style:"margin-bottom:10px;"}, tr("editEmployee")));
-      card.appendChild(el("label", {class:"field-label"}, tr("username")));
-      card.appendChild(userIn);
-      card.appendChild(el("label", {class:"field-label"}, tr("fullName")));
-      card.appendChild(nameIn);
-      card.appendChild(el("label", {class:"field-label"}, tr("role")));
-      card.appendChild(roleSel);
-      card.appendChild(err);
-      // Admin actions (Reset password, Deactivate) sit in their own row
-      // above the form actions (Cancel / Save). Deactivate is hidden when
-      // editing yourself since the Worker forbids self-deactivation.
-      const adminActions = el("div", {class:"actions", style:"justify-content: space-between; padding-bottom: 10px; border-bottom: 1px dashed var(--outline-soft);"});
-      adminActions.appendChild(el("button", {
-        class: "btn",
-        onclick: () => { state.modal = "resetPasswordUser"; render(); },
-      }, tr("resetPassword")));
-      if (!isSelf) {
-        adminActions.appendChild(el("button", {
-          class: "btn danger",
-          onclick: () => { state.modal = "confirmDeactivate"; render(); },
-        }, tr("deactivate")));
-      }
-      card.appendChild(adminActions);
-      const actions = el("div", {class:"actions"},
-        el("button", {class:"btn", onclick: () => { state.modal = "manageEmployees"; render(); }}, tr("cancel")),
-        el("button", {class:"btn primary", onclick: async (ev) => {
-          if (ev.currentTarget.disabled) return;
-          ev.currentTarget.disabled = true;
-          const patch = {
-            id: target.id,
-            username: userIn.value.trim().toLowerCase(),
-            displayName: nameIn.value.trim(),
-          };
-          if (!isSelf) patch.role = roleSel.value;
-          try {
-            await api.updateUser(patch);
-            hydrateFromDb(await api.db());
-            toast(tr("userUpdated"), {kind:"success", pill:"✓"});
-            state.modal = "manageEmployees";
-            render();
-          } catch (e) {
-            ev.currentTarget.disabled = false;
-            err.textContent = e.message || (state.lang === "es" ? "No se pudo guardar" : "Couldn't save");
-            err.style.display = "block";
-          }
-        }}, tr("saveChanges")),
-      );
-      card.appendChild(actions);
     } else if (state.modal === "resetPasswordUser") {
+      // Sheet on top of the Edit User screen. Cancel = dismiss the sheet
+      // (history.back); Save = dismiss + a success toast underneath.
       const target = users.find(x => x.id === state.manageTargetId);
-      if (!target) { state.modal = "manageEmployees"; render(); return; }
+      if (!target) { close(); return; }
       const passIn = el("input", { type: "password", placeholder: tr("newPassword"), autocapitalize:"off", autocorrect:"off", spellcheck:"false" });
       const err = el("div", {class:"err", style:"display:none"});
       card.appendChild(el("h3", {}, tr("resetPassword")));
@@ -5403,17 +5873,16 @@
       card.appendChild(passIn);
       card.appendChild(err);
       card.appendChild(el("div", {class:"actions"},
-        el("button", {class:"btn", onclick: () => { state.modal = "editEmployee"; render(); }}, tr("cancel")),
+        el("button", {class:"btn", onclick: close}, tr("cancel")),
         el("button", {class:"btn primary", onclick: async (ev) => {
           const pw = passIn.value.trim();
-          if (!pw) { err.textContent = tr("passwordRequired") || (state.lang === "es" ? "Contraseña obligatoria" : "Password required"); err.style.display = "block"; return; }
+          if (!pw) { err.textContent = state.lang === "es" ? "Contraseña obligatoria" : "Password required"; err.style.display = "block"; return; }
           if (ev.currentTarget.disabled) return;
           ev.currentTarget.disabled = true;
           try {
             await api.resetPassword(target.id, pw);
             toast(tr("passwordChanged"), {kind:"success", pill:"✓"});
-            state.modal = "editEmployee";
-            render();
+            close();
           } catch (e) {
             ev.currentTarget.disabled = false;
             err.textContent = e.message || (state.lang === "es" ? "No se pudo cambiar" : "Couldn't update");
@@ -5422,12 +5891,16 @@
         }}, tr("saveChanges")),
       ));
     } else if (state.modal === "confirmDeactivate") {
+      // Confirmation sheet on top of Edit User. On confirm, dismiss the sheet
+      // AND pop the Edit User screen (since the user no longer exists in the
+      // active list); the underlying Manage Users screen rerenders with the
+      // user moved to the Deactivated section.
       const target = users.find(x => x.id === state.manageTargetId);
-      if (!target) { state.modal = "manageEmployees"; render(); return; }
+      if (!target) { close(); return; }
       card.appendChild(el("h3", {}, tr("deactivateConfirmTitle")));
       card.appendChild(el("p", {}, tr("deactivateConfirmBody", target.displayName)));
       card.appendChild(el("div", {class:"actions"},
-        el("button", {class:"btn", onclick: () => { state.modal = "editEmployee"; render(); }}, tr("cancel")),
+        el("button", {class:"btn", onclick: close}, tr("cancel")),
         el("button", {class:"btn danger-confirm", onclick: async (ev) => {
           if (ev.currentTarget.disabled) return;
           ev.currentTarget.disabled = true;
@@ -5435,8 +5908,10 @@
             await api.deactivateUser(target.id);
             hydrateFromDb(await api.db());
             toast(tr("userDeactivated"), {kind:"success", pill:"✓"});
-            state.modal = "manageEmployees";
-            render();
+            // Close the sheet, then pop the Edit User screen so the owner
+            // lands back on Manage Users with the user now in Deactivated.
+            state.modal = null;
+            navBack();
           } catch (e) {
             ev.currentTarget.disabled = false;
             toastApiError(e, state.lang === "es" ? "No se pudo desactivar" : "Couldn't deactivate");
@@ -5460,10 +5935,22 @@
     // dropdown toggle, button state update, or in-place mutation looks like
     // a full-page flash because the scroll area fades+shifts.
     if (state.screen !== _lastRenderedScreen) {
-      scroll.classList.remove("screen-enter");
+      // Pick the right entrance for the navigation kind:
+      //   navDir > 0  → forward push (slide in from the right)
+      //   navDir < 0  → back pop    (slide in from the left)
+      //   navDir = 0  → tab swap    (cross-fade; siblings, not parent/child)
+      // Reset all class candidates first so the previous screen's animation
+      // doesn't bleed into the new one.
+      scroll.classList.remove("screen-enter", "screen-enter-fwd", "screen-enter-back", "screen-enter-tab");
+      scroll.classList.remove("mu-screen", "eu-screen", "roster-screen");
       void scroll.offsetWidth;
-      scroll.classList.add("screen-enter");
+      let cls = "screen-enter";
+      if (state.navDir > 0) cls = "screen-enter-fwd";
+      else if (state.navDir < 0) cls = "screen-enter-back";
+      else if (_lastRenderedScreen != null) cls = "screen-enter-tab";
+      scroll.classList.add(cls);
       _lastRenderedScreen = state.screen;
+      state.navDir = 0;
     }
 
     renderTopbar();
@@ -5478,10 +5965,16 @@
       renderHistory();
     } else if (state.screen === "admin_home") {
       renderAdminHome();
+    } else if (state.screen === "inbox") {
+      renderInbox();
     } else if (state.screen === "admin_employee") {
       renderAdminEmployee();
     } else if (state.screen === "shift_detail") {
       renderShiftDetail();
+    } else if (state.screen === "manage_users") {
+      renderManageUsers();
+    } else if (state.screen === "edit_user") {
+      renderEditUser();
     }
 
     renderModal();

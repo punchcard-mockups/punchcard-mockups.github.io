@@ -846,6 +846,33 @@
     font-style: italic;
     line-height: 1.4;
   }
+  /* Same shape as the read-only .sd-comment so the two render identically
+     at a glance; the textarea variant just becomes editable on focus. */
+  .sd-comment-input {
+    display: block;
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--surface-card);
+    border: 1px solid var(--outline-soft);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-style: italic;
+    line-height: 1.4;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 44px;
+    outline: none;
+    transition: border-color 150ms ease, background 150ms ease;
+  }
+  .sd-comment-input:hover { border-color: var(--text-muted); }
+  .sd-comment-input:focus {
+    border-color: var(--accent-blue);
+    background: var(--surface-card-hi, var(--surface-card));
+    color: var(--text-primary);
+    font-style: normal;
+  }
+  @media (pointer: coarse) { .sd-comment-input { font-size: 16px; } }
   .sd-no-loc {
     margin-top: 14px;
     padding: 14px;
@@ -3206,7 +3233,7 @@
       hoursShort: "h",
       comments: "Add a note…",
       commentRequired: "A note is required for shifts under 9 hours",
-      commentLabel: "Note",
+      commentLabel: "Comment",
       mapLegendIn: "Clock-in",
       mapLegendOut: "Clock-out",
       submitWeek: "Submit",
@@ -3263,11 +3290,8 @@
       requestEditHelper: "Your admin will review and apply this.",
       reasonRequiredLabel: "Reason (required)",
       editComment: "Tell your admin what needs to change…",
-      editShiftCommentAction: "Edit note",
-      addNoteAction: "Add note",
-      editShiftCommentTitle: "Edit your note",
-      editShiftCommentPlaceholder: "Add or change a note about this shift…",
-      noteSaved: "Note saved",
+      editShiftCommentPlaceholder: "Add a comment about this shift…",
+      noteSaved: "Comment saved",
       addShiftAction: "Add shift",
       addShiftTitle: "Add a shift",
       addShiftReason: "Why are you adding this shift?",
@@ -3350,7 +3374,7 @@
       hoursShort: "h",
       comments: "Añadir una nota…",
       commentRequired: "Se requiere una nota para turnos menos de 9 horas",
-      commentLabel: "Nota",
+      commentLabel: "Comentario",
       mapLegendIn: "Entrada",
       mapLegendOut: "Salida",
       submitWeek: "Validar",
@@ -3407,11 +3431,8 @@
       requestEditHelper: "Tu admin lo revisará y lo aplicará.",
       reasonRequiredLabel: "Motivo (obligatorio)",
       editComment: "Cuéntale a tu admin qué debe cambiar…",
-      editShiftCommentAction: "Editar nota",
-      addNoteAction: "Añadir nota",
-      editShiftCommentTitle: "Editar tu nota",
-      editShiftCommentPlaceholder: "Añade o cambia una nota sobre este turno…",
-      noteSaved: "Nota guardada",
+      editShiftCommentPlaceholder: "Añade un comentario sobre este turno…",
+      noteSaved: "Comentario guardado",
       addShiftAction: "Añadir turno",
       addShiftTitle: "Añadir un turno",
       addShiftReason: "¿Por qué añades este turno?",
@@ -3705,7 +3726,20 @@
     state.navDir = -1;
     render();
   }
+  // The shift-detail sheet lets an employee edit their own comment inline
+  // (no "Save" button — the textarea is the editor). When the sheet closes
+  // or a sub-modal opens on top, this flushes the pending write. The hook
+  // captures the textarea element + original comment so it can no-op if
+  // nothing actually changed.
+  let pendingCommentFlush = null;
+  function flushPendingComment() {
+    if (!pendingCommentFlush) return;
+    const fn = pendingCommentFlush;
+    pendingCommentFlush = null;
+    try { fn(); } catch (e) { console.error("Couldn't save comment:", e); }
+  }
   function openModal(name, extras = {}) {
+    flushPendingComment();
     if (state.modal) {
       state.modalStack.push({
         modal: state.modal,
@@ -3720,6 +3754,7 @@
     render();
   }
   window.addEventListener("popstate", () => {
+    flushPendingComment();
     if (state.modal) {
       if (state.modalStack.length) {
         const prev = state.modalStack.pop();
@@ -3755,6 +3790,7 @@
     state.currentUser = null;
     state.screen = "login";
     state.nav = [];
+    flushPendingComment();
     state.modal = null;
     state.modalStack = [];
     state.expandedApproval = null;
@@ -5254,8 +5290,45 @@
         `Clocked in ${inTz}, clocked out ${outTz}`));
     }
 
-    // Comment (if present)
-    if (sh.comment) {
+    // Comment. If the viewer owns this shift and the week is still open
+    // (not submitted-for-approval, not approved), the comment is an inline
+    // editable textarea — no "Edit" button, no sub-modal. The latest value
+    // is flushed to the server when the sheet closes (or a sub-modal opens
+    // on top). Everyone else — admins viewing someone else's shift, or the
+    // employee themselves after submission — sees a read-only display.
+    const weekSt = weekStatus(sh.empId, weekStartOf(sh.date));
+    const weekIsLocked = weekSt === "approved";
+    const weekIsOpen = weekSt !== "pending" && !weekIsLocked;
+    const canEditComment = isEmployee(u) && u.id === sh.empId && weekIsOpen;
+    if (canEditComment) {
+      root.appendChild(el("div", {class:"sd-section-label"}, tr("commentLabel")));
+      const ta = el("textarea", {
+        class: "sd-comment-input",
+        rows: 2,
+        placeholder: tr("editShiftCommentPlaceholder"),
+      });
+      ta.value = sh.comment || "";
+      root.appendChild(ta);
+      const original = sh.comment || "";
+      const shiftId = sh.id;
+      pendingCommentFlush = async () => {
+        const next = ta.value;
+        if (next === original) return;
+        // Optimistic local write so an immediate re-open of the sheet shows
+        // the new comment even before the server round-trip finishes.
+        const localSh = shifts.find(s => s.id === shiftId);
+        if (localSh) localSh.comment = next;
+        try {
+          const { shift: updated } = await api.updateShiftComment(shiftId, next);
+          if (localSh) Object.assign(localSh, updated);
+          toast(tr("noteSaved"), {kind:"success", pill:"✓"});
+        } catch (e) {
+          // Roll back so the UI matches server state.
+          if (localSh) localSh.comment = original;
+          toastApiError(e, state.lang === "es" ? "No se pudo guardar" : "Couldn't save");
+        }
+      };
+    } else if (sh.comment) {
       root.appendChild(el("div", {class:"sd-section-label"}, tr("commentLabel")));
       root.appendChild(el("div", {class:"sd-comment"}, `"${sh.comment}"`));
     }
@@ -5300,13 +5373,17 @@
               month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
             })),
           ),
-          (entry.oldStart !== entry.newStart || entry.oldEnd !== entry.newEnd)
+          entry.action === "created" || !entry.oldStart || !entry.oldEnd
             ? el("div", {class:"diff"},
-                el("span", {class:"before"}, `${fmt12(entry.oldStart)} – ${fmt12(entry.oldEnd)}`),
-                el("span", {class:"arrow"}, "→"),
                 el("span", {class:"after"}, `${fmt12(entry.newStart)} – ${fmt12(entry.newEnd)}`),
               )
-            : null,
+            : (entry.oldStart !== entry.newStart || entry.oldEnd !== entry.newEnd)
+              ? el("div", {class:"diff"},
+                  el("span", {class:"before"}, `${fmt12(entry.oldStart)} – ${fmt12(entry.oldEnd)}`),
+                  el("span", {class:"arrow"}, "→"),
+                  el("span", {class:"after"}, `${fmt12(entry.newStart)} – ${fmt12(entry.newEnd)}`),
+                )
+              : null,
           el("div", {class:"reason"}, `"${entry.comment}"`),
         ));
       }
@@ -5318,8 +5395,8 @@
     //     and can directly edit the shift (requires a reason, logged).
     //   - employee on own shift: can request an edit — UNLESS the week has
     //     already been admin-approved, in which case the shift is locked.
-    const weekSt = weekStatus(sh.empId, weekStartOf(sh.date));
-    const weekIsLocked = weekSt === "approved";
+    //   (weekSt / weekIsLocked / weekIsOpen are computed above, next to
+    //    the comment editor, since both sections key off them.)
 
     if (editReq && canApprove(u)) {
       root.appendChild(el("div", {class:"sd-action-row"},
@@ -5341,20 +5418,9 @@
         onclick: () => openModal("adminEditShift"),
       }, tr("adminEditTitle")));
     } else if (!editReq && isEmployee(u) && u.id === sh.empId && !weekIsLocked) {
-      // Employee actions on own shift in an active (not yet submitted,
-      // not approved) week:
-      //   - Edit note: direct save, no admin approval needed.
-      //   - Request edit: time changes still go through the edit-request queue.
-      // If the week is "pending" or "approved", both of these are hidden
-      // via the weekIsLocked and !pending checks.
-      const weekIsOpen = weekSt !== "pending";
-      if (weekIsOpen) {
-        root.appendChild(el("button", {
-          class:"btn full",
-          style: "margin-top:8px;",
-          onclick: () => openModal("editShiftComment"),
-        }, sh.comment ? tr("editShiftCommentAction") : tr("addNoteAction")));
-      }
+      // Employee on own active shift: "Request edit" still lives in a
+      // sub-sheet (time changes go through admin approval). Comment edits
+      // happen inline via the editable textarea rendered above.
       root.appendChild(el("button", {
         class:"btn primary full",
         style: "margin-top:8px;",
@@ -5820,33 +5886,6 @@
           } catch (e) {
             ev.currentTarget.disabled = false;
             err.textContent = e.message || (state.lang === "es" ? "No se pudo añadir" : "Couldn't add shift");
-            err.style.display = "block";
-          }
-        }}, tr("saveChanges")),
-      ));
-    } else if (state.modal === "editShiftComment") {
-      const sh = shifts.find(s => s.id === state.viewingShiftId);
-      if (!sh) { close(); return; }
-      const noteIn = el("textarea", { rows: 4, placeholder: tr("editShiftCommentPlaceholder") });
-      noteIn.value = sh.comment || "";
-      const err = el("div", {class:"err", style:"display:none"});
-      card.appendChild(el("h3", {}, tr("editShiftCommentTitle")));
-      card.appendChild(el("p", {style:"color:var(--text-muted); margin:-4px 0 10px;"}, fmtDateLong(sh.date)));
-      card.appendChild(noteIn);
-      card.appendChild(err);
-      card.appendChild(el("div", {class:"actions"},
-        el("button", {class:"btn", onclick: close}, tr("cancel")),
-        el("button", {class:"btn primary", onclick: async (ev) => {
-          if (ev.currentTarget.disabled) return;
-          ev.currentTarget.disabled = true;
-          try {
-            const { shift: updated } = await api.updateShiftComment(sh.id, noteIn.value);
-            Object.assign(sh, updated);
-            toast(tr("noteSaved"), {kind:"success", pill:"✓"});
-            close();
-          } catch (e) {
-            ev.currentTarget.disabled = false;
-            err.textContent = e.message || (state.lang === "es" ? "No se pudo guardar" : "Couldn't save");
             err.style.display = "block";
           }
         }}, tr("saveChanges")),

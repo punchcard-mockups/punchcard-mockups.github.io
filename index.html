@@ -1283,28 +1283,58 @@
   .hist-week-head .w-status.pending  { background: rgba(245,158,11,.2); color: var(--accent-amber); }
   .hist-week-head .w-status.approved { background: rgba(16,185,129,.2); color: var(--accent-green-light); }
   .hist-week-head .w-status.rejected { background: rgba(239,68,68,.2); color: var(--accent-red-light, #fca5a5); }
-  /* Admin-only inline reopen action — small ghost button, no filter chrome. */
-  .hist-week-head .w-reopen {
+  /* Admin-only: approved pill doubles as a dropdown trigger. Menu
+     anchors relative to the pill. Click is not allowed to bubble to the
+     row expand/collapse (handled in JS via stopPropagation). */
+  .hist-week-head .w-status.has-menu {
+    position: relative;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .hist-week-head .w-status.has-menu::after {
+    content: "▾";
+    margin-left: 4px;
+    opacity: .7;
+  }
+  .hist-week-head .w-status.has-menu.open::after { transform: rotate(180deg); }
+  .w-status-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 140px;
+    background: var(--surface-card);
+    border: 1px solid var(--outline-soft);
+    border-radius: 2px;
+    padding: 6px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.15), 0 2px 6px rgba(0,0,0,.08);
+    z-index: 40;
+    text-align: left;
+    cursor: default;
+    animation: fade-up 140ms ease both;
+  }
+  .w-status-menu-item {
     -webkit-appearance: none;
     appearance: none;
-    border: 1px solid var(--outline-soft);
+    width: 100%;
+    min-height: 36px;
+    padding: 0 12px;
     background: transparent;
-    color: var(--text-secondary);
+    border: 0;
     font-family: var(--tf-body);
-    font-size: var(--fs-xs);
-    letter-spacing: 0.5px;
-    padding: 4px 10px;
+    font-size: var(--fs-sm);
+    font-weight: 500;
+    text-align: left;
+    color: var(--text-primary);
     border-radius: 2px;
     cursor: pointer;
     touch-action: manipulation;
-    transition: background 120ms ease, color 120ms ease;
+    transition: background 120ms ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
   }
-  .hist-week-head .w-reopen:active { filter: brightness(.95); }
+  .w-status-menu-item:active { background: var(--surface-dark); }
   @media (hover: hover) {
-    .hist-week-head .w-reopen:hover {
-      background: var(--surface-card-hi);
-      color: var(--text-primary);
-    }
+    .w-status-menu-item:hover { background: var(--surface-dark); }
   }
   /* Shift cards inside an expanded week sit slightly inset from the rail */
   .week-group .hist-shift-card { margin-top: 8px; }
@@ -2251,6 +2281,9 @@
     expandedHistoryWeeks: null,
     // user menu (account dropdown) open state
     userMenuOpen: false,
+    // admin-only: which approved-week pill dropdown is open. Format:
+    // `${empId}|${wkStart}` or null.
+    weekMenuKey: null,
     // flashing toast for banner animation
   };
 
@@ -4375,30 +4408,47 @@
           const label = status === "approved" ? tr("weekApproved")
                       : status === "rejected" ? tr("weekRejected")
                       : tr("weekPending");
-          right.appendChild(el("span", {class:`w-status ${status}`}, label));
-        }
-        // Admin-only: reopen an approved week (flip it back to unsubmitted
-        // so the employee can add a missed shift). Click must not bubble to
-        // the row's expand/collapse handler.
-        if (status === "approved" && canApprove(state.currentUser)) {
-          right.appendChild(el("button", {
-            class: "w-reopen",
-            onclick: async (ev) => {
+          const menuKey = `${empId}|${wkStart}`;
+          const canReopen = status === "approved" && canApprove(state.currentUser);
+          const isMenuOpen = canReopen && state.weekMenuKey === menuKey;
+          const pill = el("span", {
+            class: `w-status ${status}${canReopen ? " has-menu" : ""}${isMenuOpen ? " open" : ""}`,
+          }, label);
+          if (canReopen) {
+            // Admin-only: tapping an approved-week pill opens a small
+            // dropdown with the Reopen action. Click must not bubble to
+            // the row's expand/collapse handler.
+            pill.addEventListener("click", (ev) => {
               ev.stopPropagation();
-              if (ev.currentTarget.disabled) return;
-              ev.currentTarget.disabled = true;
-              try {
-                await api.setApproval(empId, wkStart, "unsubmitted");
-                const i = weekApprovals.findIndex(w => w.empId === empId && w.weekStart === wkStart);
-                if (i >= 0) weekApprovals.splice(i, 1);
-                toast(tr("weekReopened"), {kind:"warn", pill:"↺"});
-                render();
-              } catch (e) {
-                ev.currentTarget.disabled = false;
-                toastApiError(e, state.lang === "es" ? "No se pudo reabrir" : "Couldn't reopen");
-              }
-            },
-          }, tr("reopenWeek")));
+              state.weekMenuKey = isMenuOpen ? null : menuKey;
+              render();
+            });
+            if (isMenuOpen) {
+              const menu = el("div", {class: "w-status-menu"},
+                el("button", {
+                  class: "w-status-menu-item",
+                  onclick: async (ev) => {
+                    ev.stopPropagation();
+                    if (ev.currentTarget.disabled) return;
+                    ev.currentTarget.disabled = true;
+                    try {
+                      await api.setApproval(empId, wkStart, "unsubmitted");
+                      const i = weekApprovals.findIndex(w => w.empId === empId && w.weekStart === wkStart);
+                      if (i >= 0) weekApprovals.splice(i, 1);
+                      state.weekMenuKey = null;
+                      toast(tr("weekReopened"), {kind:"warn", pill:"↺"});
+                      render();
+                    } catch (e) {
+                      ev.currentTarget.disabled = false;
+                      toastApiError(e, state.lang === "es" ? "No se pudo reabrir" : "Couldn't reopen");
+                    }
+                  },
+                }, tr("reopenWeek")),
+              );
+              pill.appendChild(menu);
+            }
+          }
+          right.appendChild(pill);
         }
         right.appendChild(el("span", {class: `chevron ${isOpen ? "up" : ""}`}, "▾"));
 
@@ -5248,10 +5298,16 @@
   // Children of the trigger / menu stop propagation so the menu survives
   // internal clicks.
   document.addEventListener("click", () => {
+    let needsRender = false;
     if (state.userMenuOpen) {
       state.userMenuOpen = false;
       renderTopbar();
     }
+    if (state.weekMenuKey) {
+      state.weekMenuKey = null;
+      needsRender = true;
+    }
+    if (needsRender) render();
   });
 
   // Keyboard-aware viewport: lift the bottom sheet (and anything that reads

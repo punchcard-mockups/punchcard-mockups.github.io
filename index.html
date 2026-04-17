@@ -255,7 +255,7 @@
     font-family: var(--tf-body);
     font-style: italic;
     color: var(--text-secondary);
-    font-size: 15px;
+    font-size: var(--fs-base);
   }
   /* font-family/weight come from the display-face multi-selector below */
   .greeting .name {
@@ -689,31 +689,22 @@
     font-weight: 500;
     color: var(--accent-green);
   }
-  .tz-tag {
-    display: inline-block;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    margin-left: 8px;
-    padding: 2px 6px;
-    border-radius: 4px;
-    background: var(--surface-dark);
-    color: var(--text-muted);
-    vertical-align: middle;
-    font-variant-numeric: tabular-nums;
-  }
   /* Compact inline tz suffix used wherever a time or time-range is shown — lives
-     beside the time itself ("7:30 AM EDT") rather than on its own line. */
+     beside the time itself ("7:30 AM EDT") rather than on its own line. Fixed
+     size + letter-spacing so the tz stays legible as a tiny caps badge
+     regardless of whether the surrounding text is body, mono, or chip-small. */
   .tz-inline {
     display: inline-block;
-    font-size: 0.75em;
+    font-family: var(--tf-body);
+    font-size: 10px;
     font-weight: 700;
-    letter-spacing: 0.4px;
+    letter-spacing: 1.2px;
     margin-left: 5px;
     padding: 1px 5px;
-    border-radius: 3px;
+    border-radius: 2px;
     background: var(--surface-dark);
     color: var(--text-muted);
+    text-transform: uppercase;
     font-variant-numeric: tabular-nums;
     vertical-align: 1px;
   }
@@ -1050,19 +1041,28 @@
     transform-origin: center;
   }
   .modal-card h3 {
-    margin: 0 0 6px;
-    font-size: 18px; font-weight: 700;
+    margin: 0 0 4px;
+    font-size: var(--fs-xl);
+    font-weight: 400;
+    letter-spacing: -0.4px;
+    line-height: 1.15;
   }
-  .modal-card p { margin: 0 0 14px; color: var(--text-secondary); font-size: 13px; }
+  .modal-card p {
+    margin: 0 0 18px;
+    color: var(--text-secondary);
+    font-family: var(--tf-body);
+    font-style: italic;
+    font-size: var(--fs-sm);
+  }
   .modal-card input, .modal-card textarea, .modal-card select {
     display: block;
     width: 100%;
     background: var(--surface-dark);
     border: 1px solid var(--outline-soft);
-    border-radius: 10px;
+    border-radius: 2px;
     padding: 10px 12px;
     color: var(--text-primary);
-    font-size: 13px;
+    font-size: var(--fs-sm);
     font-family: inherit;
     margin-bottom: 10px;
     outline: none;
@@ -1125,6 +1125,32 @@
     font-size: var(--fs-xs);
     letter-spacing: 0.5px;
     color: var(--text-muted);
+  }
+  /* Compact inline timezone picker inside the add-shift modal. The zone is
+     secondary metadata — don't give it a full-width labeled row like Date /
+     Start / End. */
+  .modal-card .tz-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 2px 0 14px;
+  }
+  .modal-card .tz-row-label {
+    font-family: var(--tf-body);
+    font-style: italic;
+    font-size: var(--fs-xs);
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+  .modal-card select.tz-select-compact {
+    width: auto;
+    margin: 0;
+    padding: 6px 8px;
+    font-size: var(--fs-sm);
+  }
+  @media (pointer: coarse) {
+    .modal-card select.tz-select-compact { font-size: 16px; padding: 8px 10px; }
   }
   .modal-card .err {
     font-size: 12px; color: var(--accent-red-light);
@@ -1206,24 +1232,28 @@
     display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;
   }
   .hist-shift-card .chip {
-    font-size: 11px;
+    font-family: var(--tf-body);
+    font-size: var(--fs-xs);
     background: transparent;
     padding: 4px 8px;
     border-radius: 2px;
     border: 1px solid var(--outline-soft);
-    color: var(--text-secondary);
+    color: var(--text-muted);
     display: inline-flex; align-items: center; gap: 5px;
   }
   .hist-shift-card .chip svg { width: 11px; height: 11px; }
   .hist-shift-card .comment {
     margin-top: 8px;
-    font-size: 12px;
-    color: var(--text-secondary);
+    font-family: var(--tf-body);
+    font-size: var(--fs-base);
     font-style: italic;
+    font-weight: 400;
+    color: var(--text-muted);
   }
   .hist-shift-card .week-status {
     margin-top: 8px; display: inline-flex;
-    font-size: 10px; font-weight: 700; letter-spacing: 0.4px;
+    font-family: var(--tf-body);
+    font-size: 10px; font-weight: 700; letter-spacing: 1.2px;
     padding: 3px 8px; border-radius: 999px; text-transform: uppercase;
   }
   .hist-shift-card .week-status.pending { background: rgba(245,158,11,.2); color: var(--accent-amber); }
@@ -1237,15 +1267,23 @@
     border-bottom: 1px solid var(--outline-soft);
   }
   .hist-month-head:first-child { margin-top: 8px; }
+  /* Month is a divider, not a heading — the week cards are the content.
+     Small uppercase label, letterspaced, muted. Matches the m-stats row
+     on its right so the two feel like one horizontal meta rule. */
   .hist-month-head .m-title {
-    font-size: 15px; font-weight: 700;
-    letter-spacing: 0.2px;
+    font-family: var(--tf-body);
+    font-size: var(--fs-xs);
+    font-weight: 500;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
   }
   .hist-month-head .m-stats {
-    font-size: 11px;
-    color: var(--text-secondary);
+    font-family: var(--tf-mono);
+    font-size: var(--fs-xs);
+    font-weight: 500;
+    color: var(--text-muted);
     font-variant-numeric: tabular-nums;
-    font-weight: 600;
   }
   /* Each week is a substantial card (Manage-Users pattern): rounded,
      surface-dark background, fat padding. The whole header row is the
@@ -1264,8 +1302,9 @@
   .hist-week-head .w-title {
     font-family: var(--tf-display);
     font-weight: 400;
-    font-size: var(--fs-lg);
-    letter-spacing: -0.2px;
+    font-size: var(--fs-xl);
+    letter-spacing: -0.4px;
+    line-height: 1.1;
     color: var(--text-primary);
     font-variant-numeric: tabular-nums;
   }
@@ -1274,14 +1313,19 @@
   }
   .hist-week-head .w-hrs {
     font-family: var(--tf-mono);
-    font-size: var(--fs-sm);
+    font-size: var(--fs-base);
     font-weight: 700;
     color: var(--text-primary);
     font-variant-numeric: tabular-nums;
   }
   .hist-week-head .w-status {
-    font-size: 9px; font-weight: 700; letter-spacing: 0.4px;
-    padding: 2px 7px; border-radius: 999px; text-transform: uppercase;
+    font-family: var(--tf-body);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    text-transform: uppercase;
   }
   .hist-week-head .w-status.pending  { background: rgba(245,158,11,.2); color: var(--accent-amber); }
   .hist-week-head .w-status.approved { background: rgba(16,185,129,.2); color: var(--accent-green-light); }
@@ -1356,6 +1400,16 @@
     padding: 12px 0;
     background: transparent;
     border-bottom: 1px dotted var(--outline-soft);
+  }
+  /* Inside a week card, the day label sits below the week heading as a
+     data row, not a second headline. Body font, tighter size, less
+     presence than the week title. */
+  .week-group .hist-shift-card .date {
+    font-family: var(--tf-body);
+    font-weight: 600;
+    font-size: var(--fs-base);
+    letter-spacing: 0;
+    color: var(--text-secondary);
   }
   .week-group .hist-shift-card:first-of-type {
     margin-top: 12px;
@@ -1501,66 +1555,44 @@
   }
   .week-submit .left { flex: 1; min-width: 0; }
   /* Week date-range reads as a lede: Gloock display, sized up enough to
-     anchor the card without an "ESTA SEMANA / THIS WEEK" prefix. */
+     anchor the card without an "ESTA SEMANA / THIS WEEK" prefix. Matches
+     .hist-week-head .w-title treatment so the role stays consistent across
+     home and history. */
   .week-submit .title {
     font-family: var(--tf-display);
     font-weight: 400;
     font-size: var(--fs-lg);
-    letter-spacing: -0.2px;
+    letter-spacing: -0.3px;
     line-height: 1.15;
   }
   .week-submit .sub {
+    font-family: var(--tf-mono);
     font-size: var(--fs-xs);
-    color: var(--text-secondary);
+    font-weight: 500;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
     margin-top: 4px;
   }
   /* Week-submit / past-weeks buttons use the global .btn.primary system. */
   .week-submit .status-pill {
-    font-size: 10px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase;
+    font-family: var(--tf-body);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
     padding: 4px 10px;
     border-radius: 999px;
   }
   .week-submit .status-pill.pending { background: rgba(245,158,11,.2); color: var(--accent-amber); }
   .week-submit .status-pill.approved { background: rgba(16,185,129,.2); color: var(--accent-green-light); }
   .week-submit .attest {
-    font-size: 10px;
+    font-family: var(--tf-body);
+    font-style: italic;
+    font-size: var(--fs-xs);
     color: var(--text-muted);
-    margin-top: 4px;
-    letter-spacing: 0.1px;
-    line-height: 1.35;
+    margin-top: 6px;
+    line-height: 1.4;
   }
-  /* Urgency banner: shows at top of employee home when there are unsubmitted
-     past weeks. Taps scroll to the past-weeks section below. */
-  .urgency-banner {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: 12px;
-    padding: 10px 14px;
-    background: linear-gradient(180deg, rgba(245,158,11,.18), rgba(245,158,11,.10));
-    border: 1px solid rgba(245,158,11,.35);
-    border-radius: 12px;
-    color: var(--text-primary);
-    cursor: pointer;
-    touch-action: manipulation;
-    transition: filter 120ms ease;
-  }
-  .urgency-banner:active { filter: brightness(.95); }
-  .urgency-banner .urgency-icon {
-    width: 28px; height: 28px;
-    border-radius: 999px;
-    display: grid; place-items: center;
-    background: rgba(245,158,11,.3);
-    color: var(--accent-amber);
-    font-size: 14px; font-weight: 800;
-    flex: 0 0 auto;
-  }
-  .urgency-banner .urgency-body {
-    flex: 1; min-width: 0;
-    font-size: 13px; font-weight: 600;
-  }
-  .urgency-banner .urgency-chev { color: var(--text-secondary); flex: 0 0 auto; }
-
   .signoff-label--urgent { color: var(--accent-amber) !important; }
   .past-weeks--urgent {
     border: 1px solid rgba(245,158,11,.35);
@@ -1569,12 +1601,25 @@
   }
 
   .signoff-label {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.6px;
+    font-family: var(--tf-body);
+    font-size: var(--fs-xs);
+    font-weight: 500;
+    letter-spacing: 1.2px;
     text-transform: uppercase;
     color: var(--text-muted);
     margin: 18px 4px 6px;
+  }
+  /* Today marker above the clock-in button. Small caps label, not a
+     heading — the big name greeting is the heading. */
+  .today-label {
+    text-align: center;
+    font-family: var(--tf-body);
+    font-size: var(--fs-xs);
+    font-weight: 500;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-top: 4px;
   }
   .past-weeks {
     background: var(--surface-card);
@@ -2013,7 +2058,6 @@
   .week-submit .status-pill.pending { color: var(--accent-amber); }
   .week-submit .status-pill.approved { color: var(--accent-green); }
   /* History shift comment + week-status typography */
-  .hist-shift-card .comment { font-family: var(--tf-body); font-style: italic; font-size: 13px; }
   .hist-shift-card .week-status { background: transparent; border: 1px solid currentColor; border-radius: 2px; letter-spacing: 1.2px; font-family: var(--tf-body); }
   .hist-shift-card .week-status.pending { color: var(--accent-amber); }
   .hist-shift-card .week-status.approved { color: var(--accent-green); }
@@ -2142,8 +2186,8 @@
     gap: 12px;
     padding: 14px 18px;
     padding-bottom: max(14px, calc(env(safe-area-inset-bottom, 0) + 14px));
-    background: linear-gradient(180deg, rgba(245,158,11,.18), rgba(245,158,11,.08));
-    border-top: 1px solid rgba(245,158,11,.3);
+    background: rgba(245,158,11,.14);
+    border-top: 1px solid rgba(245,158,11,.35);
     color: var(--text-primary);
     cursor: pointer;
     touch-action: manipulation;
@@ -2151,7 +2195,7 @@
   .pinned-approvals:active { filter: brightness(.95); }
   .pinned-approvals .icon {
     width: 36px; height: 36px;
-    border-radius: 10px;
+    border-radius: 2px;
     display: grid; place-items: center;
     background: rgba(245,158,11,.28);
     color: var(--accent-amber);
@@ -2159,10 +2203,15 @@
   }
   .pinned-approvals .body { flex: 1; min-width: 0; }
   .pinned-approvals .title {
-    font-size: 14px; font-weight: 700;
+    font-family: var(--tf-body);
+    font-size: var(--fs-base);
+    font-weight: 700;
   }
   .pinned-approvals .meta {
-    font-size: 12px; color: var(--text-secondary);
+    font-family: var(--tf-body);
+    font-size: var(--fs-xs);
+    color: var(--text-secondary);
+    margin-top: 2px;
   }
   .pinned-approvals .chev {
     color: var(--text-secondary);
@@ -3625,7 +3674,7 @@
     // Today's date + Clock-in (primary action, at the top)
     const todayLabel = new Date().toLocaleDateString(locale(),
       { weekday:"long", month:"long", day:"numeric" }).replace(/^./, c => c.toUpperCase());
-    root.appendChild(el("div", {style:"text-align:center; font-size:16px; color:var(--text-secondary); letter-spacing:.4px; text-transform:uppercase; font-weight:700; margin-top:4px;"}, `${tr("today")} · ${todayLabel}`));
+    root.appendChild(el("div", {class:"today-label"}, `${tr("today")} · ${todayLabel}`));
     root.appendChild(el("div", {style:"height:12px"}));
     root.appendChild(clockSection());
 
@@ -3902,7 +3951,7 @@
           el("div", {class:"label"}, tr("clockedInAt")),
           el("div", {class:"time"},
             fmtTimeDate(state.clockIn),
-            inTz ? el("span", {class:"tz-tag"}, inTz) : null,
+            inTz ? el("span", {class:"tz-inline"}, inTz) : null,
           ),
         )
       ));
@@ -3951,14 +4000,14 @@
           el("div", {class:"l-label"}, tr("start")),
           el("div", {class:"time"},
             fmtTimeDate(state.clockIn),
-            inTzShort ? el("span", {class:"tz-tag"}, inTzShort) : null,
+            inTzShort ? el("span", {class:"tz-inline"}, inTzShort) : null,
           ),
         ),
         el("div", {class:"col r"},
           el("div", {class:"l-label"}, tr("end")),
           el("div", {class:"time"},
             fmtTimeDate(state.clockOut),
-            outTzShort ? el("span", {class:"tz-tag"}, outTzShort) : null,
+            outTzShort ? el("span", {class:"tz-inline"}, outTzShort) : null,
           ),
         ),
       ),
@@ -4948,16 +4997,19 @@
       const endIn   = el("input", { type: "time", value: "17:00" });
       const noteIn  = el("textarea", { rows: 2, placeholder: tr("addShiftReason") });
       const err = el("div", {class:"err", style:"display:none"});
+      tzIn.classList.add("tz-select-compact");
       card.appendChild(el("h3", {}, tr("addShiftTitle")));
       card.appendChild(el("p", {style:"color:var(--text-muted); margin:-4px 0 10px;"}, emp.displayName));
       card.appendChild(el("label", {class:"field-label"}, tr("date")));
       card.appendChild(dateIn);
-      card.appendChild(el("label", {class:"field-label"}, tr("timezone")));
-      card.appendChild(tzIn);
       card.appendChild(el("label", {class:"field-label"}, tr("start")));
       card.appendChild(startIn);
       card.appendChild(el("label", {class:"field-label"}, tr("end")));
       card.appendChild(endIn);
+      card.appendChild(el("div", {class:"tz-row"},
+        el("span", {class:"tz-row-label"}, tr("timezone")),
+        tzIn,
+      ));
       card.appendChild(el("label", {class:"field-label"}, tr("commentLabel")));
       card.appendChild(noteIn);
       card.appendChild(err);

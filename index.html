@@ -1582,6 +1582,13 @@
   }
   .approval-row .approve { background: var(--accent-green); color: #fff; }
   .approval-row .reject { background: rgba(239,68,68,.2); color: var(--accent-red-light); }
+  /* When the row has switched to "type a reason" mode: the reject button
+     becomes the destructive submit (filled red, white text) and the
+     approve slot turns into a plain ghost Cancel. */
+  .approval-row .reject.confirm { background: var(--accent-red); color: #fff; }
+  .approval-row .reject.confirm:disabled { opacity: .4; cursor: not-allowed; }
+  .approval-row .cancel-ghost { background: transparent; color: var(--text-primary); }
+  .approval-row .cancel-ghost:hover { background: rgba(0,0,0,.05); }
   .approval-row .approve:hover, .approval-row .reject:hover { filter: brightness(1.1); }
 
   /* Inline "why are you rejecting" form that swaps in for the actions row */
@@ -3619,6 +3626,8 @@
     modal: null,        // "addEmployee" | "approvals" | "submitWeek"
     // drill-in: "empId:weekStart" of approval row currently expanded in approvals modal
     expandedApproval: null,
+    // key of the approval row currently in rejection-reason entry mode
+    rejectingApproval: null,
     // history week-expansion: Set<weekStart>. Lazy-init to { thisWeekStart() }.
     expandedHistoryWeeks: null,
     // user menu (account dropdown) open state
@@ -5945,82 +5954,88 @@
             row.appendChild(weekShiftBreakdown(wkShifts));
           }
           if (canApprove(state.currentUser)) {
-            const actions = el("div", {class:"actions"},
-              el("button", {
-                class:"reject",
-                onclick: (ev) => {
-                  // Open inline rejection-reason form in place of the buttons.
-                  const rowNode = ev.currentTarget.closest(".approval-row");
-                  const reasonField = el("textarea", {
-                    class: "reject-reason-field",
-                    placeholder: tr("rejectReasonPlaceholder"),
-                    rows: 3,
-                  });
-                  const err = el("div", {class:"reject-reason-err", style:"display:none;"});
-                  const form = el("div", {class:"reject-form"},
-                    el("div", {class:"reject-reason-title"}, tr("rejectReasonTitle")),
-                    reasonField,
-                    err,
-                    el("div", {class:"reject-form-actions"},
-                      el("button", {
-                        class:"reject",
-                        onclick: () => { form.remove(); actions.style.display = ""; },
-                      }, tr("cancel")),
-                      el("button", {
-                        class:"reject confirm",
-                        onclick: async (ev) => {
-                          const reason = reasonField.value.trim();
-                          if (!reason) {
-                            err.textContent = tr("rejectReasonRequired");
-                            err.style.display = "block";
-                            reasonField.focus();
-                            return;
-                          }
-                          if (ev.currentTarget.disabled) return;
-                          ev.currentTarget.disabled = true;
-                          try {
-                            const { entry } = await api.setApproval(w.empId, w.weekStart, "rejected", reason);
-                            animateOutAndThen(rowNode, () => {
-                              upsertWeekApproval(entry);
-                              state.expandedApproval = null;
-                              toast(tr("weekRejectedToast"), {kind:"warn", pill:"↺"});
-                              render();
-                            });
-                          } catch (e) {
-                            ev.currentTarget.disabled = false;
-                            toastApiError(e, state.lang === "es" ? "No se pudo rechazar" : "Couldn't reject");
-                          }
-                        },
-                      }, tr("confirmReject")),
-                    ),
-                  );
-                  actions.style.display = "none";
-                  rowNode.appendChild(form);
-                  reasonField.focus();
-                },
-              }, tr("reject")),
-              el("button", {
-                class:"approve",
+            // When Reject is tapped, the row enters "typing a reason" mode:
+            // the textarea appears above the buttons, the Reject button stays
+            // on the left but turns into the destructive submit (filled red),
+            // and the Approve slot on the right becomes a plain Cancel. The
+            // reject submit stays disabled until the textarea has content —
+            // an admin can't reject without a reason.
+            const isRejecting = state.rejectingApproval === key;
+            let submitBtn;
+            if (isRejecting) {
+              const reasonField = el("textarea", {
+                class: "reject-reason-field",
+                placeholder: tr("rejectReasonPlaceholder"),
+                rows: 3,
+                oninput: () => { if (submitBtn) submitBtn.disabled = !reasonField.value.trim(); },
+              });
+              const err = el("div", {class:"reject-reason-err", style:"display:none;"});
+              row.appendChild(el("div", {class:"reject-form"},
+                el("div", {class:"reject-reason-title"}, tr("rejectReasonTitle")),
+                reasonField,
+                err,
+              ));
+              submitBtn = el("button", {
+                class: "reject confirm",
+                disabled: true,
                 onclick: async (ev) => {
+                  const reason = reasonField.value.trim();
+                  if (!reason) { reasonField.focus(); return; }
                   if (ev.currentTarget.disabled) return;
                   ev.currentTarget.disabled = true;
                   const rowNode = ev.currentTarget.closest(".approval-row");
                   try {
-                    const { entry } = await api.setApproval(w.empId, w.weekStart, "approved");
+                    const { entry } = await api.setApproval(w.empId, w.weekStart, "rejected", reason);
                     animateOutAndThen(rowNode, () => {
                       upsertWeekApproval(entry);
                       state.expandedApproval = null;
-                      toast(tr("weekApprovedToast"), {kind:"success", pill:"✓"});
+                      state.rejectingApproval = null;
+                      toast(tr("weekRejectedToast"), {kind:"warn", pill:"↺"});
                       render();
                     });
                   } catch (e) {
                     ev.currentTarget.disabled = false;
-                    toastApiError(e, state.lang === "es" ? "No se pudo aprobar" : "Couldn't approve");
+                    toastApiError(e, state.lang === "es" ? "No se pudo rechazar" : "Couldn't reject");
                   }
                 },
-              }, tr("approve")),
-            );
-            row.appendChild(actions);
+              }, tr("reject"));
+              const cancelBtn = el("button", {
+                class: "cancel-ghost",
+                onclick: () => { state.rejectingApproval = null; renderModal(); },
+              }, tr("cancel"));
+              const actions = el("div", {class:"actions"}, submitBtn, cancelBtn);
+              row.appendChild(actions);
+              // Focus the textarea after the current tick so it's attached.
+              setTimeout(() => reasonField.focus(), 0);
+            } else {
+              const actions = el("div", {class:"actions"},
+                el("button", {
+                  class:"reject",
+                  onclick: () => { state.rejectingApproval = key; renderModal(); },
+                }, tr("reject")),
+                el("button", {
+                  class:"approve",
+                  onclick: async (ev) => {
+                    if (ev.currentTarget.disabled) return;
+                    ev.currentTarget.disabled = true;
+                    const rowNode = ev.currentTarget.closest(".approval-row");
+                    try {
+                      const { entry } = await api.setApproval(w.empId, w.weekStart, "approved");
+                      animateOutAndThen(rowNode, () => {
+                        upsertWeekApproval(entry);
+                        state.expandedApproval = null;
+                        toast(tr("weekApprovedToast"), {kind:"success", pill:"✓"});
+                        render();
+                      });
+                    } catch (e) {
+                      ev.currentTarget.disabled = false;
+                      toastApiError(e, state.lang === "es" ? "No se pudo aprobar" : "Couldn't aprove");
+                    }
+                  },
+                }, tr("approve")),
+              );
+              row.appendChild(actions);
+            }
           }
           card.appendChild(row);
         }

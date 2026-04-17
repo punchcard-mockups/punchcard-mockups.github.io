@@ -1044,6 +1044,9 @@
     overflow-y: auto;
     animation: modal-in 220ms cubic-bezier(.2,.8,.2,1) both;
   }
+  /* Intra-modal re-renders (expand/collapse, switch sub-modals) keep the
+     scrim and card in place visually — skip the entrance animations. */
+  .modal-scrim.no-anim, .modal-card.no-anim { animation: none !important; }
   @keyframes modal-in {
     from { opacity: 0; transform: translateY(12px) scale(.98); }
     to   { opacity: 1; transform: translateY(0) scale(1); }
@@ -5360,14 +5363,6 @@
 
     const mine = shifts.filter(s => s.empId === u.id)
       .sort((a,b) => b.date.localeCompare(a.date) || b.start.localeCompare(a.start));
-    const total = mine.reduce((s,x)=>s+x.hours,0);
-
-    root.appendChild(el("div", {class:"info-card", style:"margin-top:14px"},
-      el("div", {class:"row"},
-        stat("blue", String(mine.length), tr("shifts")),
-        stat("green", total.toFixed(1), tr("hours")),
-      ),
-    ));
 
     const withCoords = mine.filter(s => s.clockIn || s.clockOut);
     if (withCoords.length > 0) {
@@ -5841,15 +5836,25 @@
   // =============================================================
   // MODALS
   // =============================================================
+  let _lastRenderedModal = null;
   function renderModal() {
     const root = document.getElementById("modalRoot");
+    // Only play the scrim fade-in + card slide-up animations when the modal
+    // is actually being opened (state.modal transitioning from one value to
+    // another). Intra-modal re-renders — expanding a pending-week row,
+    // switching from Manage users → Edit employee, etc — replay the modal's
+    // entrance otherwise, which looks like the whole sheet bouncing.
+    const isFreshOpen = state.modal !== _lastRenderedModal;
+    // Preserve modal scroll position across intra-modal re-renders.
+    const prevScroll = !isFreshOpen ? (root.querySelector(".modal-card")?.scrollTop ?? 0) : 0;
+    _lastRenderedModal = state.modal;
     root.innerHTML = "";
     if (!state.modal) return;
 
     const close = () => { history.back(); };
-    const card = el("div", {class:"modal-card"});
+    const card = el("div", {class: "modal-card" + (isFreshOpen ? "" : " no-anim")});
     const scrim = el("div", {
-      class:"modal-scrim",
+      class: "modal-scrim" + (isFreshOpen ? "" : " no-anim"),
       onclick: (e) => { if (e.target === scrim) close(); },
     }, card);
 
@@ -6334,6 +6339,7 @@
     }
 
     root.appendChild(scrim);
+    if (!isFreshOpen) card.scrollTop = prevScroll;
   }
 
   // =============================================================

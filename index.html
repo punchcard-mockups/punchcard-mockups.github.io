@@ -3557,7 +3557,16 @@
       const hrsCls = sh.hours < 9 ? "h warn" : "h ok";
       const drow = el("div", {
         class: "drow tappable",
-        onclick: () => navTo("shift_detail", { viewingShiftId: sh.id }),
+        onclick: () => {
+          // Close any open modal (e.g. the weekly approvals sheet) before
+          // routing, otherwise shift-detail renders under the scrim.
+          if (state.modal) {
+            state.modal = null;
+            state.expandedApproval = null;
+            state.rejectingApproval = null;
+          }
+          navTo("shift_detail", { viewingShiftId: sh.id });
+        },
       },
         el("div", {class:"d"}, fmtDateWD(sh.date)),
         el("div", {class:"t"},

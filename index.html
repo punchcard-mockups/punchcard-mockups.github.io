@@ -610,41 +610,87 @@
   .demo-chip .tag.emp { background: rgba(16,185,129,.2); color: var(--accent-green-light); }
   .demo-chip .tag.readonly { background: rgba(245,158,11,.2); color: var(--accent-amber); }
 
-  /* Clock-in flow */
-  .big-cta {
+  /* ========================================================================
+     Buttons — one system.
+       .btn                default ghost: transparent, uppercase Vollkorn
+       .btn.primary        filled accent (caramel in editorial)
+       .btn.danger         outlined red — "I intend to do the destructive thing"
+       .btn.danger-confirm filled red — the committing action after confirmation
+       .btn.hero           oversized clock-in/out on the employee home
+       .btn.full           stretches to 100% width
+     Every button meets the 44px tap target (Android primary).
+     ======================================================================== */
+  .btn {
+    -webkit-appearance: none;
+    appearance: none;
     border: 0;
-    width: 100%;
-    height: 116px;
-    border-radius: 24px;
-    color: #fff;
-    font-size: 18px; font-weight: 700;
+    background: transparent;
+    color: var(--text-primary);
+    font-family: var(--tf-body);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 12px 16px;
+    min-height: 44px;
+    border-radius: 2px;
     cursor: pointer;
-    display: flex; flex-direction: column;
-    gap: 4px; align-items: center; justify-content: center;
+    touch-action: manipulation;
+    transition: filter 120ms ease, background 120ms ease;
+  }
+  .btn:active { filter: brightness(.94); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  @media (hover: hover) { .btn:hover { filter: brightness(1.08); } }
+
+  .btn.primary {
+    background: var(--accent-blue);
+    color: var(--t-bg);
+  }
+  .btn.danger {
+    background: transparent;
+    color: var(--accent-red);
+    border: 1px solid var(--accent-red);
+  }
+  .btn.danger-confirm {
+    background: var(--accent-red);
+    color: var(--t-bg);
+    border: 1px solid var(--accent-red);
+  }
+
+  /* Hero: the clock-in/out button on the employee home.
+     Calm by design — no gradient, no shadow — the tool stays out of the way. */
+  .btn.hero {
+    width: 100%;
+    min-height: 80px;
+    padding: 18px;
+    font-family: var(--tf-display);
+    font-size: 22px;
+    font-weight: 400;
     letter-spacing: 0.3px;
-    transition: transform 100ms ease, filter 150ms ease;
-  }
-  .big-cta:active { transform: scale(.985); }
-  .big-cta.clock-in { background: linear-gradient(180deg, var(--accent-green), #059669); }
-  .big-cta.clock-out { background: linear-gradient(180deg, var(--accent-red), #dc2626); }
-  .big-cta.submit {
-    background: linear-gradient(180deg, var(--accent-blue), #1d4ed8);
-    /* Not a primary hero action like Clock In/Out — just the "save this shift"
-       button at the bottom of the summary. Compact and text-only. */
-    height: auto;
-    min-height: 52px;
-    border-radius: 14px;
-    font-size: 15px;
-    flex-direction: row;
+    text-transform: none;
+    display: flex;
+    flex-direction: column;
     gap: 6px;
-    padding: 0 18px;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent-blue);
+    color: var(--t-bg);
   }
-  .big-cta.disabled {
-    filter: grayscale(0.4) brightness(.7);
+  .btn.hero svg { width: 22px; height: 22px; }
+  .btn.hero.clock-out { background: var(--text-primary); color: var(--t-bg); }
+  .btn.hero:disabled,
+  .btn.hero.disabled {
+    background: oklch(88% 0.02 85);
+    color: var(--text-muted);
+    opacity: 1;
     cursor: not-allowed;
   }
-  .big-cta svg { width: 32px; height: 32px; }
-  .big-cta.submit svg { width: 18px; height: 18px; }
+
+  .btn.full { width: 100%; }
+
+  /* In horizontal action clusters (approvals row, shift-detail), buttons share space equally */
+  .approval-row .actions > .btn,
+  .sd-action-row > .btn { flex: 1; min-width: 0; }
 
   .clock-card {
     display: flex; align-items: center; gap: 14px;
@@ -839,53 +885,21 @@
     gap: 10px;
     margin-top: 16px;
   }
-  .sd-btn {
-    flex: 1;
-    padding: 12px;
-    border: 0;
-    border-radius: 8px;
-    font-family: inherit;
-    font-weight: 700;
-    font-size: 13px;
-    letter-spacing: 0.3px;
-    cursor: pointer;
-    transition: filter 150ms ease;
-  }
-  .sd-btn:hover { filter: brightness(1.08); }
-  .sd-btn.approve {
-    background: var(--accent-green);
-    color: #fff;
-  }
-  .sd-btn.reject {
-    background: transparent;
-    color: var(--accent-red);
-    border: 1px solid var(--accent-red);
-  }
-  .sd-btn.primary {
-    background: var(--accent-blue);
-    color: #fff;
-  }
-  .sd-btn-full {
-    width: 100%;
-    margin-top: 18px;
-    padding: 14px;
-    font-size: 14px;
-  }
+  /* Shift-detail action row uses the global .btn system. */
 
   /* Explicit overrides so Editorial's big serif stat styles
      never leak into the shift-detail compact values. */
-  body.theme-editorial .sd-name { font-family: var(--tf-display); font-weight: 400; font-size: 17px; letter-spacing: -0.2px; }
-  body.theme-editorial .sd-date { font-family: var(--tf-body); font-style: italic; font-size: 12px; }
-  body.theme-editorial .sd-total-hrs { font-family: var(--tf-mono); }
-  body.theme-editorial .sd-value { font-family: var(--tf-mono); }
-  body.theme-editorial .sd-label,
-  body.theme-editorial .sd-section-label {
+  .sd-name { font-family: var(--tf-display); font-weight: 400; font-size: 17px; letter-spacing: -0.2px; }
+  .sd-date { font-family: var(--tf-body); font-style: italic; font-size: 12px; }
+  .sd-total-hrs { font-family: var(--tf-mono); }
+  .sd-value { font-family: var(--tf-mono); }
+  .sd-label,
+  .sd-section-label {
     font-family: var(--tf-body); font-style: italic; font-weight: 400;
     letter-spacing: 0.4px; text-transform: none; font-size: 11px;
   }
-  body.theme-editorial .sd-comment { font-family: var(--tf-body); background: transparent; }
-  body.theme-editorial .sd-edit-comment { font-family: var(--tf-body); }
-  body.theme-editorial .sd-btn { font-family: var(--tf-body); letter-spacing: 0.4px; border-radius: 3px; }
+  .sd-comment { font-family: var(--tf-body); background: transparent; }
+  .sd-edit-comment { font-family: var(--tf-body); }
 
 
   .shift-summary {
@@ -1128,25 +1142,7 @@
     display: flex; justify-content: flex-end; gap: 8px;
     margin-top: 6px;
   }
-  .modal-card .btn {
-    border: 0;
-    background: transparent;
-    color: var(--text-secondary);
-    font-size: 13px; font-weight: 700;
-    padding: 10px 16px;
-    border-radius: 10px;
-    cursor: pointer;
-    font-family: inherit;
-    transition: background 150ms ease, color 150ms ease;
-  }
-  .modal-card .btn:hover { background: var(--surface-dark); color: var(--text-primary); }
-  .modal-card .btn.primary {
-    background: var(--accent-blue); color: #fff;
-  }
-  .modal-card .btn.primary:hover { filter: brightness(1.1); background: var(--accent-blue); }
-  .modal-card .btn.danger {
-    background: rgba(239,68,68,.2); color: var(--accent-red-light);
-  }
+  /* Modal buttons use the global .btn system — no overrides needed. */
   .modal-card .err {
     font-size: 12px; color: var(--accent-red-light);
     background: rgba(239,68,68,.08);
@@ -1164,14 +1160,18 @@
     margin-bottom: 12px;
   }
   .modal-card .manage-row {
-    display: flex; flex-direction: column; gap: 10px;
-    padding: 12px 14px;
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 16px;
     border-radius: 12px;
     background: var(--surface-dark);
   }
-  .modal-card .manage-row .header {
-    display: flex; align-items: flex-start; gap: 10px;
+  .modal-card .manage-row.tappable {
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background 150ms ease;
   }
+  .modal-card .manage-row.tappable:hover { background: var(--surface-card-hi); }
+  .modal-card .manage-row.tappable:active { filter: brightness(.96); }
   .modal-card .manage-row .left { flex: 1; min-width: 0; }
   .modal-card .manage-row .name {
     font-weight: 700; color: var(--text-primary);
@@ -1181,12 +1181,8 @@
     font-size: 11px; color: var(--text-muted); margin-top: 2px;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  .modal-card .manage-row .actions {
-    display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-start;
-  }
-  .modal-card .manage-row .actions .btn,
-  .modal-card .manage-row .header .btn {
-    padding: 6px 10px; font-size: 11px;
+  .modal-card .manage-row .chev {
+    color: var(--text-secondary); flex-shrink: 0;
   }
   .modal-card .manage-section-label {
     font-size: 11px; font-weight: 700; letter-spacing: 0.4px;
@@ -1265,23 +1261,17 @@
     font-variant-numeric: tabular-nums;
     font-weight: 600;
   }
-  /* Each week is wrapped in .week-group — this is what gives weeks their visual
-     container: left accent rail, indented shift cards. */
+  /* Each week is wrapped in .week-group — week status is communicated by
+     the .w-status pill in the header, not a colored side rail. */
   .week-group {
     margin-top: 18px;
-    border-left: 3px solid var(--outline-soft);
-    padding-left: 14px;
   }
-  .week-group.pending  { border-left-color: var(--accent-amber); }
-  .week-group.approved { border-left-color: var(--accent-green); }
-  .week-group.rejected { border-left-color: var(--accent-red, #ef4444); }
   .hist-week-head {
     display: flex; align-items: center; justify-content: space-between;
     gap: 8px;
     padding: 8px 10px;
-    margin-left: -14px;      /* bleed over the rail so the header sits flush */
     background: var(--surface-dark);
-    border-radius: 0 10px 10px 0;
+    border-radius: 10px;
   }
   .hist-week-head .w-title {
     font-size: 12px;
@@ -1439,25 +1429,7 @@
   .week-submit .left { flex: 1; min-width: 0; }
   .week-submit .title { font-size: 13px; font-weight: 700; }
   .week-submit .sub { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
-  .week-submit .btn,
-  .past-weeks .prow .btn {
-    background: var(--accent-blue);
-    color: #fff;
-    border: 0;
-    font-size: 12px; font-weight: 700;
-    padding: 8px 14px;
-    border-radius: 10px;
-    cursor: pointer;
-    font-family: inherit;
-    letter-spacing: 0.3px;
-    transition: filter 150ms ease;
-  }
-  .week-submit .btn:hover,
-  .past-weeks .prow .btn:hover { filter: brightness(1.1); }
-  .week-submit .btn:disabled {
-    filter: grayscale(.5) brightness(.7);
-    cursor: default;
-  }
+  /* Week-submit / past-weeks buttons use the global .btn.primary system. */
   .week-submit .status-pill {
     font-size: 10px; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase;
     padding: 4px 10px;
@@ -1570,26 +1542,7 @@
   .approval-row .actions {
     display: flex; gap: 8px; margin-top: 10px;
   }
-  .approval-row .actions button {
-    flex: 1;
-    font-family: inherit;
-    border: 0;
-    border-radius: 8px;
-    padding: 8px 10px;
-    font-size: 12px; font-weight: 700;
-    cursor: pointer;
-    transition: filter 150ms ease;
-  }
-  .approval-row .approve { background: var(--accent-green); color: #fff; }
-  .approval-row .reject { background: rgba(239,68,68,.2); color: var(--accent-red-light); }
-  /* When the row has switched to "type a reason" mode: the reject button
-     becomes the destructive submit (filled red, white text) and the
-     approve slot turns into a plain ghost Cancel. */
-  .approval-row .reject.confirm { background: var(--accent-red); color: #fff; }
-  .approval-row .reject.confirm:disabled { opacity: .4; cursor: not-allowed; }
-  .approval-row .cancel-ghost { background: transparent; color: var(--text-primary); }
-  .approval-row .cancel-ghost:hover { background: rgba(0,0,0,.05); }
-  .approval-row .approve:hover, .approval-row .reject:hover { filter: brightness(1.1); }
+  /* Approval row action buttons use the global .btn system (.primary / .danger / .danger-confirm). */
 
   /* Inline "why are you rejecting" form that swaps in for the actions row */
   .reject-form {
@@ -1624,27 +1577,6 @@
     color: var(--accent-red-light);
     margin-top: 4px;
   }
-  .reject-form-actions {
-    display: flex; gap: 8px; margin-top: 8px;
-  }
-  .reject-form-actions button {
-    flex: 1;
-    font-family: inherit;
-    border: 0;
-    border-radius: 8px;
-    padding: 8px 10px;
-    font-size: 12px; font-weight: 700;
-    cursor: pointer;
-    transition: filter 150ms ease;
-    background: rgba(239,68,68,.2);
-    color: var(--accent-red-light);
-  }
-  .reject-form-actions button.confirm {
-    background: var(--accent-red, #ef4444);
-    color: #fff;
-  }
-  .reject-form-actions button:hover { filter: brightness(1.1); }
-
   /* Rejection notice shown to the employee (on weekSignoffCard + past-week row)
      with the admin's reason for rejecting. */
   .rejection-notice {
@@ -1668,10 +1600,7 @@
     color: var(--text-primary);
     line-height: 1.35;
   }
-  /* Rejected past-week rows get a subtle red left accent */
-  .past-weeks .prow.rejected {
-    box-shadow: inset 3px 0 0 var(--accent-red, #ef4444);
-  }
+  /* Rejected past-week rows — status already visible via rejectionNotice banner. */
 
   /* Admin edit audit log on the shift detail screen */
   .sd-admin-log {
@@ -1680,7 +1609,6 @@
   }
   .sd-admin-log-entry {
     background: var(--surface-dark);
-    border-left: 3px solid var(--accent-amber);
     border-radius: 6px;
     padding: 8px 10px;
   }
@@ -1750,9 +1678,7 @@
     margin-left: 2px;
     flex: 0 0 auto;
   }
-  .hist-shift-card.edited {
-    box-shadow: inset 3px 0 0 var(--accent-amber);
-  }
+  /* edited shifts are signaled by the ✎ edit-badge, no stripe */
   .approval-row .top.expandable,
   .hist-week-head.expandable {
     cursor: pointer;
@@ -1806,6 +1732,8 @@
     font-variant-numeric: tabular-nums;
     text-align: right;
   }
+  .breakdown .drow .h.ok { color: var(--accent-green); }
+  .breakdown .drow .h.warn { color: var(--accent-red); }
   .breakdown .drow .c {
     grid-column: 2 / -1;
     font-size: 11px;
@@ -1842,6 +1770,40 @@
     display: flex; gap: 6px; align-items: center;
   }
   .readonly-banner svg { width: 14px; height: 14px; }
+
+  /* Replaces the clock-in hero when the current week has already been
+     approved by an admin — prevents silently adding new shifts to a
+     closed week. Employee must wait for the next week or ask for reopen. */
+  .week-closed-card {
+    display: flex; gap: 14px; align-items: flex-start;
+    padding: 16px 18px;
+    background: transparent;
+    border-top: 1.5px solid var(--text-primary);
+    border-bottom: 1px solid var(--outline-soft);
+  }
+  .week-closed-card .icon {
+    flex: 0 0 auto;
+    width: 36px; height: 36px;
+    display: grid; place-items: center;
+    border: 1px solid var(--text-primary);
+    color: var(--text-primary);
+    border-radius: 2px;
+  }
+  .week-closed-card .body { flex: 1; min-width: 0; }
+  .week-closed-card .title {
+    font-family: var(--tf-display);
+    font-weight: 400;
+    font-size: 18px;
+    color: var(--text-primary);
+    letter-spacing: -0.2px;
+  }
+  .week-closed-card .meta {
+    font-family: var(--tf-body);
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--text-secondary);
+    margin-top: 4px;
+  }
 
   /* Sidebar */
   .side {
@@ -1896,1069 +1858,10 @@
   .todo-list .txt b { color: var(--text-primary); }
 
   /* =========================================================
-     THEME SWITCH (page header)
-     ========================================================= */
-  .theme-switch {
-    margin-left: auto;
-    display: inline-flex;
-    background: var(--surface-dark);
-    border: 1px solid var(--outline-soft);
-    border-radius: 999px;
-    padding: 3px;
-    gap: 2px;
-    user-select: none;
-  }
-  .theme-switch .opt {
-    border: 0;
-    background: transparent;
-    color: var(--text-secondary);
-    font-family: inherit;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.2px;
-    padding: 6px 14px;
-    border-radius: 999px;
-    cursor: pointer;
-    transition: background 220ms ease, color 220ms ease;
-    white-space: nowrap;
-  }
-  .theme-switch .opt:hover { color: var(--text-primary); }
-  .theme-switch .opt.active {
-    background: var(--accent-blue);
-    color: #fff;
-  }
-
-  /* =========================================================
-     SHARED: common tweaks applied to all non-default themes
-     ========================================================= */
-  body.theme-minimal,
-  body.theme-warm,
-  body.theme-nordic,
-  body.theme-tactile {
-    background: var(--t-bg);
-  }
-
-  /* =========================================================
-     THEME: MINIMALIST  — Linear-ish, high contrast
-     Off-white, near-black ink, electric orange accent.
-     Red Hat Display / Red Hat Text + Azeret Mono.
-     ========================================================= */
-  body.theme-minimal {
-    --t-bg: oklch(97% 0.004 250);
-    --navy: oklch(99% 0.003 250);
-    --deep-blue: oklch(94% 0.005 250);
-    --surface-dark: oklch(95% 0.004 250);
-    --surface-card: oklch(99% 0.003 250);
-    --surface-card-hi: oklch(96% 0.005 250);
-    --accent-blue: oklch(62% 0.2 45);
-    --accent-blue-bright: oklch(55% 0.21 45);
-    --accent-green: oklch(55% 0.14 160);
-    --accent-green-light: oklch(50% 0.15 160);
-    --accent-red: oklch(55% 0.19 28);
-    --accent-red-light: oklch(52% 0.18 28);
-    --accent-amber: oklch(70% 0.16 75);
-    --text-primary: oklch(18% 0.01 250);
-    --text-secondary: oklch(42% 0.01 250);
-    --text-muted: oklch(62% 0.01 250);
-    --outline-soft: oklch(89% 0.005 250);
-
-    --tf-display: "Red Hat Display", system-ui, sans-serif;
-    --tf-body: "Red Hat Text", system-ui, sans-serif;
-    --tf-mono: "Azeret Mono", ui-monospace, monospace;
-    font-family: var(--tf-body);
-    color: var(--text-primary);
-  }
-  body.theme-minimal .phone {
-    background: var(--t-bg);
-    box-shadow:
-      0 24px 60px oklch(18% 0.01 250 / .12),
-      0 0 0 1px oklch(88% 0.005 250),
-      0 0 0 10px oklch(94% 0.005 250);
-  }
-  body.theme-minimal .phone::before { background: oklch(18% 0.01 250); }
-  body.theme-minimal .screen { background: var(--t-bg); }
-  body.theme-minimal .topbar .title,
-  body.theme-minimal .greeting .name,
-  body.theme-minimal .month-nav .label,
-  body.theme-minimal .section-header h3,
-  body.theme-minimal .modal-card h3,
-  body.theme-minimal .login-wrap .brand,
-  body.theme-minimal .approvals-banner .title,
-  body.theme-minimal .week-submit .title,
-  body.theme-minimal .info-panel h3 {
-    font-family: var(--tf-display);
-    font-weight: 800;
-    letter-spacing: -0.8px;
-  }
-  body.theme-minimal .greeting .name { font-size: 30px; }
-  body.theme-minimal .login-wrap .brand { font-size: 40px; }
-  body.theme-minimal .info-card .stat .value,
-  body.theme-minimal .cal .inner .num,
-  body.theme-minimal .cal .pair,
-  body.theme-minimal .dd-table .tm,
-  body.theme-minimal .dd-table .hrs,
-  body.theme-minimal .clock-card .time,
-  body.theme-minimal .shift-summary .time,
-  body.theme-minimal .shift-summary .total .value,
-  body.theme-minimal .hist-shift-card .hrs,
-  body.theme-minimal .hist-shift-card .chip,
-  body.theme-minimal .emp-breakdown .brow .hrs,
-  body.theme-minimal .approval-row .total,
-  body.theme-minimal .week-submit .sub {
-    font-family: var(--tf-mono);
-    font-feature-settings: "tnum" 1;
-    letter-spacing: -0.6px;
-  }
-  body.theme-minimal .greeting .hello { color: var(--text-secondary); font-weight: 400; }
-  body.theme-minimal .greeting .role {
-    background: var(--text-primary);
-    color: oklch(98% 0.003 250);
-    font-weight: 700;
-    padding: 3px 8px;
-    border-radius: 3px;
-    font-size: 10px;
-    letter-spacing: 1.4px;
-    display: inline-block;
-  }
-  body.theme-minimal .greeting .role.readonly {
-    background: var(--accent-amber);
-    color: var(--text-primary);
-  }
-  body.theme-minimal .topbar .lang-toggle,
-  body.theme-minimal .topbar .icon-btn,
-  body.theme-minimal .topbar .back,
-  body.theme-minimal .month-nav .chev {
-    color: var(--text-primary);
-  }
-  body.theme-minimal .lang-toggle {
-    background: oklch(94% 0.005 250);
-    border: 1px solid var(--outline-soft);
-  }
-  body.theme-minimal .lang-toggle .slider { background: var(--text-primary); box-shadow: none; }
-  body.theme-minimal .topbar .icon-btn:hover,
-  body.theme-minimal .topbar .back:hover,
-  body.theme-minimal .month-nav .chev:hover {
-    background: oklch(93% 0.005 250);
-  }
-  body.theme-minimal .info-card {
-    background: oklch(99% 0.003 250);
-    border: 1px solid var(--outline-soft);
-    border-radius: 6px;
-    box-shadow: none;
-  }
-  body.theme-minimal .info-card .stat .value { font-size: 30px; font-weight: 600; }
-  body.theme-minimal .info-card .stat .label { font-size: 9px; letter-spacing: 1.2px; }
-  body.theme-minimal .info-card .stat.blue .value { color: var(--accent-blue); }
-  body.theme-minimal .info-card .stat.green .value { color: var(--accent-green); }
-  body.theme-minimal .info-card .stat.amber .value { color: var(--accent-amber); }
-  body.theme-minimal .info-card .stat.plain .value { color: var(--text-primary); }
-  body.theme-minimal .info-card.legend .legend-list {
-    border-top: 1px solid var(--outline-soft); padding-top: 12px;
-  }
-  body.theme-minimal .emp-breakdown .brow .name { font-size: 13px; font-weight: 500; }
-  /* Calendar */
-  body.theme-minimal .cal .dows span {
-    color: var(--text-muted);
-    font-size: 10px;
-    letter-spacing: 1.2px;
-    font-weight: 600;
-  }
-  body.theme-minimal .cal .inner { border-radius: 4px; }
-  body.theme-minimal .cal .cell.today .inner {
-    background: transparent;
-    outline: 1.5px solid var(--accent-blue);
-    outline-offset: -2px;
-  }
-  body.theme-minimal .cal .cell.today .num { color: var(--accent-blue); font-weight: 700; }
-  body.theme-minimal .cal .cell.selected .inner { background: var(--accent-blue); }
-  body.theme-minimal .cal .pair { color: var(--accent-blue); font-weight: 600; }
-  body.theme-minimal .cal .pair .emp { color: var(--text-primary); }
-  body.theme-minimal .cal .heat-1 .inner { background: oklch(95% 0.02 50); }
-  body.theme-minimal .cal .heat-2 .inner { background: oklch(92% 0.05 50); }
-  body.theme-minimal .cal .heat-3 .inner { background: oklch(88% 0.08 50); }
-  body.theme-minimal .cal .heat-4 .inner { background: oklch(82% 0.12 50); }
-  /* Day detail */
-  body.theme-minimal .day-detail {
-    background: oklch(99% 0.003 250);
-    border: 1px solid var(--outline-soft);
-    border-radius: 6px;
-  }
-  body.theme-minimal .day-detail .date-label {
-    font-family: var(--tf-display); font-weight: 700;
-    font-size: 14px; letter-spacing: -0.3px;
-    text-transform: none;
-  }
-  body.theme-minimal .dd-table .head {
-    color: var(--text-muted); font-size: 10px; letter-spacing: 1px;
-    border-bottom: 1px solid var(--outline-soft);
-  }
-  body.theme-minimal .dd-table .nm { font-weight: 600; }
-  body.theme-minimal .dd-table .trow { border-bottom: 1px solid var(--outline-soft); }
-  /* Section */
-  body.theme-minimal .section-header { border-bottom: 1px solid var(--outline-soft); padding-bottom: 6px; }
-  body.theme-minimal .section-header h3 { font-size: 18px; }
-  body.theme-minimal .section-header small {
-    font-family: var(--tf-mono); letter-spacing: 1px; font-size: 10px; text-transform: uppercase;
-  }
-  /* Emp row */
-  body.theme-minimal .emp-row {
-    background: transparent;
-    border: 0;
-    border-bottom: 1px solid var(--outline-soft);
-    border-radius: 0;
-    padding: 14px 6px;
-    margin-top: 0;
-  }
-  body.theme-minimal .emp-row:hover { background: oklch(95% 0.005 250); }
-  body.theme-minimal .emp-row .name { font-weight: 600; font-size: 14px; }
-  body.theme-minimal .emp-row .meta { font-family: var(--tf-mono); font-size: 11px; }
-  body.theme-minimal .emp-row .badge {
-    background: transparent;
-    color: var(--accent-amber);
-    border: 1px solid var(--accent-amber);
-    border-radius: 2px;
-    font-size: 9px; letter-spacing: 1px;
-  }
-  /* FAB */
-  body.theme-minimal .fab {
-    background: var(--text-primary); color: #fff;
-    border-radius: 50%;
-    box-shadow: 0 8px 20px oklch(18% 0.01 250 / .2);
-  }
-  /* Buttons — flat, hard edges */
-  body.theme-minimal .big-cta {
-    border-radius: 6px;
-    font-family: var(--tf-display);
-    font-weight: 800;
-    font-size: 16px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    box-shadow: none;
-  }
-  body.theme-minimal .big-cta.clock-in { background: var(--accent-blue); color: #fff; }
-  body.theme-minimal .big-cta.clock-out { background: var(--text-primary); color: #fff; }
-  body.theme-minimal .big-cta.submit { background: var(--text-primary); color: #fff; }
-  body.theme-minimal .big-cta.disabled {
-    background: oklch(88% 0.005 250); color: var(--text-muted); filter: none;
-  }
-  /* Clock card */
-  body.theme-minimal .clock-card {
-    background: oklch(99% 0.003 250);
-    border: 1px solid var(--outline-soft);
-    border-radius: 6px;
-  }
-  body.theme-minimal .clock-card .label { letter-spacing: 1.2px; }
-  body.theme-minimal .shift-summary {
-    background: oklch(99% 0.003 250);
-    border: 1px solid var(--outline-soft);
-    border-radius: 6px;
-  }
-  body.theme-minimal .shift-summary .total .value { color: var(--accent-blue); }
-  body.theme-minimal .shift-summary .total .value.warn { color: var(--accent-red); }
-  body.theme-minimal .comment-field {
-    background: oklch(97% 0.004 250);
-    border: 1px solid var(--outline-soft); border-radius: 4px;
-  }
-  /* Login */
-  body.theme-minimal .login-wrap .brand .accent { color: var(--accent-blue); }
-  body.theme-minimal .login-wrap .tag { color: var(--text-secondary); }
-  body.theme-minimal .login-form input {
-    background: oklch(99% 0.003 250);
-    border: 1px solid var(--outline-soft);
-    border-radius: 4px;
-    color: var(--text-primary);
-  }
-  body.theme-minimal .login-form .go {
-    background: var(--text-primary); color: #fff;
-    border-radius: 4px;
-    font-family: var(--tf-display);
-    font-weight: 800;
-    letter-spacing: 1.2px;
-    text-transform: uppercase;
-  }
-  body.theme-minimal .login-form .err {
-    background: oklch(95% 0.05 28); color: var(--accent-red); border-radius: 4px;
-  }
-  body.theme-minimal .demo-accounts {
-    background: oklch(95% 0.004 250); border: 1px solid var(--outline-soft); border-radius: 6px;
-  }
-  body.theme-minimal .demo-chip {
-    background: oklch(99% 0.003 250); border: 1px solid var(--outline-soft);
-    border-radius: 4px; font-family: var(--tf-mono); font-size: 11px;
-  }
-  body.theme-minimal .demo-chip:hover { background: oklch(97% 0.004 250); }
-  body.theme-minimal .demo-chip b { color: var(--text-primary); }
-  body.theme-minimal .demo-chip .tag {
-    background: transparent; border: 1px solid currentColor; border-radius: 2px;
-    letter-spacing: 0.8px;
-  }
-  body.theme-minimal .demo-chip .tag.admin { color: var(--accent-blue); }
-  body.theme-minimal .demo-chip .tag.emp { color: var(--accent-green); }
-  body.theme-minimal .demo-chip .tag.readonly { color: var(--accent-amber); }
-  /* Approvals banner */
-  body.theme-minimal .approvals-banner {
-    background: oklch(97% 0.03 75); border: 1px solid oklch(75% 0.1 75);
-    border-radius: 6px;
-  }
-  body.theme-minimal .approvals-banner .icon {
-    background: oklch(75% 0.12 75); color: #fff; border-radius: 4px;
-  }
-  body.theme-minimal .approvals-banner .title { color: oklch(40% 0.1 75); }
-  body.theme-minimal .approvals-banner .meta { font-family: var(--tf-mono); }
-  /* Week submit */
-  body.theme-minimal .week-submit {
-    background: oklch(99% 0.003 250); border: 1px solid var(--outline-soft); border-radius: 6px;
-  }
-  body.theme-minimal .week-submit .btn,
-  body.theme-minimal .past-weeks .prow .btn {
-    background: var(--text-primary); color: #fff; border-radius: 4px;
-    font-family: var(--tf-display); font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
-  }
-  body.theme-minimal .week-submit .status-pill {
-    background: transparent; border: 1px solid currentColor; letter-spacing: 0.8px;
-  }
-  body.theme-minimal .week-submit .status-pill.pending { color: var(--accent-amber); }
-  body.theme-minimal .week-submit .status-pill.approved { color: var(--accent-green); }
-  /* Readonly */
-  body.theme-minimal .readonly-banner {
-    background: oklch(96% 0.04 75); border: 1px solid oklch(75% 0.1 75);
-    color: oklch(40% 0.1 75); border-radius: 4px;
-  }
-  /* History */
-  body.theme-minimal .hist-shift-card {
-    background: transparent; border: 0;
-    border-bottom: 1px solid var(--outline-soft); border-radius: 0;
-    padding: 14px 4px; margin-top: 0;
-  }
-  body.theme-minimal .hist-shift-card .date { font-weight: 600; }
-  body.theme-minimal .hist-shift-card .chip {
-    background: transparent; border: 1px solid var(--outline-soft);
-    color: var(--text-secondary); border-radius: 3px;
-  }
-  body.theme-minimal .hist-shift-card .week-status {
-    background: transparent; border: 1px solid currentColor; border-radius: 2px; letter-spacing: 0.8px;
-  }
-  /* Map */
-  body.theme-minimal .mini-map {
-    border: 1px solid var(--outline-soft); border-radius: 6px; background: oklch(90% 0.005 250);
-  }
-  body.theme-minimal .mini-map .tiles img,
-  body.theme-minimal .mini-map .leaflet-tile {
-    filter: grayscale(0.25) brightness(1.05) contrast(1.05);
-  }
-  /* Modal */
-  body.theme-minimal .modal-scrim { background: oklch(18% 0.01 250 / .35); }
-  body.theme-minimal .modal-card {
-    background: oklch(99% 0.003 250); border: 1px solid var(--outline-soft); border-radius: 8px;
-  }
-  body.theme-minimal .modal-card input, body.theme-minimal .modal-card textarea {
-    background: oklch(97% 0.004 250); border: 1px solid var(--outline-soft); border-radius: 4px;
-  }
-  body.theme-minimal .modal-card .btn { border-radius: 4px; font-weight: 600; }
-  body.theme-minimal .modal-card .btn.primary { background: var(--text-primary); }
-  body.theme-minimal .approval-row {
-    background: oklch(97% 0.004 250); border: 1px solid var(--outline-soft); border-radius: 6px;
-  }
-  body.theme-minimal .approval-row .actions button { border-radius: 4px; font-weight: 700; letter-spacing: 0.8px; }
-  /* Sidebar info panel */
-  body.theme-minimal .info-panel {
-    background: oklch(99% 0.003 250); border: 1px solid var(--outline-soft); border-radius: 6px;
-    color: var(--text-secondary);
-  }
-  body.theme-minimal .info-panel code { background: oklch(95% 0.004 250); border: 1px solid var(--outline-soft); font-family: var(--tf-mono); }
-  body.theme-minimal .phone-caption b { color: var(--text-primary); }
-  body.theme-minimal .todo-list .check.done { background: var(--accent-green); }
-
-  /* =========================================================
-     THEME: WARM — off-white, charcoal text, jade accent.
-     Archivo (body + display).
-     ========================================================= */
-  body.theme-warm {
-    --t-bg: oklch(97% 0.012 75);
-    --navy: oklch(98% 0.01 75);
-    --surface-dark: oklch(95% 0.014 75);
-    --surface-card: oklch(99% 0.008 75);
-    --surface-card-hi: oklch(96% 0.012 75);
-    --accent-blue: oklch(55% 0.13 170);       /* jade */
-    --accent-blue-bright: oklch(48% 0.14 170);
-    --accent-green: oklch(55% 0.13 170);
-    --accent-green-light: oklch(60% 0.12 170);
-    --accent-red: oklch(58% 0.17 30);
-    --accent-red-light: oklch(62% 0.17 30);
-    --accent-amber: oklch(68% 0.14 60);
-    --text-primary: oklch(24% 0.015 75);
-    --text-secondary: oklch(45% 0.015 75);
-    --text-muted: oklch(62% 0.015 75);
-    --outline-soft: oklch(88% 0.015 75);
-
-    --tf-display: "Archivo", system-ui, sans-serif;
-    --tf-body: "Archivo", system-ui, sans-serif;
-    --tf-mono: "Azeret Mono", ui-monospace, monospace;
-    font-family: var(--tf-body);
-    font-weight: 400;
-    color: var(--text-primary);
-  }
-  body.theme-warm .phone {
-    background: var(--t-bg);
-    box-shadow:
-      0 30px 70px oklch(24% 0.015 75 / .18),
-      0 0 0 10px oklch(92% 0.018 75),
-      0 0 0 11px oklch(84% 0.02 75);
-  }
-  body.theme-warm .phone::before { background: oklch(24% 0.015 75); }
-  body.theme-warm .screen { background: var(--t-bg); }
-  body.theme-warm .topbar .title,
-  body.theme-warm .greeting .name,
-  body.theme-warm .month-nav .label,
-  body.theme-warm .section-header h3,
-  body.theme-warm .modal-card h3,
-  body.theme-warm .login-wrap .brand,
-  body.theme-warm .approvals-banner .title,
-  body.theme-warm .week-submit .title,
-  body.theme-warm .info-panel h3 {
-    font-family: var(--tf-display);
-    font-weight: 700;
-    letter-spacing: -0.4px;
-  }
-  body.theme-warm .greeting .name { font-size: 28px; font-weight: 800; }
-  body.theme-warm .login-wrap .brand { font-size: 38px; font-weight: 800; letter-spacing: -1px; }
-  body.theme-warm .greeting .hello { font-size: 14px; color: var(--text-secondary); }
-  body.theme-warm .greeting .role {
-    background: oklch(92% 0.03 170);
-    color: oklch(35% 0.1 170);
-    font-weight: 700;
-    padding: 3px 10px;
-    border-radius: 999px;
-    font-size: 10px;
-    letter-spacing: 1.2px;
-    display: inline-block;
-  }
-  body.theme-warm .greeting .role.readonly {
-    background: oklch(93% 0.04 75);
-    color: oklch(45% 0.12 75);
-  }
-  body.theme-warm .info-card .stat .value,
-  body.theme-warm .cal .inner .num,
-  body.theme-warm .cal .pair,
-  body.theme-warm .dd-table .tm,
-  body.theme-warm .dd-table .hrs,
-  body.theme-warm .clock-card .time,
-  body.theme-warm .shift-summary .time,
-  body.theme-warm .shift-summary .total .value,
-  body.theme-warm .hist-shift-card .hrs,
-  body.theme-warm .emp-breakdown .brow .hrs,
-  body.theme-warm .approval-row .total,
-  body.theme-warm .week-submit .sub {
-    font-family: var(--tf-mono);
-    font-feature-settings: "tnum" 1;
-    letter-spacing: -0.4px;
-  }
-  body.theme-warm .topbar .icon-btn:hover,
-  body.theme-warm .topbar .back:hover,
-  body.theme-warm .month-nav .chev:hover { background: oklch(92% 0.02 75); }
-  body.theme-warm .lang-toggle { background: oklch(94% 0.015 75); border: 1px solid var(--outline-soft); }
-  body.theme-warm .lang-toggle .slider { background: var(--accent-blue); box-shadow: 0 2px 6px oklch(55% 0.13 170 / .3); }
-  body.theme-warm .info-card {
-    background: oklch(99% 0.008 75);
-    border: 1px solid var(--outline-soft);
-    border-radius: 16px;
-    box-shadow: 0 2px 6px oklch(24% 0.015 75 / .04);
-  }
-  body.theme-warm .info-card .stat .value { font-size: 28px; font-weight: 700; }
-  body.theme-warm .info-card .stat.blue .value { color: var(--accent-blue); }
-  body.theme-warm .info-card .stat.green .value { color: var(--accent-green); }
-  body.theme-warm .info-card .stat.amber .value { color: var(--accent-amber); }
-  body.theme-warm .info-card .stat.plain .value { color: var(--text-primary); }
-  body.theme-warm .info-card.legend .legend-list {
-    border-top: 1px solid var(--outline-soft); padding-top: 12px;
-  }
-  /* Calendar */
-  body.theme-warm .cal .dows span { color: var(--text-muted); font-weight: 600; letter-spacing: 1px; }
-  body.theme-warm .cal .inner { border-radius: 12px; }
-  body.theme-warm .cal .cell.today .inner { background: oklch(93% 0.03 170); }
-  body.theme-warm .cal .cell.today .num { color: var(--accent-blue); font-weight: 700; }
-  body.theme-warm .cal .cell.selected .inner { background: var(--accent-blue); }
-  body.theme-warm .cal .pair { color: var(--accent-blue); }
-  body.theme-warm .cal .pair .emp { color: var(--text-primary); }
-  body.theme-warm .cal .heat-1 .inner { background: oklch(95% 0.02 170); }
-  body.theme-warm .cal .heat-2 .inner { background: oklch(92% 0.035 170); }
-  body.theme-warm .cal .heat-3 .inner { background: oklch(88% 0.05 170); }
-  body.theme-warm .cal .heat-4 .inner { background: oklch(82% 0.08 170); }
-  body.theme-warm .day-detail {
-    background: oklch(99% 0.008 75); border: 1px solid var(--outline-soft); border-radius: 14px;
-  }
-  body.theme-warm .day-detail .date-label { font-family: var(--tf-display); font-weight: 700; font-size: 14px; }
-  body.theme-warm .dd-table .head { border-bottom: 1px solid var(--outline-soft); }
-  body.theme-warm .dd-table .trow { border-bottom: 1px solid var(--outline-soft); }
-  /* Section / emp rows */
-  body.theme-warm .section-header h3 { font-size: 18px; }
-  body.theme-warm .emp-row {
-    background: oklch(99% 0.008 75);
-    border: 1px solid var(--outline-soft);
-    border-radius: 14px;
-    margin-top: 10px;
-    padding: 14px 16px;
-  }
-  body.theme-warm .emp-row:hover {
-    background: oklch(96% 0.014 170);
-    border-color: oklch(80% 0.06 170);
-  }
-  body.theme-warm .emp-row .name { font-weight: 700; }
-  body.theme-warm .emp-row .meta { font-family: var(--tf-mono); }
-  body.theme-warm .emp-row .badge {
-    background: oklch(93% 0.04 75); color: oklch(45% 0.12 75); border-radius: 999px;
-  }
-  body.theme-warm .fab {
-    background: var(--accent-blue); border-radius: 18px;
-    box-shadow: 0 10px 24px oklch(55% 0.13 170 / .3);
-  }
-  /* Buttons */
-  body.theme-warm .big-cta {
-    border-radius: 18px; font-family: var(--tf-display); font-weight: 700; font-size: 18px;
-    letter-spacing: 0.3px; box-shadow: 0 6px 14px oklch(24% 0.015 75 / .12);
-  }
-  body.theme-warm .big-cta.clock-in { background: var(--accent-blue); color: #fff; }
-  body.theme-warm .big-cta.clock-out { background: oklch(45% 0.14 30); color: #fff; }
-  body.theme-warm .big-cta.submit { background: var(--text-primary); color: #fff; }
-  body.theme-warm .big-cta.disabled { background: oklch(88% 0.015 75); color: var(--text-muted); filter: none; box-shadow: none; }
-  body.theme-warm .clock-card {
-    background: oklch(99% 0.008 75); border: 1px solid var(--outline-soft); border-radius: 14px;
-  }
-  body.theme-warm .clock-card .time { color: var(--accent-blue); }
-  body.theme-warm .shift-summary {
-    background: oklch(99% 0.008 75); border: 1px solid var(--outline-soft); border-radius: 16px;
-  }
-  body.theme-warm .shift-summary .total .value { color: var(--accent-blue); }
-  body.theme-warm .shift-summary .total .value.warn { color: var(--accent-red); }
-  body.theme-warm .comment-field {
-    background: oklch(97% 0.012 75); border: 1px solid var(--outline-soft); border-radius: 10px;
-  }
-  /* Login */
-  body.theme-warm .login-wrap .brand .accent { color: var(--accent-blue); }
-  body.theme-warm .login-form input {
-    background: oklch(99% 0.008 75); border: 1px solid var(--outline-soft); border-radius: 12px;
-  }
-  body.theme-warm .login-form .go {
-    background: var(--accent-blue); color: #fff; border-radius: 12px;
-    font-family: var(--tf-display); font-weight: 700; letter-spacing: 0.5px;
-  }
-  body.theme-warm .login-form .err { background: oklch(94% 0.04 30); color: var(--accent-red); border-radius: 10px; }
-  body.theme-warm .demo-accounts { background: oklch(95% 0.015 75); border: 1px solid var(--outline-soft); border-radius: 12px; }
-  body.theme-warm .demo-chip { background: oklch(99% 0.008 75); border: 1px solid var(--outline-soft); border-radius: 10px; font-family: var(--tf-mono); }
-  body.theme-warm .demo-chip b { color: var(--text-primary); }
-  body.theme-warm .demo-chip .tag { border-radius: 999px; }
-  body.theme-warm .demo-chip .tag.admin { background: oklch(92% 0.04 170); color: oklch(40% 0.12 170); }
-  body.theme-warm .demo-chip .tag.emp { background: oklch(92% 0.04 170); color: oklch(40% 0.12 170); }
-  body.theme-warm .demo-chip .tag.readonly { background: oklch(93% 0.04 75); color: oklch(45% 0.12 75); }
-  /* Approvals */
-  body.theme-warm .approvals-banner {
-    background: oklch(95% 0.05 75);
-    border: 1px solid oklch(78% 0.12 75);
-    border-radius: 14px;
-  }
-  body.theme-warm .approvals-banner .icon { background: oklch(78% 0.13 75); color: #fff; border-radius: 10px; }
-  body.theme-warm .approvals-banner .title { color: oklch(38% 0.12 75); font-weight: 700; }
-  /* Week submit */
-  body.theme-warm .week-submit { background: oklch(99% 0.008 75); border: 1px solid var(--outline-soft); border-radius: 14px; }
-  body.theme-warm .week-submit .btn,
-  body.theme-warm .past-weeks .prow .btn { background: var(--accent-blue); border-radius: 999px; font-weight: 700; letter-spacing: 0.3px; }
-  body.theme-warm .week-submit .status-pill { border-radius: 999px; }
-  body.theme-warm .week-submit .status-pill.pending { background: oklch(93% 0.04 75); color: oklch(45% 0.12 75); }
-  body.theme-warm .week-submit .status-pill.approved { background: oklch(92% 0.04 170); color: oklch(40% 0.12 170); }
-  body.theme-warm .readonly-banner { background: oklch(95% 0.04 75); border: 1px solid oklch(80% 0.1 75); color: oklch(45% 0.12 75); border-radius: 10px; }
-  /* History */
-  body.theme-warm .hist-shift-card { background: oklch(99% 0.008 75); border: 1px solid var(--outline-soft); border-radius: 14px; padding: 14px 16px; }
-  body.theme-warm .hist-shift-card .chip { background: oklch(94% 0.015 75); color: var(--text-secondary); }
-  body.theme-warm .hist-shift-card .week-status { border-radius: 999px; }
-  body.theme-warm .hist-shift-card .week-status.pending { background: oklch(93% 0.04 75); color: oklch(45% 0.12 75); }
-  body.theme-warm .hist-shift-card .week-status.approved { background: oklch(92% 0.04 170); color: oklch(40% 0.12 170); }
-  /* Map */
-  body.theme-warm .mini-map { border-radius: 14px; border: 1px solid var(--outline-soft); }
-  body.theme-warm .mini-map .tiles img,
-  body.theme-warm .mini-map .leaflet-tile { filter: saturate(0.7) brightness(1.05); }
-  /* Modal */
-  body.theme-warm .modal-scrim { background: oklch(24% 0.015 75 / .35); }
-  body.theme-warm .modal-card { background: oklch(99% 0.008 75); border: 1px solid var(--outline-soft); border-radius: 20px; }
-  body.theme-warm .modal-card input, body.theme-warm .modal-card textarea {
-    background: oklch(97% 0.012 75); border: 1px solid var(--outline-soft); border-radius: 10px;
-  }
-  body.theme-warm .modal-card .btn { border-radius: 10px; }
-  body.theme-warm .modal-card .btn.primary { background: var(--accent-blue); }
-  body.theme-warm .approval-row { background: oklch(97% 0.012 75); border: 1px solid var(--outline-soft); border-radius: 12px; }
-  body.theme-warm .info-panel { background: oklch(99% 0.008 75); border: 1px solid var(--outline-soft); border-radius: 16px; color: var(--text-secondary); }
-  body.theme-warm .phone-caption b { color: var(--text-primary); }
-  body.theme-warm .todo-list .check.done { background: var(--accent-green); }
-
-  /* =========================================================
-     THEME: NORDIC — muted sage, lots of air.
-     Sora (display + body).
-     ========================================================= */
-  body.theme-nordic {
-    --t-bg: oklch(97% 0.006 170);
-    --navy: oklch(99% 0.004 170);
-    --surface-dark: oklch(95% 0.008 170);
-    --surface-card: oklch(99% 0.004 170);
-    --surface-card-hi: oklch(96% 0.008 170);
-    --accent-blue: oklch(55% 0.08 165);        /* dusty sage */
-    --accent-blue-bright: oklch(50% 0.09 165);
-    --accent-green: oklch(58% 0.08 155);
-    --accent-green-light: oklch(62% 0.09 155);
-    --accent-red: oklch(62% 0.1 25);           /* muted blush */
-    --accent-red-light: oklch(65% 0.11 25);
-    --accent-amber: oklch(72% 0.1 75);
-    --text-primary: oklch(30% 0.015 230);      /* cool slate */
-    --text-secondary: oklch(50% 0.015 230);
-    --text-muted: oklch(66% 0.012 230);
-    --outline-soft: oklch(90% 0.008 170);
-
-    --tf-display: "Sora", system-ui, sans-serif;
-    --tf-body: "Sora", system-ui, sans-serif;
-    --tf-mono: "Azeret Mono", ui-monospace, monospace;
-    font-family: var(--tf-body);
-    font-weight: 400;
-    color: var(--text-primary);
-  }
-  body.theme-nordic .phone {
-    background: var(--t-bg);
-    box-shadow:
-      0 28px 60px oklch(30% 0.02 230 / .12),
-      0 0 0 10px oklch(93% 0.01 170),
-      0 0 0 11px oklch(86% 0.013 170);
-  }
-  body.theme-nordic .phone::before { background: oklch(30% 0.02 230); }
-  body.theme-nordic .screen { background: var(--t-bg); padding: 56px 22px 24px; }
-  body.theme-nordic .topbar .title,
-  body.theme-nordic .greeting .name,
-  body.theme-nordic .month-nav .label,
-  body.theme-nordic .section-header h3,
-  body.theme-nordic .modal-card h3,
-  body.theme-nordic .login-wrap .brand,
-  body.theme-nordic .approvals-banner .title,
-  body.theme-nordic .week-submit .title,
-  body.theme-nordic .info-panel h3 {
-    font-family: var(--tf-display);
-    font-weight: 600;
-    letter-spacing: -0.3px;
-  }
-  body.theme-nordic .greeting .name { font-size: 28px; font-weight: 600; }
-  body.theme-nordic .login-wrap .brand { font-size: 34px; letter-spacing: -0.8px; }
-  body.theme-nordic .greeting .hello { color: var(--text-secondary); font-weight: 300; font-size: 14px; }
-  body.theme-nordic .greeting .role {
-    background: oklch(92% 0.03 165);
-    color: oklch(40% 0.1 165);
-    font-weight: 500;
-    padding: 3px 10px;
-    border-radius: 999px;
-    font-size: 10px;
-    letter-spacing: 1px;
-    display: inline-block;
-  }
-  body.theme-nordic .greeting .role.readonly { background: oklch(93% 0.04 75); color: oklch(45% 0.1 75); }
-  body.theme-nordic .info-card .stat .value,
-  body.theme-nordic .cal .inner .num,
-  body.theme-nordic .cal .pair,
-  body.theme-nordic .dd-table .tm,
-  body.theme-nordic .dd-table .hrs,
-  body.theme-nordic .clock-card .time,
-  body.theme-nordic .shift-summary .time,
-  body.theme-nordic .shift-summary .total .value,
-  body.theme-nordic .hist-shift-card .hrs,
-  body.theme-nordic .emp-breakdown .brow .hrs,
-  body.theme-nordic .approval-row .total,
-  body.theme-nordic .week-submit .sub {
-    font-family: var(--tf-mono);
-    font-feature-settings: "tnum" 1;
-    letter-spacing: -0.3px;
-  }
-  body.theme-nordic .lang-toggle { background: oklch(94% 0.01 170); border: 1px solid var(--outline-soft); }
-  body.theme-nordic .lang-toggle .slider { background: var(--accent-blue); box-shadow: none; }
-  body.theme-nordic .topbar .icon-btn:hover,
-  body.theme-nordic .topbar .back:hover,
-  body.theme-nordic .month-nav .chev:hover { background: oklch(93% 0.01 170); }
-  body.theme-nordic .info-card {
-    background: oklch(99% 0.004 170);
-    border: 1px solid var(--outline-soft);
-    border-radius: 20px;
-    padding: 22px 22px 18px;
-    box-shadow: none;
-  }
-  body.theme-nordic .info-card .stat .value { font-size: 28px; font-weight: 500; }
-  body.theme-nordic .info-card .stat .label { font-size: 10px; letter-spacing: 1px; font-weight: 500; }
-  body.theme-nordic .info-card .stat.blue .value { color: var(--accent-blue); }
-  body.theme-nordic .info-card .stat.green .value { color: var(--accent-green); }
-  body.theme-nordic .info-card .stat.amber .value { color: var(--accent-amber); }
-  body.theme-nordic .info-card .stat.plain .value { color: var(--text-primary); }
-  body.theme-nordic .info-card.legend .legend-list {
-    border-top: 1px solid var(--outline-soft); padding-top: 14px; margin-top: 14px;
-  }
-  body.theme-nordic .emp-breakdown .brow .name { font-weight: 500; }
-  /* Calendar */
-  body.theme-nordic .cal .dows span { color: var(--text-muted); font-weight: 500; letter-spacing: 0.8px; }
-  body.theme-nordic .cal .inner { border-radius: 50%; }
-  body.theme-nordic .cal .cell.today .inner {
-    background: transparent;
-    outline: 1.5px solid var(--accent-blue);
-    outline-offset: -3px;
-  }
-  body.theme-nordic .cal .cell.today .num { color: var(--accent-blue); font-weight: 600; }
-  body.theme-nordic .cal .cell.selected .inner { background: var(--accent-blue); }
-  body.theme-nordic .cal .pair { color: var(--accent-blue); font-weight: 500; }
-  body.theme-nordic .cal .heat-1 .inner { background: oklch(95% 0.015 165); }
-  body.theme-nordic .cal .heat-2 .inner { background: oklch(92% 0.025 165); }
-  body.theme-nordic .cal .heat-3 .inner { background: oklch(88% 0.04 165); }
-  body.theme-nordic .cal .heat-4 .inner { background: oklch(82% 0.06 165); }
-  body.theme-nordic .day-detail {
-    background: oklch(99% 0.004 170); border: 1px solid var(--outline-soft); border-radius: 18px; padding: 16px;
-  }
-  body.theme-nordic .day-detail .date-label { font-family: var(--tf-display); font-weight: 600; font-size: 14px; text-transform: none; }
-  body.theme-nordic .dd-table .head { border-bottom: 1px solid var(--outline-soft); letter-spacing: 1px; }
-  body.theme-nordic .dd-table .trow { border-bottom: 1px solid var(--outline-soft); }
-  body.theme-nordic .dd-table .nm { font-weight: 500; }
-  /* Section / emp */
-  body.theme-nordic .section-header { margin-top: 20px; }
-  body.theme-nordic .section-header h3 { font-size: 18px; font-weight: 600; }
-  body.theme-nordic .emp-row {
-    background: oklch(99% 0.004 170); border: 1px solid var(--outline-soft); border-radius: 18px;
-    padding: 16px 18px; margin-top: 10px;
-  }
-  body.theme-nordic .emp-row:hover { background: oklch(96% 0.012 165); border-color: oklch(82% 0.04 165); }
-  body.theme-nordic .emp-row .name { font-weight: 500; }
-  body.theme-nordic .emp-row .meta { font-family: var(--tf-mono); }
-  body.theme-nordic .emp-row .badge { background: oklch(93% 0.04 75); color: oklch(45% 0.1 75); border-radius: 999px; letter-spacing: 0.8px; }
-  body.theme-nordic .fab { background: var(--accent-blue); border-radius: 50%; box-shadow: 0 12px 28px oklch(55% 0.08 165 / .3); }
-  /* Buttons */
-  body.theme-nordic .big-cta {
-    border-radius: 20px; font-family: var(--tf-display); font-weight: 600; font-size: 17px; letter-spacing: 0.2px;
-    box-shadow: 0 6px 14px oklch(30% 0.02 230 / .08);
-  }
-  body.theme-nordic .big-cta.clock-in { background: var(--accent-blue); color: #fff; }
-  body.theme-nordic .big-cta.clock-out { background: oklch(62% 0.1 25); color: #fff; }
-  body.theme-nordic .big-cta.submit { background: oklch(30% 0.02 230); color: #fff; }
-  body.theme-nordic .big-cta.disabled { background: oklch(90% 0.01 170); color: var(--text-muted); filter: none; box-shadow: none; }
-  body.theme-nordic .clock-card { background: oklch(99% 0.004 170); border: 1px solid var(--outline-soft); border-radius: 18px; }
-  body.theme-nordic .clock-card .time { color: var(--accent-blue); font-weight: 500; }
-  body.theme-nordic .shift-summary { background: oklch(99% 0.004 170); border: 1px solid var(--outline-soft); border-radius: 20px; }
-  body.theme-nordic .shift-summary .total .value { color: var(--accent-blue); font-weight: 500; }
-  body.theme-nordic .shift-summary .total .value.warn { color: var(--accent-red); }
-  body.theme-nordic .comment-field { background: oklch(97% 0.008 170); border: 1px solid var(--outline-soft); border-radius: 12px; }
-  /* Login */
-  body.theme-nordic .login-wrap .brand .accent { color: var(--accent-blue); }
-  body.theme-nordic .login-wrap .tag { color: var(--text-secondary); font-weight: 300; }
-  body.theme-nordic .login-form input { background: oklch(99% 0.004 170); border: 1px solid var(--outline-soft); border-radius: 14px; }
-  body.theme-nordic .login-form .go { background: var(--accent-blue); color: #fff; border-radius: 14px; font-family: var(--tf-display); font-weight: 600; letter-spacing: 0.5px; }
-  body.theme-nordic .login-form .err { background: oklch(93% 0.05 25); color: oklch(45% 0.12 25); border-radius: 12px; }
-  body.theme-nordic .demo-accounts { background: oklch(95% 0.008 170); border: 1px solid var(--outline-soft); border-radius: 14px; }
-  body.theme-nordic .demo-chip { background: oklch(99% 0.004 170); border: 1px solid var(--outline-soft); border-radius: 12px; font-family: var(--tf-mono); }
-  body.theme-nordic .demo-chip b { color: var(--text-primary); }
-  body.theme-nordic .demo-chip .tag { border-radius: 999px; letter-spacing: 0.8px; }
-  body.theme-nordic .demo-chip .tag.admin { background: oklch(92% 0.03 165); color: oklch(40% 0.1 165); }
-  body.theme-nordic .demo-chip .tag.emp { background: oklch(92% 0.03 155); color: oklch(40% 0.1 155); }
-  body.theme-nordic .demo-chip .tag.readonly { background: oklch(93% 0.04 75); color: oklch(45% 0.1 75); }
-  body.theme-nordic .approvals-banner {
-    background: oklch(95% 0.035 75); border: 1px solid oklch(82% 0.08 75); border-radius: 18px;
-  }
-  body.theme-nordic .approvals-banner .icon { background: oklch(82% 0.1 75); color: #fff; border-radius: 12px; }
-  body.theme-nordic .approvals-banner .title { color: oklch(42% 0.1 75); font-weight: 600; }
-  body.theme-nordic .week-submit { background: oklch(99% 0.004 170); border: 1px solid var(--outline-soft); border-radius: 18px; }
-  body.theme-nordic .week-submit .btn,
-  body.theme-nordic .past-weeks .prow .btn { background: var(--accent-blue); border-radius: 999px; font-weight: 600; letter-spacing: 0.3px; }
-  body.theme-nordic .week-submit .status-pill { border-radius: 999px; letter-spacing: 0.8px; }
-  body.theme-nordic .week-submit .status-pill.pending { background: oklch(93% 0.04 75); color: oklch(45% 0.1 75); }
-  body.theme-nordic .week-submit .status-pill.approved { background: oklch(92% 0.03 155); color: oklch(40% 0.1 155); }
-  body.theme-nordic .readonly-banner { background: oklch(95% 0.03 75); border: 1px solid oklch(82% 0.08 75); color: oklch(45% 0.1 75); border-radius: 12px; }
-  body.theme-nordic .hist-shift-card { background: oklch(99% 0.004 170); border: 1px solid var(--outline-soft); border-radius: 18px; padding: 16px 18px; }
-  body.theme-nordic .hist-shift-card .chip { background: oklch(95% 0.008 170); color: var(--text-secondary); border-radius: 999px; }
-  body.theme-nordic .hist-shift-card .week-status { border-radius: 999px; letter-spacing: 0.8px; }
-  body.theme-nordic .hist-shift-card .week-status.pending { background: oklch(93% 0.04 75); color: oklch(45% 0.1 75); }
-  body.theme-nordic .hist-shift-card .week-status.approved { background: oklch(92% 0.03 155); color: oklch(40% 0.1 155); }
-  body.theme-nordic .mini-map { border-radius: 18px; border: 1px solid var(--outline-soft); }
-  body.theme-nordic .mini-map .tiles img,
-  body.theme-nordic .mini-map .leaflet-tile { filter: saturate(0.55) brightness(1.05) contrast(0.95); }
-  body.theme-nordic .modal-scrim { background: oklch(30% 0.02 230 / .3); }
-  body.theme-nordic .modal-card { background: oklch(99% 0.004 170); border: 1px solid var(--outline-soft); border-radius: 24px; }
-  body.theme-nordic .modal-card input, body.theme-nordic .modal-card textarea {
-    background: oklch(97% 0.008 170); border: 1px solid var(--outline-soft); border-radius: 12px;
-  }
-  body.theme-nordic .modal-card .btn { border-radius: 12px; font-weight: 600; letter-spacing: 0.3px; }
-  body.theme-nordic .modal-card .btn.primary { background: var(--accent-blue); }
-  body.theme-nordic .approval-row { background: oklch(97% 0.008 170); border: 1px solid var(--outline-soft); border-radius: 16px; }
-  body.theme-nordic .approval-row .actions button { border-radius: 10px; font-weight: 600; letter-spacing: 0.3px; }
-  body.theme-nordic .info-panel { background: oklch(99% 0.004 170); border: 1px solid var(--outline-soft); border-radius: 20px; color: var(--text-secondary); }
-  body.theme-nordic .phone-caption b { color: var(--text-primary); }
-  body.theme-nordic .todo-list .check.done { background: var(--accent-green); }
-
-  /* =========================================================
-     THEME: TACTILE — minimal chrome, content-first.
-     Epilogue everywhere. Warm cream, brick accent, mostly rules.
-     ========================================================= */
-  body.theme-tactile {
-    --t-bg: oklch(97% 0.008 85);
-    --navy: oklch(98% 0.006 85);
-    --surface-dark: oklch(95% 0.01 85);
-    --surface-card: oklch(99% 0.005 85);
-    --surface-card-hi: oklch(96% 0.008 85);
-    --accent-blue: oklch(52% 0.14 25);         /* brick */
-    --accent-blue-bright: oklch(45% 0.16 25);
-    --accent-green: oklch(52% 0.11 150);
-    --accent-green-light: oklch(56% 0.12 150);
-    --accent-red: oklch(52% 0.14 25);
-    --accent-red-light: oklch(55% 0.14 25);
-    --accent-amber: oklch(62% 0.13 70);
-    --text-primary: oklch(20% 0.015 60);
-    --text-secondary: oklch(45% 0.015 60);
-    --text-muted: oklch(62% 0.012 60);
-    --outline-soft: oklch(88% 0.01 85);
-
-    --tf-display: "Epilogue", system-ui, sans-serif;
-    --tf-body: "Epilogue", system-ui, sans-serif;
-    --tf-mono: "Azeret Mono", ui-monospace, monospace;
-    font-family: var(--tf-body);
-    font-weight: 400;
-    color: var(--text-primary);
-  }
-  body.theme-tactile .phone {
-    background: var(--t-bg);
-    box-shadow:
-      0 28px 60px oklch(20% 0.015 60 / .14),
-      0 0 0 10px oklch(92% 0.012 85),
-      0 0 0 11px oklch(84% 0.015 85);
-  }
-  body.theme-tactile .phone::before { background: oklch(20% 0.015 60); }
-  body.theme-tactile .screen { background: var(--t-bg); padding: 56px 22px 24px; }
-  body.theme-tactile .topbar { border-bottom: 1px solid var(--outline-soft); padding-bottom: 4px; margin-bottom: 8px; }
-  body.theme-tactile .topbar .title,
-  body.theme-tactile .greeting .name,
-  body.theme-tactile .month-nav .label,
-  body.theme-tactile .section-header h3,
-  body.theme-tactile .modal-card h3,
-  body.theme-tactile .login-wrap .brand,
-  body.theme-tactile .approvals-banner .title,
-  body.theme-tactile .week-submit .title,
-  body.theme-tactile .info-panel h3 {
-    font-family: var(--tf-display);
-    font-weight: 700;
-    letter-spacing: -0.5px;
-  }
-  body.theme-tactile .greeting .name { font-size: 30px; font-weight: 800; letter-spacing: -0.8px; }
-  body.theme-tactile .login-wrap .brand { font-size: 40px; font-weight: 800; letter-spacing: -1.5px; }
-  body.theme-tactile .greeting .hello { color: var(--text-secondary); font-weight: 400; }
-  body.theme-tactile .greeting .role {
-    background: transparent;
-    color: var(--accent-blue);
-    font-weight: 700;
-    padding: 2px 0;
-    font-size: 10px;
-    letter-spacing: 2px;
-    border: 0;
-  }
-  body.theme-tactile .greeting .role.readonly { color: var(--accent-amber); }
-  body.theme-tactile .info-card .stat .value,
-  body.theme-tactile .cal .inner .num,
-  body.theme-tactile .cal .pair,
-  body.theme-tactile .dd-table .tm,
-  body.theme-tactile .dd-table .hrs,
-  body.theme-tactile .clock-card .time,
-  body.theme-tactile .shift-summary .time,
-  body.theme-tactile .shift-summary .total .value,
-  body.theme-tactile .hist-shift-card .hrs,
-  body.theme-tactile .emp-breakdown .brow .hrs,
-  body.theme-tactile .approval-row .total,
-  body.theme-tactile .week-submit .sub {
-    font-family: var(--tf-mono);
-    font-feature-settings: "tnum" 1;
-    letter-spacing: -0.4px;
-  }
-  body.theme-tactile .lang-toggle { background: oklch(93% 0.012 85); border: 1px solid var(--outline-soft); }
-  body.theme-tactile .lang-toggle .slider { background: var(--text-primary); box-shadow: none; }
-  body.theme-tactile .lang-toggle .opt.active { color: var(--t-bg); }
-  body.theme-tactile .topbar .icon-btn:hover,
-  body.theme-tactile .topbar .back:hover,
-  body.theme-tactile .month-nav .chev:hover { background: oklch(93% 0.01 85); }
-  body.theme-tactile .info-card {
-    background: transparent;
-    border: 0;
-    border-top: 1px solid var(--text-primary);
-    border-bottom: 1px solid var(--outline-soft);
-    border-radius: 0;
-    padding: 18px 4px 14px;
-    box-shadow: none;
-  }
-  body.theme-tactile .info-card .stat .value { font-size: 30px; font-weight: 500; }
-  body.theme-tactile .info-card .stat .label { font-size: 10px; letter-spacing: 1.4px; }
-  body.theme-tactile .info-card .stat.blue .value { color: var(--accent-blue); }
-  body.theme-tactile .info-card .stat.green .value { color: var(--accent-green); }
-  body.theme-tactile .info-card .stat.amber .value { color: var(--accent-amber); }
-  body.theme-tactile .info-card .stat.plain .value { color: var(--text-primary); }
-  body.theme-tactile .info-card.legend .legend-list { border-top: 1px dotted var(--outline-soft); padding-top: 12px; }
-  body.theme-tactile .emp-breakdown .brow { border-bottom: 1px dotted var(--outline-soft); padding: 8px 0; }
-  body.theme-tactile .emp-breakdown .brow:last-child { border-bottom: 0; }
-  body.theme-tactile .emp-breakdown .brow .name { font-weight: 600; }
-  body.theme-tactile .cal .dows span { color: var(--text-muted); font-weight: 600; letter-spacing: 1.4px; }
-  body.theme-tactile .cal .inner { border-radius: 8px; }
-  body.theme-tactile .cal .cell.today .inner { background: transparent; outline: 1.5px solid var(--accent-blue); outline-offset: -2px; }
-  body.theme-tactile .cal .cell.today .num { color: var(--accent-blue); font-weight: 700; }
-  body.theme-tactile .cal .cell.selected .inner { background: var(--accent-blue); }
-  body.theme-tactile .cal .pair { color: var(--accent-blue); font-weight: 500; }
-  body.theme-tactile .cal .heat-1 .inner { background: oklch(95% 0.02 35); }
-  body.theme-tactile .cal .heat-2 .inner { background: oklch(92% 0.04 30); }
-  body.theme-tactile .cal .heat-3 .inner { background: oklch(88% 0.06 28); }
-  body.theme-tactile .cal .heat-4 .inner { background: oklch(83% 0.09 28); }
-  body.theme-tactile .day-detail {
-    background: transparent; border: 0;
-    border-top: 1px solid var(--text-primary); border-bottom: 1px solid var(--outline-soft);
-    border-radius: 0; padding: 14px 0;
-  }
-  body.theme-tactile .day-detail .date-label { font-family: var(--tf-display); font-weight: 700; font-size: 14px; text-transform: none; }
-  body.theme-tactile .dd-table .head { border-bottom: 1px solid var(--text-primary); letter-spacing: 1.4px; font-size: 9px; }
-  body.theme-tactile .dd-table .trow { border-bottom: 1px dotted var(--outline-soft); }
-  body.theme-tactile .section-header { border-bottom: 1px solid var(--text-primary); padding-bottom: 4px; margin-top: 24px; }
-  body.theme-tactile .section-header h3 { font-size: 18px; font-weight: 700; }
-  body.theme-tactile .section-header small { font-family: var(--tf-mono); letter-spacing: 1px; font-size: 10px; text-transform: uppercase; }
-  body.theme-tactile .emp-row {
-    background: transparent; border: 0;
-    border-bottom: 1px solid var(--outline-soft); border-radius: 0;
-    padding: 14px 4px; margin-top: 0;
-  }
-  body.theme-tactile .emp-row:hover { background: oklch(95% 0.01 85); }
-  body.theme-tactile .emp-row .name { font-weight: 600; }
-  body.theme-tactile .emp-row .meta { font-family: var(--tf-mono); }
-  body.theme-tactile .emp-row .badge {
-    background: transparent; color: var(--accent-amber); border: 1px solid var(--accent-amber);
-    border-radius: 2px; letter-spacing: 1px;
-  }
-  body.theme-tactile .fab {
-    background: var(--text-primary); color: var(--t-bg); border-radius: 50%;
-    box-shadow: 0 10px 24px oklch(20% 0.015 60 / .25);
-  }
-  body.theme-tactile .big-cta {
-    border-radius: 10px; font-family: var(--tf-display); font-weight: 700;
-    font-size: 16px; letter-spacing: 1.4px; text-transform: uppercase;
-    box-shadow: 0 3px 0 oklch(20% 0.015 60 / .25);
-    transition: transform 100ms ease, box-shadow 150ms ease;
-  }
-  body.theme-tactile .big-cta:active { transform: translateY(3px); box-shadow: 0 0 0 oklch(20% 0.015 60 / .25); }
-  body.theme-tactile .big-cta.clock-in { background: var(--accent-blue); color: var(--t-bg); }
-  body.theme-tactile .big-cta.clock-out { background: var(--text-primary); color: var(--t-bg); }
-  body.theme-tactile .big-cta.submit { background: var(--accent-green); color: var(--t-bg); }
-  body.theme-tactile .big-cta.disabled { background: oklch(88% 0.01 85); color: var(--text-muted); filter: none; box-shadow: none; }
-  body.theme-tactile .clock-card {
-    background: transparent; border: 0;
-    border-top: 1px solid var(--text-primary); border-bottom: 1px solid var(--outline-soft);
-    border-radius: 0; padding: 14px 4px;
-  }
-  body.theme-tactile .clock-card .label { letter-spacing: 1.5px; }
-  body.theme-tactile .clock-card .time { color: var(--accent-green); }
-  body.theme-tactile .shift-summary {
-    background: transparent; border: 0;
-    border-top: 1px solid var(--text-primary); border-bottom: 1px solid var(--outline-soft);
-    border-radius: 0; padding: 16px 4px;
-  }
-  body.theme-tactile .shift-summary .l-label { letter-spacing: 1.5px; }
-  body.theme-tactile .shift-summary .total .value { color: var(--accent-green); }
-  body.theme-tactile .shift-summary .total .value.warn { color: var(--accent-red); }
-  body.theme-tactile .comment-field {
-    background: oklch(97% 0.008 85); border: 1px solid var(--outline-soft); border-radius: 4px;
-    font-family: var(--tf-body);
-  }
-  body.theme-tactile .login-wrap .brand .accent { color: var(--accent-blue); }
-  body.theme-tactile .login-wrap .tag { color: var(--text-secondary); }
-  body.theme-tactile .login-form input {
-    background: transparent; border: 0;
-    border-bottom: 1.5px solid var(--outline-soft); border-radius: 0;
-    padding: 12px 4px;
-    font-family: var(--tf-body);
-  }
-  body.theme-tactile .login-form input:focus { border-color: var(--accent-blue); }
-  body.theme-tactile .login-form .go {
-    background: var(--text-primary); color: var(--t-bg); border-radius: 6px;
-    font-family: var(--tf-display); font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase;
-  }
-  body.theme-tactile .login-form .err { background: oklch(92% 0.04 25); color: var(--accent-red); border-radius: 4px; }
-  body.theme-tactile .demo-accounts {
-    background: transparent; border-top: 1px solid var(--text-primary); border-radius: 0;
-    padding: 10px 0 0;
-  }
-  body.theme-tactile .demo-chip {
-    background: transparent; border: 0;
-    border-bottom: 1px dotted var(--outline-soft); border-radius: 0;
-    font-family: var(--tf-mono);
-    padding: 10px 4px;
-  }
-  body.theme-tactile .demo-chip:hover { background: oklch(95% 0.01 85); }
-  body.theme-tactile .demo-chip b { color: var(--text-primary); font-weight: 700; }
-  body.theme-tactile .demo-chip .tag {
-    background: transparent; border: 1px solid currentColor; border-radius: 2px; letter-spacing: 1px;
-  }
-  body.theme-tactile .demo-chip .tag.admin { color: var(--accent-blue); }
-  body.theme-tactile .demo-chip .tag.emp { color: var(--accent-green); }
-  body.theme-tactile .demo-chip .tag.readonly { color: var(--accent-amber); }
-  body.theme-tactile .approvals-banner {
-    background: transparent; border: 0;
-    border-top: 1px solid var(--accent-amber); border-bottom: 1px solid var(--accent-amber);
-    border-radius: 0; padding: 14px 4px;
-  }
-  body.theme-tactile .approvals-banner .icon { background: var(--accent-amber); color: var(--t-bg); border-radius: 4px; }
-  body.theme-tactile .approvals-banner .title { color: var(--accent-amber); }
-  body.theme-tactile .week-submit {
-    background: transparent; border: 0;
-    border-top: 1px solid var(--outline-soft); border-bottom: 1px solid var(--outline-soft);
-    border-radius: 0; padding: 14px 4px;
-  }
-  body.theme-tactile .week-submit .btn,
-  body.theme-tactile .past-weeks .prow .btn {
-    background: var(--text-primary); color: var(--t-bg); border-radius: 4px;
-    font-family: var(--tf-display); font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase;
-  }
-  body.theme-tactile .week-submit .status-pill { background: transparent; border: 1px solid currentColor; border-radius: 2px; letter-spacing: 1px; }
-  body.theme-tactile .week-submit .status-pill.pending { color: var(--accent-amber); }
-  body.theme-tactile .week-submit .status-pill.approved { color: var(--accent-green); }
-  body.theme-tactile .readonly-banner {
-    background: transparent; border: 0;
-    border-top: 1px solid var(--accent-amber); border-bottom: 1px solid var(--accent-amber);
-    border-radius: 0; color: var(--accent-amber);
-    letter-spacing: 1px;
-  }
-  body.theme-tactile .hist-shift-card {
-    background: transparent; border: 0;
-    border-bottom: 1px solid var(--outline-soft); border-radius: 0;
-    padding: 14px 4px;
-  }
-  body.theme-tactile .hist-shift-card .date { font-family: var(--tf-display); font-weight: 700; }
-  body.theme-tactile .hist-shift-card .hrs.ok { color: var(--accent-green); }
-  body.theme-tactile .hist-shift-card .hrs.warn { color: var(--accent-red); }
-  body.theme-tactile .hist-shift-card .chip { background: transparent; border: 1px solid var(--outline-soft); color: var(--text-secondary); border-radius: 3px; }
-  body.theme-tactile .hist-shift-card .week-status { background: transparent; border: 1px solid currentColor; border-radius: 2px; letter-spacing: 1px; }
-  body.theme-tactile .hist-shift-card .week-status.pending { color: var(--accent-amber); }
-  body.theme-tactile .hist-shift-card .week-status.approved { color: var(--accent-green); }
-  body.theme-tactile .mini-map {
-    border-radius: 4px; border: 1px solid var(--outline-soft);
-    background: oklch(90% 0.015 85);
-  }
-  body.theme-tactile .mini-map .tiles img,
-  body.theme-tactile .mini-map .leaflet-tile { filter: sepia(0.18) saturate(0.6) brightness(1) contrast(1.05); }
-  body.theme-tactile .modal-scrim { background: oklch(20% 0.015 60 / .35); }
-  body.theme-tactile .modal-card { background: oklch(97% 0.008 85); border: 1px solid var(--outline-soft); border-radius: 8px; }
-  body.theme-tactile .modal-card input, body.theme-tactile .modal-card textarea {
-    background: transparent; border: 0; border-bottom: 1.5px solid var(--outline-soft); border-radius: 0;
-  }
-  body.theme-tactile .modal-card .btn { border-radius: 4px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
-  body.theme-tactile .modal-card .btn.primary { background: var(--text-primary); color: var(--t-bg); }
-  body.theme-tactile .approval-row { background: transparent; border: 0; border-bottom: 1px dotted var(--outline-soft); border-radius: 0; padding: 14px 4px; }
-  body.theme-tactile .approval-row .actions button { border-radius: 4px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
-  body.theme-tactile .info-panel {
-    background: transparent; border: 0;
-    border-top: 1px solid var(--text-primary); border-bottom: 1px solid var(--outline-soft);
-    border-radius: 0; color: var(--text-secondary);
-  }
-  body.theme-tactile .phone-caption b { color: var(--text-primary); }
-  body.theme-tactile .todo-list .check.done { background: var(--accent-green); }
-
-
-  /* =========================================================
-     THEME: EDITORIAL — warm white, deep oxblood, big serif.
+     Design tokens — warm white, deep oxblood, big serif.
      Magazine-typographic. Gloock display + Vollkorn body.
      ========================================================= */
-  body.theme-editorial {
+  :root {
     --t-bg: oklch(96% 0.015 85);
     --navy: oklch(98% 0.01 85);
     --deep-blue: oklch(92% 0.02 85);
@@ -2986,46 +1889,46 @@
     font-weight: 400;
     color: var(--text-primary);
   }
-  body.theme-editorial .phone {
+  .phone {
     background: var(--t-bg);
     box-shadow:
       0 28px 60px oklch(16% 0.015 30 / .18),
       0 0 0 10px oklch(92% 0.02 85),
       0 0 0 11px oklch(82% 0.025 85);
   }
-  body.theme-editorial .phone::before { background: oklch(16% 0.015 30); }
-  body.theme-editorial .screen { background: var(--t-bg); padding: 56px 22px 24px; }
-  body.theme-editorial .topbar {
+  .phone::before { background: oklch(16% 0.015 30); }
+  .screen { background: var(--t-bg); padding: 56px 22px 24px; }
+  .topbar {
     border-bottom: 1px solid var(--outline-soft);
     padding-bottom: 4px;
     margin-bottom: 8px;
   }
-  body.theme-editorial .topbar .title,
-  body.theme-editorial .greeting .name,
-  body.theme-editorial .month-nav .label,
-  body.theme-editorial .section-header h3,
-  body.theme-editorial .modal-card h3,
-  body.theme-editorial .login-wrap .brand,
-  body.theme-editorial .approvals-banner .title,
-  body.theme-editorial .week-submit .title,
-  body.theme-editorial .info-panel h3 {
+  .topbar .title,
+  .greeting .name,
+  .month-nav .label,
+  .section-header h3,
+  .modal-card h3,
+  .login-wrap .brand,
+  .approvals-banner .title,
+  .week-submit .title,
+  .info-panel h3 {
     font-family: var(--tf-display);
     font-weight: 400;
   }
-  body.theme-editorial .greeting .name { font-size: 34px; line-height: 1.05; letter-spacing: -0.5px; }
-  body.theme-editorial .login-wrap .brand { font-size: 52px; letter-spacing: -1.5px; line-height: .95; }
-  body.theme-editorial .login-wrap .brand .accent { color: var(--accent-blue); }
-  body.theme-editorial .login-wrap .tag {
+  .greeting .name { font-size: 34px; line-height: 1.05; letter-spacing: -0.5px; }
+  .login-wrap .brand { font-size: 52px; letter-spacing: -1.5px; line-height: .95; }
+  .login-wrap .brand .accent { color: var(--accent-blue); }
+  .login-wrap .tag {
     font-family: var(--tf-body); font-style: italic;
     color: var(--text-secondary); font-size: 14px;
   }
-  body.theme-editorial .greeting .hello {
+  .greeting .hello {
     font-family: var(--tf-body);
     font-style: italic;
     color: var(--text-secondary);
     font-size: 15px;
   }
-  body.theme-editorial .greeting .role {
+  .greeting .role {
     background: transparent;
     border: 1px solid var(--text-secondary);
     color: var(--text-secondary);
@@ -3038,33 +1941,33 @@
     text-transform: uppercase;
     display: inline-block;
   }
-  body.theme-editorial .greeting .role.readonly {
+  .greeting .role.readonly {
     color: var(--accent-amber); border-color: var(--accent-amber);
   }
-  body.theme-editorial .info-card .stat .value,
-  body.theme-editorial .cal .inner .num,
-  body.theme-editorial .cal .pair,
-  body.theme-editorial .dd-table .tm,
-  body.theme-editorial .dd-table .hrs,
-  body.theme-editorial .clock-card .time,
-  body.theme-editorial .shift-summary .time,
-  body.theme-editorial .shift-summary .total .value,
-  body.theme-editorial .hist-shift-card .hrs,
-  body.theme-editorial .emp-breakdown .brow .hrs,
-  body.theme-editorial .approval-row .total,
-  body.theme-editorial .week-submit .sub {
+  .info-card .stat .value,
+  .cal .inner .num,
+  .cal .pair,
+  .dd-table .tm,
+  .dd-table .hrs,
+  .clock-card .time,
+  .shift-summary .time,
+  .shift-summary .total .value,
+  .hist-shift-card .hrs,
+  .emp-breakdown .brow .hrs,
+  .approval-row .total,
+  .week-submit .sub {
     font-family: var(--tf-mono);
     font-feature-settings: "tnum" 1;
     letter-spacing: -0.4px;
   }
-  body.theme-editorial .topbar .icon-btn:hover,
-  body.theme-editorial .topbar .back:hover,
-  body.theme-editorial .month-nav .chev:hover { background: oklch(92% 0.02 85); }
-  body.theme-editorial .lang-toggle { background: oklch(93% 0.02 85); border: 1px solid var(--outline-soft); }
-  body.theme-editorial .lang-toggle .slider { background: var(--accent-blue); box-shadow: none; }
-  body.theme-editorial .lang-toggle .opt.active { color: oklch(96% 0.015 85); }
+  .topbar .icon-btn:hover,
+  .topbar .back:hover,
+  .month-nav .chev:hover { background: oklch(92% 0.02 85); }
+  .lang-toggle { background: oklch(93% 0.02 85); border: 1px solid var(--outline-soft); }
+  .lang-toggle .slider { background: var(--accent-blue); box-shadow: none; }
+  .lang-toggle .opt.active { color: oklch(96% 0.015 85); }
   /* Info card — flattened, ruled */
-  body.theme-editorial .info-card {
+  .info-card {
     background: transparent;
     border: 0;
     border-top: 1.5px solid var(--text-primary);
@@ -3073,8 +1976,8 @@
     padding: 18px 2px 14px;
     box-shadow: none;
   }
-  body.theme-editorial .info-card .stat .value { font-size: 34px; font-weight: 400; font-family: var(--tf-display); font-family: var(--tf-mono); }
-  body.theme-editorial .info-card .stat .label {
+  .info-card .stat .value { font-size: 34px; font-weight: 400; font-family: var(--tf-display); font-family: var(--tf-mono); }
+  .info-card .stat .label {
     font-family: var(--tf-body);
     font-style: italic;
     font-weight: 400;
@@ -3084,18 +1987,18 @@
     color: var(--text-secondary);
   }
   /* Stats are informational, not actions — keep all neutral ink. */
-  body.theme-editorial .info-card .stat.blue .value,
-  body.theme-editorial .info-card .stat.green .value,
-  body.theme-editorial .info-card .stat.amber .value,
-  body.theme-editorial .info-card .stat.plain .value { color: var(--text-primary); }
-  body.theme-editorial .info-card.legend .legend-list {
+  .info-card .stat.blue .value,
+  .info-card .stat.green .value,
+  .info-card .stat.amber .value,
+  .info-card .stat.plain .value { color: var(--text-primary); }
+  .info-card.legend .legend-list {
     border-top: 1px solid var(--outline-soft); padding-top: 12px; margin-top: 14px;
   }
-  body.theme-editorial .emp-breakdown .brow { padding: 7px 0; border-bottom: 1px dotted var(--outline-soft); }
-  body.theme-editorial .emp-breakdown .brow:last-child { border-bottom: 0; }
-  body.theme-editorial .emp-breakdown .brow .name { font-family: var(--tf-display); font-weight: 400; font-size: 14px; }
+  .emp-breakdown .brow { padding: 7px 0; border-bottom: 1px dotted var(--outline-soft); }
+  .emp-breakdown .brow:last-child { border-bottom: 0; }
+  .emp-breakdown .brow .name { font-family: var(--tf-display); font-weight: 400; font-size: 14px; }
   /* Calendar */
-  body.theme-editorial .cal .dows span {
+  .cal .dows span {
     font-family: var(--tf-body);
     font-style: italic;
     font-weight: 500;
@@ -3104,32 +2007,32 @@
     letter-spacing: 0.8px;
     text-transform: none;
   }
-  body.theme-editorial .cal .inner { border-radius: 2px; }
-  body.theme-editorial .cal .cell.today .inner {
+  .cal .inner { border-radius: 2px; }
+  .cal .cell.today .inner {
     background: transparent;
     outline: 1.5px solid var(--text-primary);
     outline-offset: -2px;
   }
-  body.theme-editorial .cal .cell.today .num { color: var(--text-primary); font-weight: 700; font-family: var(--tf-display); }
-  body.theme-editorial .cal .cell.selected .inner { background: var(--accent-blue); }
-  body.theme-editorial .cal .cell.selected .num,
-  body.theme-editorial .cal .cell.selected .pair,
-  body.theme-editorial .cal .cell.selected .pair .mid,
-  body.theme-editorial .cal .cell.selected .pair .emp { color: oklch(96% 0.015 85); }
-  body.theme-editorial .cal .inner .num { font-family: var(--tf-display); font-weight: 400; font-size: 15px; }
-  body.theme-editorial .cal .pair { color: var(--text-primary); font-weight: 600; }
-  body.theme-editorial .cal .pair .emp { color: var(--text-secondary); }
-  body.theme-editorial .cal .heat-1 .inner { background: oklch(94% 0.02 85); }
-  body.theme-editorial .cal .heat-2 .inner { background: oklch(90% 0.028 85); }
-  body.theme-editorial .cal .heat-3 .inner { background: oklch(85% 0.035 85); }
-  body.theme-editorial .cal .heat-4 .inner { background: oklch(79% 0.042 85); }
-  body.theme-editorial .day-detail {
+  .cal .cell.today .num { color: var(--text-primary); font-weight: 700; font-family: var(--tf-display); }
+  .cal .cell.selected .inner { background: var(--accent-blue); }
+  .cal .cell.selected .num,
+  .cal .cell.selected .pair,
+  .cal .cell.selected .pair .mid,
+  .cal .cell.selected .pair .emp { color: oklch(96% 0.015 85); }
+  .cal .inner .num { font-family: var(--tf-display); font-weight: 400; font-size: 15px; }
+  .cal .pair { color: var(--text-primary); font-weight: 600; }
+  .cal .pair .emp { color: var(--text-secondary); }
+  .cal .heat-1 .inner { background: oklch(94% 0.02 85); }
+  .cal .heat-2 .inner { background: oklch(90% 0.028 85); }
+  .cal .heat-3 .inner { background: oklch(85% 0.035 85); }
+  .cal .heat-4 .inner { background: oklch(79% 0.042 85); }
+  .day-detail {
     background: transparent; border: 0;
     border-top: 1.5px solid var(--text-primary);
     border-bottom: 1px solid var(--outline-soft);
     border-radius: 0; padding: 14px 2px;
   }
-  body.theme-editorial .day-detail .date-label {
+  .day-detail .date-label {
     font-family: var(--tf-display); font-weight: 400;
     font-size: 18px; letter-spacing: -0.2px;
     text-transform: none;
@@ -3137,7 +2040,7 @@
     padding-bottom: 8px;
     border-bottom: 1px solid var(--outline-soft);
   }
-  body.theme-editorial .dd-table .head {
+  .dd-table .head {
     font-family: var(--tf-body);
     font-style: italic;
     font-weight: 400;
@@ -3146,15 +2049,15 @@
     color: var(--text-muted);
     border-bottom: 1px solid var(--text-primary);
   }
-  body.theme-editorial .dd-table .trow { border-bottom: 1px dotted var(--outline-soft); }
-  body.theme-editorial .dd-table .nm { font-family: var(--tf-display); font-weight: 400; font-size: 14px; }
+  .dd-table .trow { border-bottom: 1px dotted var(--outline-soft); }
+  .dd-table .nm { font-family: var(--tf-display); font-weight: 400; font-size: 14px; }
   /* Section / emp */
-  body.theme-editorial .section-header {
+  .section-header {
     border-bottom: 1.5px solid var(--text-primary);
     padding-bottom: 4px; margin-top: 24px;
   }
-  body.theme-editorial .section-header h3 { font-size: 22px; letter-spacing: -0.3px; }
-  body.theme-editorial .section-header small {
+  .section-header h3 { font-size: 22px; letter-spacing: -0.3px; }
+  .section-header small {
     font-family: var(--tf-body);
     font-style: italic;
     font-weight: 400;
@@ -3162,7 +2065,7 @@
     letter-spacing: 0.2px;
     font-size: 11px;
   }
-  body.theme-editorial .emp-row {
+  .emp-row {
     background: transparent;
     border: 0;
     border-bottom: 1px solid var(--outline-soft);
@@ -3170,91 +2073,79 @@
     padding: 14px 4px;
     margin-top: 0;
   }
-  body.theme-editorial .emp-row:hover { background: oklch(94% 0.02 85); }
-  body.theme-editorial .emp-row .name { font-family: var(--tf-display); font-weight: 400; font-size: 17px; }
-  body.theme-editorial .emp-row .meta { font-family: var(--tf-mono); font-size: 11px; color: var(--text-muted); }
-  body.theme-editorial .emp-row .badge {
+  .emp-row:hover { background: oklch(94% 0.02 85); }
+  .emp-row .name { font-family: var(--tf-display); font-weight: 400; font-size: 17px; }
+  .emp-row .meta { font-family: var(--tf-mono); font-size: 11px; color: var(--text-muted); }
+  .emp-row .badge {
     background: transparent; color: var(--accent-amber); border: 1px solid var(--accent-amber);
     border-radius: 2px; letter-spacing: 1.2px; font-family: var(--tf-body);
   }
-  body.theme-editorial .fab {
+  .fab {
     background: var(--accent-blue); color: var(--t-bg);
     border-radius: 50%;
     box-shadow: 0 10px 24px oklch(48% 0.11 58 / .35);
   }
-  /* Buttons — flat, sharp */
-  body.theme-editorial .big-cta {
-    border-radius: 2px;
-    font-family: var(--tf-display);
-    font-weight: 400;
-    font-size: 22px;
-    letter-spacing: 0.3px;
-    box-shadow: none;
-  }
-  body.theme-editorial .big-cta.clock-in { background: var(--accent-blue); color: var(--t-bg); }
-  body.theme-editorial .big-cta.clock-out { background: var(--text-primary); color: var(--t-bg); }
-  body.theme-editorial .big-cta.submit { background: var(--accent-green); color: var(--t-bg); }
-  body.theme-editorial .big-cta.disabled { background: oklch(88% 0.02 85); color: var(--text-muted); filter: none; }
-  body.theme-editorial .clock-card {
+  /* Buttons live in the global .btn system — see top of stylesheet. */
+  .clock-card {
     background: transparent; border: 0;
     border-top: 1.5px solid var(--text-primary);
     border-bottom: 1px solid var(--outline-soft);
     border-radius: 0; padding: 14px 4px;
   }
-  body.theme-editorial .clock-card .label {
+  .clock-card .label {
     font-family: var(--tf-body); font-style: italic; font-weight: 400;
     letter-spacing: 0.5px; text-transform: none; color: var(--text-muted);
   }
-  body.theme-editorial .clock-card .time { color: var(--accent-green); font-weight: 500; }
-  body.theme-editorial .shift-summary {
+  .clock-card .time { color: var(--accent-green); font-weight: 500; }
+  .shift-summary {
     background: transparent; border: 0;
     border-top: 1.5px solid var(--text-primary);
     border-bottom: 1px solid var(--outline-soft);
     border-radius: 0; padding: 16px 4px;
   }
-  body.theme-editorial .shift-summary .l-label {
+  .shift-summary .l-label {
     font-family: var(--tf-body); font-style: italic;
     letter-spacing: 0.5px; text-transform: none; font-weight: 400;
     color: var(--text-muted);
   }
-  body.theme-editorial .shift-summary .total .value { color: var(--accent-green); }
-  body.theme-editorial .shift-summary .total .value.warn { color: var(--accent-red); }
-  body.theme-editorial .shift-summary .total .unit { font-family: var(--tf-body); font-style: italic; font-size: 14px; }
-  body.theme-editorial .comment-field {
+  .shift-summary .total .value { color: var(--accent-green); }
+  .shift-summary .total .value.warn { color: var(--accent-red); }
+  .shift-summary .total .unit { font-family: var(--tf-body); font-style: italic; font-size: 14px; }
+  .comment-field {
     background: transparent; border: 0;
     border-bottom: 1.5px solid var(--outline-soft);
     border-radius: 0; padding: 10px 0;
     font-family: var(--tf-body);
   }
-  body.theme-editorial .comment-field:focus { border-color: var(--accent-blue); }
+  .comment-field:focus { border-color: var(--accent-blue); }
   /* Login */
-  body.theme-editorial .login-form input {
+  .login-form input {
     background: transparent; border: 0;
     border-bottom: 1.5px solid var(--outline-soft);
     border-radius: 0; padding: 12px 4px;
     font-family: var(--tf-body);
   }
-  body.theme-editorial .login-form input:focus { border-color: var(--accent-blue); }
-  body.theme-editorial .login-form .go {
+  .login-form input:focus { border-color: var(--accent-blue); }
+  .login-form .go {
     background: var(--accent-blue); color: var(--t-bg);
     border-radius: 2px;
     font-family: var(--tf-display); font-weight: 400; letter-spacing: 0.5px;
     font-size: 16px;
   }
-  body.theme-editorial .login-form .err { background: oklch(92% 0.05 25); color: var(--accent-red); border-radius: 2px; }
-  body.theme-editorial .demo-accounts { background: transparent; border: 0; border-top: 1.5px solid var(--text-primary); padding: 12px 0 0; border-radius: 0; }
-  body.theme-editorial .demo-accounts .demo-title {
+  .login-form .err { background: oklch(92% 0.05 25); color: var(--accent-red); border-radius: 2px; }
+  .demo-accounts { background: transparent; border: 0; border-top: 1.5px solid var(--text-primary); padding: 12px 0 0; border-radius: 0; }
+  .demo-accounts .demo-title {
     font-family: var(--tf-body); font-style: italic; font-weight: 400;
     letter-spacing: 0.5px; text-transform: none;
   }
-  body.theme-editorial .demo-chip {
+  .demo-chip {
     background: transparent; border: 0;
     border-bottom: 1px dotted var(--outline-soft);
     border-radius: 0; font-family: var(--tf-mono);
   }
-  body.theme-editorial .demo-chip:hover { background: oklch(94% 0.02 85); }
-  body.theme-editorial .demo-chip b { color: var(--accent-blue); }
-  body.theme-editorial .demo-chip .tag {
+  .demo-chip:hover { background: oklch(94% 0.02 85); }
+  .demo-chip b { color: var(--accent-blue); }
+  .demo-chip .tag {
     background: transparent;
     border: 1px solid var(--text-secondary);
     color: var(--text-secondary);
@@ -3262,42 +2153,36 @@
     letter-spacing: 1.2px;
     font-family: var(--tf-body);
   }
-  body.theme-editorial .demo-chip .tag.admin,
-  body.theme-editorial .demo-chip .tag.emp,
-  body.theme-editorial .demo-chip .tag.readonly { color: var(--text-secondary); border-color: var(--text-secondary); }
+  .demo-chip .tag.admin,
+  .demo-chip .tag.emp,
+  .demo-chip .tag.readonly { color: var(--text-secondary); border-color: var(--text-secondary); }
   /* Approvals */
-  body.theme-editorial .approvals-banner {
+  .approvals-banner {
     background: transparent; border: 0;
     border-top: 1.5px solid var(--accent-amber);
     border-bottom: 1px solid var(--accent-amber);
     border-radius: 0; padding: 14px 4px;
   }
-  body.theme-editorial .approvals-banner .icon {
+  .approvals-banner .icon {
     background: var(--accent-amber); color: var(--t-bg); border-radius: 2px;
   }
-  body.theme-editorial .approvals-banner .title {
+  .approvals-banner .title {
     font-family: var(--tf-display); font-size: 18px; color: var(--accent-amber);
   }
-  body.theme-editorial .approvals-banner .meta { font-family: var(--tf-mono); color: var(--text-muted); }
+  .approvals-banner .meta { font-family: var(--tf-mono); color: var(--text-muted); }
   /* Week submit */
-  body.theme-editorial .week-submit {
+  .week-submit {
     background: transparent; border: 0;
     border-top: 1.5px solid var(--text-primary);
     border-bottom: 1px solid var(--outline-soft);
     border-radius: 0; padding: 14px 4px;
   }
-  body.theme-editorial .week-submit .btn,
-  body.theme-editorial .past-weeks .prow .btn {
-    background: var(--accent-blue); color: var(--t-bg);
-    border-radius: 2px;
-    font-family: var(--tf-display); font-weight: 400; letter-spacing: 0.3px;
-  }
-  body.theme-editorial .week-submit .status-pill {
+  .week-submit .status-pill {
     background: transparent; border: 1px solid currentColor; border-radius: 2px; letter-spacing: 1.2px; font-family: var(--tf-body);
   }
-  body.theme-editorial .week-submit .status-pill.pending { color: var(--accent-amber); }
-  body.theme-editorial .week-submit .status-pill.approved { color: var(--accent-green); }
-  body.theme-editorial .readonly-banner {
+  .week-submit .status-pill.pending { color: var(--accent-amber); }
+  .week-submit .status-pill.approved { color: var(--accent-green); }
+  .readonly-banner {
     background: transparent; border: 0;
     border-top: 1px solid var(--accent-amber);
     border-bottom: 1px solid var(--accent-amber);
@@ -3305,64 +2190,54 @@
     font-family: var(--tf-body);
   }
   /* History */
-  body.theme-editorial .hist-shift-card {
+  .hist-shift-card {
     background: transparent; border: 0;
     border-bottom: 1px solid var(--outline-soft);
     border-radius: 0; padding: 14px 4px;
   }
-  body.theme-editorial .hist-shift-card .date { font-family: var(--tf-display); font-weight: 400; font-size: 16px; }
-  body.theme-editorial .hist-shift-card .hrs.ok { color: var(--accent-green); }
-  body.theme-editorial .hist-shift-card .hrs.warn { color: var(--accent-red); }
-  body.theme-editorial .hist-shift-card .chip { background: transparent; border: 1px solid var(--outline-soft); color: var(--text-secondary); border-radius: 2px; }
-  body.theme-editorial .hist-shift-card .comment { font-family: var(--tf-body); font-style: italic; font-size: 13px; }
-  body.theme-editorial .hist-shift-card .week-status { background: transparent; border: 1px solid currentColor; border-radius: 2px; letter-spacing: 1.2px; font-family: var(--tf-body); }
-  body.theme-editorial .hist-shift-card .week-status.pending { color: var(--accent-amber); }
-  body.theme-editorial .hist-shift-card .week-status.approved { color: var(--accent-green); }
+  .hist-shift-card .date { font-family: var(--tf-display); font-weight: 400; font-size: 16px; }
+  .hist-shift-card .hrs.ok { color: var(--accent-green); }
+  .hist-shift-card .hrs.warn { color: var(--accent-red); }
+  .hist-shift-card .chip { background: transparent; border: 1px solid var(--outline-soft); color: var(--text-secondary); border-radius: 2px; }
+  .hist-shift-card .comment { font-family: var(--tf-body); font-style: italic; font-size: 13px; }
+  .hist-shift-card .week-status { background: transparent; border: 1px solid currentColor; border-radius: 2px; letter-spacing: 1.2px; font-family: var(--tf-body); }
+  .hist-shift-card .week-status.pending { color: var(--accent-amber); }
+  .hist-shift-card .week-status.approved { color: var(--accent-green); }
   /* Map */
-  body.theme-editorial .mini-map { border-radius: 2px; border: 1px solid var(--outline-soft); background: oklch(90% 0.018 85); }
-  body.theme-editorial .mini-map .tiles img,
-  body.theme-editorial .mini-map .leaflet-tile { filter: sepia(0.22) saturate(0.8) brightness(0.95) contrast(1.05); }
-  body.theme-editorial .mini-map .legend { background: oklch(16% 0.015 30 / .85); color: oklch(96% 0.015 85); border-radius: 2px; font-family: var(--tf-body); }
+  .mini-map { border-radius: 2px; border: 1px solid var(--outline-soft); background: oklch(90% 0.018 85); }
+  .mini-map .tiles img,
+  .mini-map .leaflet-tile { filter: sepia(0.22) saturate(0.8) brightness(0.95) contrast(1.05); }
+  .mini-map .legend { background: oklch(16% 0.015 30 / .85); color: oklch(96% 0.015 85); border-radius: 2px; font-family: var(--tf-body); }
   /* Modal */
-  body.theme-editorial .modal-scrim { background: oklch(16% 0.015 30 / .45); }
-  body.theme-editorial .modal-card { background: var(--t-bg); border: 1px solid var(--outline-soft); border-radius: 2px; }
+  .modal-scrim { background: oklch(16% 0.015 30 / .45); }
+  .modal-card { background: var(--t-bg); border: 1px solid var(--outline-soft); border-radius: 2px; }
   /* On narrow viewports the modal is a bottom sheet — the rounded top
      corners are the affordance that tells the user "this is a sheet,"
      so the editorial border-radius:2px override has to give way here. */
   @media (max-width: 640px) {
-    body.theme-editorial .modal-card {
+    .modal-card {
       border-radius: 22px 22px 0 0;
       border-bottom: 0; border-left: 0; border-right: 0;
     }
   }
-  body.theme-editorial .modal-card input, body.theme-editorial .modal-card textarea {
+  .modal-card input, .modal-card textarea {
     background: transparent; border: 0; border-bottom: 1.5px solid var(--outline-soft); border-radius: 0; padding: 10px 4px;
     font-family: var(--tf-body);
   }
-  body.theme-editorial .modal-card .btn { border-radius: 2px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; font-family: var(--tf-body); }
-  body.theme-editorial .modal-card .btn.primary { background: var(--accent-blue); color: var(--t-bg); }
-  body.theme-editorial .approval-row { background: transparent; border: 0; border-bottom: 1px dotted var(--outline-soft); border-radius: 0; padding: 14px 4px; }
-  body.theme-editorial .approval-row .who { font-family: var(--tf-display); font-weight: 400; font-size: 16px; }
-  body.theme-editorial .approval-row .actions button { border-radius: 2px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; font-family: var(--tf-body); font-size: 11px; }
-  body.theme-editorial .approval-row .approve { background: var(--accent-green); color: var(--t-bg); }
-  body.theme-editorial .approval-row .reject { background: transparent; color: var(--accent-red); border: 1px solid var(--accent-red); }
-  /* Confirm-submit state: filled red, white text — overrides the outlined
-     default for the editorial theme. */
-  body.theme-editorial .approval-row .reject.confirm { background: var(--accent-red); color: var(--t-bg); border-color: var(--accent-red); }
-  body.theme-editorial .approval-row .reject.confirm:disabled { opacity: .4; cursor: not-allowed; }
-  body.theme-editorial .approval-row .cancel-ghost { background: transparent; color: var(--text-primary); border: 0; }
-  body.theme-editorial .info-panel {
+  .approval-row { background: transparent; border: 0; border-bottom: 1px dotted var(--outline-soft); border-radius: 0; padding: 14px 4px; }
+  .approval-row .who { font-family: var(--tf-display); font-weight: 400; font-size: 16px; }
+  .info-panel {
     background: transparent; border: 0;
     border-top: 1.5px solid var(--text-primary); border-bottom: 1px solid var(--outline-soft);
     border-radius: 0; color: var(--text-secondary);
   }
-  body.theme-editorial .phone-caption b { color: var(--text-primary); }
-  body.theme-editorial .todo-list .check.done { background: var(--accent-green); }
-  body.theme-editorial .toast { background: var(--text-primary); color: var(--t-bg); border: 1px solid var(--text-primary); border-radius: 2px; font-family: var(--tf-body); }
-  body.theme-editorial .toast .pill { background: var(--accent-blue); color: var(--t-bg); border-radius: 2px; font-family: var(--tf-body); }
-  body.theme-editorial .toast.success .pill { background: var(--accent-green); color: var(--t-bg); }
-  body.theme-editorial .toast.warn .pill { background: var(--accent-amber); color: var(--t-bg); }
-  body.theme-editorial .toast.error .pill { background: var(--accent-red); color: var(--t-bg); }
+  .phone-caption b { color: var(--text-primary); }
+  .todo-list .check.done { background: var(--accent-green); }
+  .toast { background: var(--text-primary); color: var(--t-bg); border: 1px solid var(--text-primary); border-radius: 2px; font-family: var(--tf-body); }
+  .toast .pill { background: var(--accent-blue); color: var(--t-bg); border-radius: 2px; font-family: var(--tf-body); }
+  .toast.success .pill { background: var(--accent-green); color: var(--t-bg); }
+  .toast.warn .pill { background: var(--accent-amber); color: var(--t-bg); }
+  .toast.error .pill { background: var(--accent-red); color: var(--t-bg); }
 
 
   /* =========================================================
@@ -3433,30 +2308,46 @@
   }
   .tabbar {
     display: flex;
-    background: var(--surface-card);
+    background: var(--t-bg);
     border-top: 1px solid var(--outline-soft);
     padding-bottom: env(safe-area-inset-bottom, 0);
   }
   .tabbar .tab {
     flex: 1;
-    min-height: 52px;
+    min-height: 56px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 3px;
-    color: var(--text-secondary);
+    gap: 4px;
+    color: var(--text-muted);
     cursor: pointer;
     touch-action: manipulation;
     transition: color 120ms ease, background 120ms ease;
+    position: relative;
+    border-right: 1px solid var(--outline-soft);
   }
+  .tabbar .tab:last-child { border-right: 0; }
   .tabbar .tab .tab-label {
+    font-family: var(--tf-body);
     font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.3px;
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
   }
-  .tabbar .tab svg { width: 22px; height: 22px; }
-  .tabbar .tab.active { color: var(--accent-blue); }
+  .tabbar .tab svg { width: 20px; height: 20px; }
+  .tabbar .tab.active {
+    color: var(--accent-blue);
+    background: var(--surface-card);
+  }
+  /* Active-tab overline — the tab-shaped affordance */
+  .tabbar .tab.active::before {
+    content: "";
+    position: absolute;
+    top: -1px; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent-blue);
+  }
   .tabbar .tab:active { background: var(--surface-dark); }
 
   .pinned-approvals {
@@ -3567,31 +2458,24 @@
   @media (hover: none) {
     .topbar .back:hover,
     .topbar .icon-btn:hover,
-    .month-nav .chev:hover,
-    body[class*="theme-"] .topbar .back:hover,
-    body[class*="theme-"] .topbar .icon-btn:hover,
-    body[class*="theme-"] .month-nav .chev:hover {
+    .month-nav .chev:hover {
       background: transparent;
       color: var(--text-secondary);
     }
     .lang-toggle:hover { background: var(--surface-dark); }
     .info-card.clickable:hover { background: var(--surface-card); }
-    .emp-row:hover,
-    body[class*="theme-"] .emp-row:hover {
+    .emp-row:hover {
       background: var(--surface-card);
       border-color: var(--outline-soft);
     }
-    .demo-chip:hover,
-    body[class*="theme-"] .demo-chip:hover { background: var(--surface-card); }
+    .demo-chip:hover { background: var(--surface-card); }
     .approval-row .top.expandable:hover { background: transparent; }
     .hist-week-head.expandable:hover { background: transparent; }
-    .theme-switch .opt:hover { color: var(--text-secondary); }
-    .modal-card .btn:hover { background: transparent; color: var(--text-secondary); }
   }
 
 </style>
 </head>
-<body class="theme-editorial">
+<body>
 
 <div class="app-root">
   <div class="version-tag" id="versionTag"></div>
@@ -3959,9 +2843,9 @@
       appName: "PunchCard",
       tagline: "Simple shift tracking",
       welcome: "Welcome,",
-      owner: "OWNER",
-      admin: "ADMIN",
-      readonly: "READ-ONLY",
+      owner: "Owner",
+      admin: "Admin",
+      readonly: "Read-only",
       employees: "Employees",
       registered: "registered",
       hours: "Hours", days: "Days", shifts: "Shifts", staff: "Staff", avgDay: "Avg/day",
@@ -4005,6 +2889,9 @@
       rejectedByAdmin: "Rejected by admin",
       resubmit: "Resubmit",
       lockedAfterApproval: "Approved — locked for editing",
+      weekClosedTitle: "This week is approved",
+      weekClosedBody: "Your admin has already approved this week's timesheet. New shifts can't be added until next week. If something needs to change, ask your admin to reopen the week.",
+      submitBlockedOpenShift: "Clock out before submitting the week.",
       adminEditTitle: "Edit shift",
       adminEditReason: "Why are you editing this shift?",
       adminEditReasonRequired: "A reason is required — this edit will be logged.",
@@ -4049,7 +2936,7 @@
       signedInAs: "Signed in as",
       addUser: "Add user",
       manageEmployees: "Manage users",
-      editEmployee: "Edit employee",
+      editEmployee: "Edit user",
       resetPassword: "Reset password",
       newPassword: "New password",
       deactivate: "Deactivate",
@@ -4057,7 +2944,7 @@
       deactivated: "Deactivated",
       deactivateConfirmTitle: "Deactivate this employee?",
       deactivateConfirmBody: (name) => `${name} will no longer be able to sign in. Past shifts and history stay in place. You can reactivate them later.`,
-      saveChanges: "Save changes",
+      saveChanges: "Save",
       passwordChanged: "Password updated",
       userUpdated: "User updated",
       userDeactivated: "User deactivated",
@@ -4071,9 +2958,9 @@
       appName: "PunchCard",
       tagline: "Seguimiento simple de turnos",
       welcome: "Hola,",
-      owner: "PROPIETARIA",
-      admin: "ADMINISTRADOR",
-      readonly: "SOLO LECTURA",
+      owner: "Propietaria",
+      admin: "Administrador",
+      readonly: "Solo lectura",
       employees: "Empleados",
       registered: "registrados",
       hours: "Horas", days: "Días", shifts: "Turnos", staff: "Equipo", avgDay: "Prom/día",
@@ -4117,6 +3004,9 @@
       rejectedByAdmin: "Rechazada por el admin",
       resubmit: "Enviar de nuevo",
       lockedAfterApproval: "Aprobada — bloqueada para editar",
+      weekClosedTitle: "Esta semana está aprobada",
+      weekClosedBody: "Tu admin ya aprobó la planilla de esta semana. No se pueden añadir turnos hasta la próxima semana. Si algo debe cambiar, pide a tu admin que reabra la semana.",
+      submitBlockedOpenShift: "Termina tu turno antes de enviar la semana.",
       adminEditTitle: "Editar turno",
       adminEditReason: "¿Por qué editas este turno?",
       adminEditReasonRequired: "Se requiere una explicación — este cambio quedará registrado.",
@@ -4161,7 +3051,7 @@
       signedInAs: "Sesión iniciada como",
       addUser: "Agregar usuario",
       manageEmployees: "Administrar usuarios",
-      editEmployee: "Editar empleado",
+      editEmployee: "Editar usuario",
       resetPassword: "Restablecer contraseña",
       newPassword: "Nueva contraseña",
       deactivate: "Desactivar",
@@ -4169,7 +3059,7 @@
       deactivated: "Desactivado",
       deactivateConfirmTitle: "¿Desactivar este empleado?",
       deactivateConfirmBody: (name) => `${name} ya no podrá iniciar sesión. Los turnos y el historial se conservan. Puedes reactivarle después.`,
-      saveChanges: "Guardar cambios",
+      saveChanges: "Guardar",
       passwordChanged: "Contraseña actualizada",
       userUpdated: "Usuario actualizado",
       userDeactivated: "Usuario desactivado",
@@ -4396,6 +3286,16 @@
     Object.assign(state, extra);
     state.lastAnim = 0;
     history.pushState({ depth: state.nav.length }, "");
+    render();
+  }
+  // Tabs are sibling roots — switching between Home/History does NOT push
+  // a nav entry, so no back button appears. Any prior drill-in navigation
+  // is cleared on tab switch.
+  function navTab(screen) {
+    if (state.screen === screen) return;
+    state.nav = [];
+    state.screen = screen;
+    state.lastAnim = 0;
     render();
   }
   function navBack() {
@@ -4718,10 +3618,9 @@
       root.appendChild(el("div", { style:"width:44px" }));
     }
 
-    // Title in middle of topbar for secondary screens
-    if (state.screen === "history") {
-      root.appendChild(el("div", {class:"title"}, tr("history")));
-    } else if (state.screen === "admin_employee") {
+    // Title in middle of topbar only for drill-in sub-screens. Root tab
+    // screens (home, history) let their own screen content name itself.
+    if (state.screen === "admin_employee") {
       const emp = userById[state.viewingEmployeeId];
       root.appendChild(el("div", {class:"title"}, emp?.displayName || ""));
     } else if (state.screen === "shift_detail") {
@@ -4837,7 +3736,7 @@
       }
       const tab = (name, iconName, labelKey, screen) => el("div", {
         class: `tab ${state.screen === screen ? "active" : ""}`,
-        onclick: () => navTo(screen),
+        onclick: () => navTab(screen),
       }, ICON(iconName), el("span", {class: "tab-label"}, tr(labelKey)));
       root.appendChild(el("div", {class: "tabbar"},
         tab("home", "home", "home", "employee_home"),
@@ -4968,12 +3867,13 @@
       a.date.localeCompare(b.date) || a.start.localeCompare(b.start));
     for (const sh of sorted) {
       const shDate = new Date(sh.date + "T00:00:00");
+      const hrsCls = sh.hours < 9 ? "h warn" : "h ok";
       const drow = el("div", {class:"drow"},
         el("div", {class:"d"}, fmtDateWD(sh.date)),
         el("div", {class:"t"},
           timeRangeWithTz(sh.start, sh.end, sh.clockInTz, sh.clockOutTz, shDate),
         ),
-        el("div", {class:"h"}, `${sh.hours.toFixed(1)}${tr("hoursShort")}`),
+        el("div", {class: hrsCls}, `${sh.hours.toFixed(1)}${tr("hoursShort")}`),
       );
       if (sh.comment) {
         drow.appendChild(el("div", {class:"c"}, `"${sh.comment}"`));
@@ -5007,9 +3907,13 @@
       head.appendChild(el("span", {class:"status-pill pending"}, tr("weekPending")));
     } else {
       // Unsigned OR rejected — both show the submit button, rejected also shows the reason below.
+      // Disabled while the user is clocked in: the open shift hasn't been
+      // captured yet, so submitting now would short the week's hours.
+      const openShift = state.clock === "in";
       const label = status === "rejected" ? tr("resubmit") : tr("submitWeek");
       head.appendChild(el("button", {
-        class:"btn",
+        class:"btn primary",
+        disabled: openShift || undefined,
         onclick: async (ev) => {
           if (ev.currentTarget.disabled) return;
           const btn = ev.currentTarget;
@@ -5029,6 +3933,9 @@
           }
         },
       }, label));
+      if (openShift) {
+        left.appendChild(el("div", {class:"attest", style:"color: var(--accent-amber);"}, tr("submitBlockedOpenShift")));
+      }
     }
 
     const card = el("div", {class:"week-submit"}, head);
@@ -5082,18 +3989,23 @@
       id: "past-weeks-section",
       class: "signoff-label signoff-label--urgent",
     }, tr("needsAttention")));
+    const openShift = state.clock === "in";
     const list = el("div", {class:"past-weeks past-weeks--urgent"});
     for (const w of past) {
       const wkShifts = shiftsForWeek(u.id, w.wkStart);
       const btnLabel = w.rejectionComment ? tr("resubmit") : tr("submitWeek");
+      const leftCol = el("div", {class:"left"},
+        el("div", {class:"title"}, `${fmtDateWD(w.wkStart)} – ${fmtDateWD(weekEndOf(w.wkStart))}`),
+        el("div", {class:"sub"}, `${w.hours.toFixed(1)} ${tr("hours").toLowerCase()} · ${w.count} ${tr("shifts").toLowerCase()}`),
+      );
+      if (openShift) {
+        leftCol.appendChild(el("div", {class:"sub", style:"color: var(--accent-amber); margin-top: 4px;"}, tr("submitBlockedOpenShift")));
+      }
       const prow = el("div", {class: `prow ${w.rejectionComment ? "rejected" : ""}`},
-        el("div", {class:"head"},
-          el("div", {class:"left"},
-            el("div", {class:"title"}, `${fmtDateWD(w.wkStart)} – ${fmtDateWD(weekEndOf(w.wkStart))}`),
-            el("div", {class:"sub"}, `${w.hours.toFixed(1)} ${tr("hours").toLowerCase()} · ${w.count} ${tr("shifts").toLowerCase()}`),
-          ),
+        el("div", {class:"head"}, leftCol,
           el("button", {
-            class:"btn",
+            class:"btn primary",
+            disabled: openShift || undefined,
             onclick: async (ev) => {
               if (ev.currentTarget.disabled) return;
               ev.currentTarget.disabled = true;
@@ -5123,9 +4035,23 @@
 
   function clockSection() {
     const readonly = false; // employees are never readonly here
+    // If the current week has been approved by an admin, new shifts must
+    // not be silently added to it. Block clock-in entirely until next week.
+    const currentWeekApproved =
+      state.clock === "idle" &&
+      weekStatus(state.currentUser.id, thisWeekStart()) === "approved";
+    if (currentWeekApproved) {
+      return el("div", {class:"week-closed-card"},
+        el("div", {class:"icon"}, ICON("eye", 20)),
+        el("div", {class:"body"},
+          el("div", {class:"title"}, tr("weekClosedTitle")),
+          el("div", {class:"meta"}, tr("weekClosedBody")),
+        ),
+      );
+    }
     if (state.clock === "idle") {
       return el("button", {
-        class:"big-cta clock-in",
+        class:"btn hero clock-in",
         onclick: async () => {
           state.clock = "in";
           state.clockIn = new Date();
@@ -5158,7 +4084,7 @@
       }
       wrap.appendChild(el("div", {style:"height:14px"}));
       wrap.appendChild(el("button", {
-        class:"big-cta clock-out",
+        class:"btn hero clock-out",
         onclick: async () => {
           state.clock = "out";
           state.clockOut = new Date();
@@ -5223,7 +4149,7 @@
     wrap.appendChild(summaryEl);
     wrap.appendChild(el("div", {style:"height:14px"}));
     const submitBtn = el("button", {
-      class: "big-cta submit",
+      class: "btn primary full",
       onclick: async (ev) => {
         if (hrs < 9 && !state.comment.trim()) {
           commentField.focus();
@@ -5515,11 +4441,11 @@
     if (editReq && canApprove(u)) {
       root.appendChild(el("div", {class:"sd-action-row"},
         el("button", {
-          class:"sd-btn approve",
+          class:"btn primary",
           onclick: () => approveEditRequest(editReq.id),
         }, tr("approveEdit")),
         el("button", {
-          class:"sd-btn reject",
+          class:"btn danger",
           onclick: () => rejectEditRequest(editReq.id),
         }, tr("rejectEdit")),
       ));
@@ -5527,14 +4453,14 @@
     // Admin/owner direct edit button — always available (even after approval)
     if (canApprove(u)) {
       root.appendChild(el("button", {
-        class:"sd-btn primary sd-btn-full",
+        class:"btn primary full",
         style: "margin-top:8px;",
         onclick: () => { state.modal = "adminEditShift"; history.pushState({ modal: true }, ""); render(); },
       }, tr("adminEditTitle")));
     } else if (!editReq && isEmployee(u) && u.id === sh.empId && !weekIsLocked) {
       // Employee can request edit only if week isn't locked by approval.
       root.appendChild(el("button", {
-        class:"sd-btn primary sd-btn-full",
+        class:"btn primary full",
         onclick: () => { state.modal = "editShift"; history.pushState({ modal: true }, ""); render(); },
       }, tr("requestEdit")));
     } else if (!editReq && isEmployee(u) && u.id === sh.empId && weekIsLocked) {
@@ -5981,7 +4907,7 @@
                 err,
               ));
               submitBtn = el("button", {
-                class: "reject confirm",
+                class: "btn danger-confirm",
                 disabled: true,
                 onclick: async (ev) => {
                   const reason = reasonField.value.trim();
@@ -6005,7 +4931,7 @@
                 },
               }, tr("reject"));
               const cancelBtn = el("button", {
-                class: "cancel-ghost",
+                class: "btn",
                 onclick: () => { state.rejectingApproval = null; renderModal(); },
               }, tr("cancel"));
               const actions = el("div", {class:"actions"}, submitBtn, cancelBtn);
@@ -6015,11 +4941,11 @@
             } else {
               const actions = el("div", {class:"actions"},
                 el("button", {
-                  class:"reject",
+                  class:"btn danger",
                   onclick: () => { state.rejectingApproval = key; renderModal(); },
                 }, tr("reject")),
                 el("button", {
-                  class:"approve",
+                  class:"btn primary",
                   onclick: async (ev) => {
                     if (ev.currentTarget.disabled) return;
                     ev.currentTarget.disabled = true;
@@ -6071,14 +4997,14 @@
           if (canApprove(state.currentUser)) {
             row.appendChild(el("div", {class:"actions"},
               el("button", {
-                class:"reject",
+                class:"btn danger",
                 onclick: (ev) => {
                   const rowNode = ev.currentTarget.closest(".approval-row");
                   animateOutAndThen(rowNode, () => { rejectEditRequest(r.id); close(); });
                 },
               }, tr("rejectEdit")),
               el("button", {
-                class:"approve",
+                class:"btn primary",
                 onclick: (ev) => {
                   const rowNode = ev.currentTarget.closest(".approval-row");
                   animateOutAndThen(rowNode, () => { approveEditRequest(r.id); close(); });
@@ -6209,42 +5135,40 @@
       const inactive = users.filter(u => u.active === false);
       const rowFor = (u) => {
         const isSelf = u.id === me.id;
-        const row = el("div", {class:"manage-row"});
-        // Header: name + role on the left, destructive Deactivate on the
-        // right so it sits away from the primary Edit / Reset buttons below.
-        const header = el("div", {class:"header"},
+        const isActive = u.active !== false;
+        // Active rows are tap-to-edit (name + role + chevron). Deactivated
+        // rows show an inline Reactivate button since they aren't editable.
+        if (isActive) {
+          return el("div", {
+            class: "manage-row tappable",
+            onclick: () => { state.manageTargetId = u.id; state.modal = "editEmployee"; render(); },
+          },
+            el("div", {class:"left"},
+              el("div", {class:"name"}, u.displayName + (isSelf ? " (you)" : "")),
+              el("div", {class:"sub"}, `@${u.username} · ${tr(u.role)}`),
+            ),
+            el("div", {class:"chev"}, ICON("chevRight")),
+          );
+        }
+        const row = el("div", {class:"manage-row"},
           el("div", {class:"left"},
-            el("div", {class:"name"}, u.displayName + (isSelf ? " (you)" : "")),
+            el("div", {class:"name"}, u.displayName),
             el("div", {class:"sub"}, `@${u.username} · ${tr(u.role)}`),
           ),
         );
-        if (u.active !== false && !isSelf) {
-          header.appendChild(el("button", {
-            class: "btn danger",
-            onclick: () => { state.manageTargetId = u.id; state.modal = "confirmDeactivate"; render(); },
-          }, tr("deactivate")));
-        }
-        row.appendChild(header);
-        const actions = el("div", {class:"actions"});
-        if (u.active !== false) {
-          actions.appendChild(el("button", {class:"btn", onclick: () => { state.manageTargetId = u.id; state.modal = "editEmployee"; render(); }}, tr("editEmployee")));
-          actions.appendChild(el("button", {class:"btn", onclick: () => { state.manageTargetId = u.id; state.modal = "resetPasswordUser"; render(); }}, tr("resetPassword")));
-        } else {
-          actions.appendChild(el("button", {class:"btn primary", onclick: async (ev) => {
-            if (ev.currentTarget.disabled) return;
-            ev.currentTarget.disabled = true;
-            try {
-              await api.reactivateUser(u.id);
-              hydrateFromDb(await api.db());
-              toast(tr("userReactivated"), {kind:"success", pill:"✓"});
-              render();
-            } catch (e) {
-              ev.currentTarget.disabled = false;
-              toastApiError(e, state.lang === "es" ? "No se pudo reactivar" : "Couldn't reactivate");
-            }
-          }}, tr("reactivate")));
-        }
-        row.appendChild(actions);
+        row.appendChild(el("button", {class:"btn primary", onclick: async (ev) => {
+          if (ev.currentTarget.disabled) return;
+          ev.currentTarget.disabled = true;
+          try {
+            await api.reactivateUser(u.id);
+            hydrateFromDb(await api.db());
+            toast(tr("userReactivated"), {kind:"success", pill:"✓"});
+            render();
+          } catch (e) {
+            ev.currentTarget.disabled = false;
+            toastApiError(e, state.lang === "es" ? "No se pudo reactivar" : "Couldn't reactivate");
+          }
+        }}, tr("reactivate")));
         return row;
       };
       const list = el("div", {class:"manage-list"});
@@ -6259,6 +5183,10 @@
     } else if (state.modal === "editEmployee") {
       const target = users.find(x => x.id === state.manageTargetId);
       if (!target) { state.modal = "manageEmployees"; render(); return; }
+      const userIn = el("input", {
+        value: target.username,
+        autocapitalize: "off", autocorrect: "off", spellcheck: "false",
+      });
       const nameIn = el("input", { value: target.displayName });
       const roleSel = el("select", {},
         el("option", { value: "employee" }, tr("employee")),
@@ -6271,19 +5199,39 @@
       if (isSelf) roleSel.disabled = true;
       const err = el("div", {class:"err", style:"display:none"});
       const labelStyle = "font-size:11px; color:var(--text-muted); letter-spacing:0.4px; text-transform:uppercase; font-weight:700; display:block; margin-bottom:4px;";
-      card.appendChild(el("h3", {}, tr("editEmployee")));
-      card.appendChild(el("p", {style:"color:var(--text-muted); margin:-4px 0 10px;"}, `@${target.username}`));
+      card.appendChild(el("h3", {style:"margin-bottom:10px;"}, tr("editEmployee")));
+      card.appendChild(el("label", {style: labelStyle}, tr("username")));
+      card.appendChild(userIn);
       card.appendChild(el("label", {style: labelStyle}, tr("fullName")));
       card.appendChild(nameIn);
       card.appendChild(el("label", {style: labelStyle}, tr("role")));
       card.appendChild(roleSel);
       card.appendChild(err);
-      card.appendChild(el("div", {class:"actions"},
+      // Admin actions (Reset password, Deactivate) sit in their own row
+      // above the form actions (Cancel / Save). Deactivate is hidden when
+      // editing yourself since the Worker forbids self-deactivation.
+      const adminActions = el("div", {class:"actions", style:"justify-content: space-between; padding-bottom: 10px; border-bottom: 1px dashed var(--outline-soft);"});
+      adminActions.appendChild(el("button", {
+        class: "btn",
+        onclick: () => { state.modal = "resetPasswordUser"; render(); },
+      }, tr("resetPassword")));
+      if (!isSelf) {
+        adminActions.appendChild(el("button", {
+          class: "btn danger",
+          onclick: () => { state.modal = "confirmDeactivate"; render(); },
+        }, tr("deactivate")));
+      }
+      card.appendChild(adminActions);
+      const actions = el("div", {class:"actions"},
         el("button", {class:"btn", onclick: () => { state.modal = "manageEmployees"; render(); }}, tr("cancel")),
         el("button", {class:"btn primary", onclick: async (ev) => {
           if (ev.currentTarget.disabled) return;
           ev.currentTarget.disabled = true;
-          const patch = { id: target.id, displayName: nameIn.value.trim() };
+          const patch = {
+            id: target.id,
+            username: userIn.value.trim().toLowerCase(),
+            displayName: nameIn.value.trim(),
+          };
           if (!isSelf) patch.role = roleSel.value;
           try {
             await api.updateUser(patch);
@@ -6297,7 +5245,8 @@
             err.style.display = "block";
           }
         }}, tr("saveChanges")),
-      ));
+      );
+      card.appendChild(actions);
     } else if (state.modal === "resetPasswordUser") {
       const target = users.find(x => x.id === state.manageTargetId);
       if (!target) { state.modal = "manageEmployees"; render(); return; }
@@ -6308,7 +5257,7 @@
       card.appendChild(passIn);
       card.appendChild(err);
       card.appendChild(el("div", {class:"actions"},
-        el("button", {class:"btn", onclick: () => { state.modal = "manageEmployees"; render(); }}, tr("cancel")),
+        el("button", {class:"btn", onclick: () => { state.modal = "editEmployee"; render(); }}, tr("cancel")),
         el("button", {class:"btn primary", onclick: async (ev) => {
           const pw = passIn.value.trim();
           if (!pw) { err.textContent = tr("passwordRequired") || (state.lang === "es" ? "Contraseña obligatoria" : "Password required"); err.style.display = "block"; return; }
@@ -6317,7 +5266,7 @@
           try {
             await api.resetPassword(target.id, pw);
             toast(tr("passwordChanged"), {kind:"success", pill:"✓"});
-            state.modal = "manageEmployees";
+            state.modal = "editEmployee";
             render();
           } catch (e) {
             ev.currentTarget.disabled = false;
@@ -6332,8 +5281,8 @@
       card.appendChild(el("h3", {}, tr("deactivateConfirmTitle")));
       card.appendChild(el("p", {}, tr("deactivateConfirmBody", target.displayName)));
       card.appendChild(el("div", {class:"actions"},
-        el("button", {class:"btn", onclick: () => { state.modal = "manageEmployees"; render(); }}, tr("cancel")),
-        el("button", {class:"btn danger", onclick: async (ev) => {
+        el("button", {class:"btn", onclick: () => { state.modal = "editEmployee"; render(); }}, tr("cancel")),
+        el("button", {class:"btn danger-confirm", onclick: async (ev) => {
           if (ev.currentTarget.disabled) return;
           ev.currentTarget.disabled = true;
           try {

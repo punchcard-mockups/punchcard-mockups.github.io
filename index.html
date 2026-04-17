@@ -282,6 +282,29 @@
     border-color: var(--accent-amber);
   }
 
+  /* Compact greeting variant — used after the first render in a session.
+     Single-line, smaller, so the home doesn't keep spending ~120px above
+     the fold on a "Welcome, Alejandra A. / OWNER" block the user just saw. */
+  .greeting.greeting--compact {
+    padding: 6px 6px 8px;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .greeting.greeting--compact .name {
+    font-size: var(--fs-xl);
+    line-height: 1.1;
+    letter-spacing: -0.2px;
+  }
+  .greeting.greeting--compact .role-inline {
+    font-family: var(--tf-body);
+    font-style: italic;
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+  }
+  .greeting.greeting--compact .role-inline.readonly { color: var(--accent-amber); }
+
   /* Month nav */
   .month-nav {
     display: flex;
@@ -309,7 +332,7 @@
   }
   .cal .dows span {
     text-align: center;
-    font-size: 10px; font-weight: 700;
+    font-size: 12px; font-weight: 700;
     color: var(--text-secondary);
     letter-spacing: 0.6px;
   }
@@ -408,6 +431,21 @@
     gap: 10px;
     padding: 7px 2px;
     border-bottom: 1px solid var(--outline-soft);
+  }
+  /* Tappable-row affordance: small right-pointing chev tucked into the hours
+     cell so the name column keeps its full width (a separate chev column
+     squeezed names like "Maria R." down to "Maria"). */
+  .dd-table .trow .hrs {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    justify-content: flex-end;
+  }
+  .dd-table .trow .hrs .chev {
+    color: var(--text-muted);
+    font-size: 14px;
+    line-height: 1;
+    font-weight: 400;
   }
   .dd-table .trow:last-of-type { border-bottom: 0; }
   .dd-table .nm {
@@ -1228,20 +1266,15 @@
   }
   .hist-shift-card .hrs.ok { color: var(--accent-green); }
   .hist-shift-card .hrs.warn { color: var(--accent-red); }
-  .hist-shift-card .chips {
-    display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;
-  }
-  .hist-shift-card .chip {
+  /* Single-line time range under the date/hours row. Matches the visual
+     weight of `.dd-table .tm` so history and day-detail read consistently. */
+  .hist-shift-card .shift-time-line {
+    margin-top: 6px;
     font-family: var(--tf-body);
-    font-size: var(--fs-xs);
-    background: transparent;
-    padding: 4px 8px;
-    border-radius: 2px;
-    border: 1px solid var(--outline-soft);
-    color: var(--text-muted);
-    display: inline-flex; align-items: center; gap: 5px;
+    font-size: var(--fs-sm);
+    color: var(--text-secondary);
+    font-variant-numeric: tabular-nums;
   }
-  .hist-shift-card .chip svg { width: 11px; height: 11px; }
   .hist-shift-card .comment {
     margin-top: 8px;
     font-family: var(--tf-body);
@@ -1391,32 +1424,31 @@
   @media (hover: hover) {
     .w-status-menu-item.confirm:hover { background: var(--accent-red); }
   }
-  /* Shift cards inside an expanded week sit slightly inset from the rail */
-  /* Shifts inside an expanded week card sit below a dashed separator.
-     First shift gets the separator; subsequent shifts get a lighter
-     inter-shift rule so the week reads as one unit. */
-  .week-group .hist-shift-card {
+  /* Shifts nested inside a "week roll-up" card (history `.week-group`,
+     home `.week-submit`, and `.past-weeks .prow`) all share the same
+     compact treatment: dashed separator above the first, dotted between,
+     date demoted from a Gloock headline to a body-font data row. The
+     marker class `.week-rollup` is added to every container that wants
+     this so we don't have to chain three selectors here. */
+  .week-rollup .hist-shift-card {
     margin-top: 0;
     padding: 12px 0;
     background: transparent;
     border-bottom: 1px dotted var(--outline-soft);
   }
-  /* Inside a week card, the day label sits below the week heading as a
-     data row, not a second headline. Body font, tighter size, less
-     presence than the week title. */
-  .week-group .hist-shift-card .date {
+  .week-rollup .hist-shift-card .date {
     font-family: var(--tf-body);
     font-weight: 600;
     font-size: var(--fs-base);
     letter-spacing: 0;
     color: var(--text-secondary);
   }
-  .week-group .hist-shift-card:first-of-type {
+  .week-rollup .hist-shift-card:first-of-type {
     margin-top: 12px;
     padding-top: 12px;
     border-top: 1px dashed var(--outline-soft);
   }
-  .week-group .hist-shift-card:last-of-type { border-bottom: 0; padding-bottom: 0; }
+  .week-rollup .hist-shift-card:last-of-type { border-bottom: 0; padding-bottom: 0; }
 
   /* Map */
   /* Compact thumbnail variant for the clock-in/out card: shorter, no legend,
@@ -1594,10 +1626,12 @@
     line-height: 1.4;
   }
   .signoff-label--urgent { color: var(--accent-amber) !important; }
+  /* Urgent past-weeks card: full amber border + tinted background. The previous
+     treatment used a thick left-stripe (`border-left-width: 3px`) which is
+     BAN 1 in `.impeccable.md` — never use a side stripe as an accent indicator. */
   .past-weeks--urgent {
-    border: 1px solid rgba(245,158,11,.35);
-    border-left-width: 3px;
-    border-left-color: var(--accent-amber);
+    border: 1px solid rgba(245,158,11,.5);
+    background: color-mix(in oklab, var(--accent-amber) 5%, var(--surface-card));
   }
 
   .signoff-label {
@@ -1824,12 +1858,16 @@
   /* The week card itself provides padding; the header just stretches
      across it and lifts the cursor to hint tappability. */
   .approval-row .total { display: flex; align-items: center; gap: 8px; }
+  /* Row-expand chevron: right-pointing when collapsed, rotates to down when
+     open. The previous treatment used a downward arrow that read like a
+     dropdown trigger. */
   .chevron {
-    font-size: 10px; color: var(--text-muted);
-    transition: transform 150ms ease;
+    font-size: 14px; color: var(--text-muted);
+    transition: transform 180ms cubic-bezier(.2,.8,.2,1);
     display: inline-block;
+    line-height: 1;
   }
-  .chevron.up { transform: rotate(180deg); }
+  .chevron.up { transform: rotate(90deg); }
 
   /* Shared shift breakdown list */
   .breakdown {
@@ -1883,10 +1921,10 @@
     text-align: center;
     padding: 4px 0;
   }
-  /* When breakdown appears inside another card, add a divider on top */
-  .approval-row .breakdown,
-  .week-submit .breakdown,
-  .past-weeks .prow .breakdown {
+  /* When breakdown appears inside another card, add a divider on top.
+     Only the admin approvals modal still uses `.breakdown` — home and
+     past-weeks render `renderShiftCard()` instead via `.week-rollup`. */
+  .approval-row .breakdown {
     margin-top: 10px;
     padding-top: 10px;
     border-top: 1px dashed var(--outline-soft);
@@ -1980,13 +2018,15 @@
   .lang-toggle { background: oklch(93% 0.02 85); border: 1px solid var(--outline-soft); }
   .lang-toggle .slider { background: var(--accent-blue); box-shadow: none; }
   .lang-toggle .opt.active { color: oklch(96% 0.015 85); }
-  /* Calendar */
+  /* Calendar — single-letter dow labels need to be legible at arm's length
+     end-of-shift, so we bump from 10px italic to 12px upright. The italic
+     read like noise at small sizes on Android. */
   .cal .dows span {
     font-family: var(--tf-body);
-    font-style: italic;
-    font-weight: 500;
+    font-style: normal;
+    font-weight: 600;
     color: var(--text-muted);
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 0.8px;
     text-transform: none;
   }
@@ -2641,6 +2681,27 @@
     return "";
   };
 
+  // Greeting block for home screens. Full "Welcome, / Name / [ROLE]" on the
+  // very first home render of a session; compact single line "Name · Role"
+  // after that, since the user just saw it. The flag is per-tab — opening a
+  // fresh tab gets the full greeting again. Returns a DOM node.
+  function greetingBlock(u, opts={}) {
+    const showRole = opts.showRole !== false;
+    const greeted = (() => { try { return sessionStorage.getItem("pc_greeted"); } catch { return null; } })();
+    if (greeted) {
+      return el("div", {class:"greeting greeting--compact"},
+        el("span", {class:"name"}, u.displayName),
+        showRole && roleLabel(u) ? el("span", {class:`role-inline ${isReadonly(u) ? "readonly" : ""}`}, "· " + roleLabel(u)) : null,
+      );
+    }
+    try { sessionStorage.setItem("pc_greeted", "1"); } catch { /* private mode */ }
+    return el("div", {class:"greeting"},
+      el("div", {class:"hello"}, tr("welcome")),
+      el("div", {class:"name"}, u.displayName),
+      showRole && roleLabel(u) ? el("div", {class:`role ${isReadonly(u) ? "readonly" : ""}`}, roleLabel(u)) : null,
+    );
+  }
+
   function weekStatus(empId, weekStart) {
     const wa = weekApprovals.find(w => w.empId === empId && w.weekStart === weekStart);
     return wa ? wa.status : null;
@@ -2715,7 +2776,7 @@
       weekPending: "Pending review",
       weekApproved: "Approved",
       weekRejected: "Rejected",
-      weeklySignoff: "Weekly submission",
+      weeklySignoff: "Current week",
       signoffAttest: "By submitting you confirm these hours are accurate.",
       pastWeeksSignoffTitle: "Past weeks to submit",
       noPastWeeks: "All past weeks submitted.",
@@ -2760,8 +2821,13 @@
       shiftDetailTitle: "Shift detail",
       requestEdit: "Request edit",
       editShiftTitle: "Edit shift",
-      editComment: "Why are you requesting this edit?",
+      requestEditTitle: "Request shift change",
+      requestEditSubmit: "Send request",
+      requestEditHelper: "Your admin will review and apply this.",
+      reasonRequiredLabel: "Reason (required)",
+      editComment: "Tell your admin what needs to change…",
       editShiftCommentAction: "Edit note",
+      addNoteAction: "Add note",
       editShiftCommentTitle: "Edit your note",
       editShiftCommentPlaceholder: "Add or change a note about this shift…",
       noteSaved: "Note saved",
@@ -2806,8 +2872,8 @@
       userReactivated: "User reactivated",
       role: "Role",
       employee: "Employee",
-      needsAttention: "Needs your attention",
-      unsubmittedBanner: (n) => `${n} unsubmitted week${n > 1 ? "s" : ""} — tap to submit`,
+      needsAttention: "Previous weeks",
+      unsubmittedBanner: (n) => `${n} unsubmitted week${n > 1 ? "s" : ""} — tap to view`,
     },
     es: {
       appName: "PunchCard",
@@ -2848,7 +2914,7 @@
       weekPending: "Pendiente de revisión",
       weekApproved: "Aprobado",
       weekRejected: "Rechazada",
-      weeklySignoff: "Validación semanal",
+      weeklySignoff: "Esta semana",
       signoffAttest: "Al validar confirmas que estas horas son correctas.",
       pastWeeksSignoffTitle: "Semanas anteriores sin validar",
       noPastWeeks: "Todas las semanas anteriores están validadas.",
@@ -2893,8 +2959,13 @@
       shiftDetailTitle: "Detalle del turno",
       requestEdit: "Solicitar cambio",
       editShiftTitle: "Editar turno",
-      editComment: "¿Por qué solicitas este cambio?",
+      requestEditTitle: "Solicitar cambio de turno",
+      requestEditSubmit: "Enviar solicitud",
+      requestEditHelper: "Tu admin lo revisará y lo aplicará.",
+      reasonRequiredLabel: "Motivo (obligatorio)",
+      editComment: "Cuéntale a tu admin qué debe cambiar…",
       editShiftCommentAction: "Editar nota",
+      addNoteAction: "Añadir nota",
       editShiftCommentTitle: "Editar tu nota",
       editShiftCommentPlaceholder: "Añade o cambia una nota sobre este turno…",
       noteSaved: "Nota guardada",
@@ -2939,8 +3010,8 @@
       userReactivated: "Usuario reactivado",
       role: "Rol",
       employee: "Empleado",
-      needsAttention: "Necesita tu atención",
-      unsubmittedBanner: (n) => `${n} semana${n > 1 ? "s" : ""} sin enviar — toca para enviar`,
+      needsAttention: "Semanas anteriores",
+      unsubmittedBanner: (n) => `${n} semana${n > 1 ? "s" : ""} sin enviar — toca para ver`,
     },
   };
   function tr(k, ...args) {
@@ -3404,14 +3475,17 @@
           style:"cursor:pointer; touch-action:manipulation;",
           onclick: () => navTo("shift_detail", { viewingShiftId: sh.id }),
         },
-          el("span", {class:"nm"},
+          el("span", {class:"nm", style:`color:${emp.color}`},
             el("span", {class:"sw", style:`background:${emp.color}`}),
             el("span", {}, emp.displayName),
           ),
           el("span", {class:"tm"},
             timeRangeWithTz(sh.start, sh.end, sh.clockInTz, sh.clockOutTz, new Date(sh.date + "T00:00:00")),
           ),
-          el("span", {class:"hrs", style:`color:${emp.color}`}, sh.hours.toFixed(1)),
+          el("span", {class:"hrs", style:`color:${emp.color}`},
+            el("span", {}, sh.hours.toFixed(1)),
+            el("span", {class:"chev"}, "›"),
+          ),
         ));
         if (sh.comment) t.appendChild(el("div", {class:"cmt"}, `"${sh.comment}"`));
       }
@@ -3666,10 +3740,7 @@
     const root = document.getElementById("scrollRoot");
     root.innerHTML = "";
 
-    root.appendChild(el("div", {class:"greeting"},
-      el("div", {class:"hello"}, tr("welcome")),
-      el("div", {class:"name"}, u.displayName),
-    ));
+    root.appendChild(greetingBlock(u, { showRole: false }));
 
     // Today's date + Clock-in (primary action, at the top)
     const todayLabel = new Date().toLocaleDateString(locale(),
@@ -3782,13 +3853,17 @@
       }
     }
 
-    const card = el("div", {class:"week-submit"}, head);
+    const card = el("div", {class:"week-submit week-rollup"}, head);
     if (status === "rejected" && rejectionComment) {
       card.appendChild(rejectionNotice(rejectionComment));
     }
-    if (wkShifts.length) {
-      card.appendChild(weekShiftBreakdown(wkShifts));
-    }
+    // Use the same shift card the history page uses, so the home/current-week
+    // and history/past-week views look identical when listing shifts. The
+    // `.week-rollup` marker on the parent triggers the inside-week treatment
+    // (compact date, dotted separators) defined once in CSS.
+    const sortedWkShifts = [...wkShifts].sort((a,b) =>
+      a.date.localeCompare(b.date) || a.start.localeCompare(b.start));
+    for (const sh of sortedWkShifts) card.appendChild(renderShiftCard(sh));
     return card;
   }
 
@@ -3845,7 +3920,7 @@
       if (openShift) {
         leftCol.appendChild(el("div", {class:"sub", style:"color: var(--accent-amber); margin-top: 4px;"}, tr("submitBlockedOpenShift")));
       }
-      const prow = el("div", {class: `prow ${w.rejectionComment ? "rejected" : ""}`},
+      const prow = el("div", {class: `prow week-rollup ${w.rejectionComment ? "rejected" : ""}`},
         el("div", {class:"head"}, leftCol,
           el("button", {
             class:"btn primary",
@@ -3869,8 +3944,10 @@
           }, btnLabel),
         ),
         w.rejectionComment ? rejectionNotice(w.rejectionComment) : null,
-        weekShiftBreakdown(wkShifts),
       );
+      const sortedPastShifts = [...wkShifts].sort((a,b) =>
+        a.date.localeCompare(b.date) || a.start.localeCompare(b.start));
+      for (const sh of sortedPastShifts) prow.appendChild(renderShiftCard(sh));
       list.appendChild(prow);
     }
     wrap.appendChild(list);
@@ -4086,12 +4163,10 @@
     root.innerHTML = "";
     const readonly = isReadonly(u);
 
-    root.appendChild(el("div", {class:"greeting"},
-      el("div", {class:"hello"}, tr("welcome")),
-      el("div", {class:"name"}, u.displayName),
-      el("div", {class:`role ${readonly ? "readonly":""}`}, roleLabel(u)),
-      readonly ? el("div", {class:"readonly-banner"}, ICON("eye", 14), el("span", {}, tr("readonlyBanner"))) : null,
-    ));
+    root.appendChild(greetingBlock(u, { showRole: true }));
+    if (readonly) {
+      root.appendChild(el("div", {class:"readonly-banner", style:"margin: 0 6px 10px;"}, ICON("eye", 14), el("span", {}, tr("readonlyBanner"))));
+    }
 
     root.appendChild(monthNav());
 
@@ -4114,7 +4189,7 @@
         el("div", {class:"av", style:`background:color-mix(in oklab, ${e.color} 22%, transparent); color:${e.color}`}, e.displayName.charAt(0)),
         el("div", {class:"body"},
           el("div", {class:"name"},
-            el("span", {}, e.displayName),
+            el("span", {style:`color:${e.color}`}, e.displayName),
             hasPending ? el("span", {class:"badge"}, tr("weekPending")) : null,
           ),
           el("div", {class:"meta"}, "@" + e.username),
@@ -4130,25 +4205,22 @@
     const root = document.getElementById("scrollRoot");
     root.innerHTML = "";
 
-    // Employee header
+    // Employee header — admin "Add shift" sits on the right, demoted from a
+    // full-width primary CTA: this screen is for review, not action.
     root.appendChild(el("div", {class:"greeting", style:"display:flex; align-items:center; gap:14px;"},
       el("div", {
         style: `width:56px; height:56px; border-radius:50%; background:color-mix(in oklab, ${e.color} 22%, transparent); color:${e.color}; display:grid; place-items:center; font-size:22px; font-weight:800;`
       }, e.displayName.charAt(0)),
-      el("div", {style:"flex:1"},
+      el("div", {style:"flex:1; min-width:0;"},
         el("div", {class:"name", style:"font-size:22px;"}, e.displayName),
         el("div", {class:"hello", style:"font-size:12px;"}, "@" + e.username),
       ),
-    ));
-
-    // Admin action: add a missed shift for this employee.
-    if (canApprove(state.currentUser)) {
-      root.appendChild(el("button", {
-        class: "btn primary full",
-        style: "margin-top:12px;",
+      canApprove(state.currentUser) ? el("button", {
+        class: "btn primary",
+        style: "padding:10px 14px; font-size:11px; flex:0 0 auto;",
         onclick: () => { state.modal = "addShift"; history.pushState({ modal: true }, ""); render(); },
-      }, tr("addShiftAction")));
-    }
+      }, tr("addShiftAction")) : null,
+    ));
 
     // Admin view: show employee history (shift list + map)
     const empShifts = shifts.filter(s => s.empId === e.id)
@@ -4212,19 +4284,27 @@
       return;
     }
     const emp = userById[sh.empId];
+    // Hospice nurses typically work full ≥9-hour shifts; anything shorter is
+    // usually an incomplete clock-out, half-day, or accidental tap. Surface it
+    // visually (red `warn` vs green `ok`) so admins notice on glance — not a
+    // hard error, just a nudge.
     const ok = sh.hours >= 9;
     const u = state.currentUser;
     const editReq = pendingEditRequestFor(sh.id);
 
-    // Header: who + when + hours
+    // Header: who + when + hours.
+    // For an employee viewing their OWN shift, the avatar + name are pure
+    // chrome — they already know who they are. Strip them and lead with the
+    // date so the eye lands on the relevant info (when + hours) faster.
+    const isSelfView = isEmployee(u) && sh.empId === u.id;
     root.appendChild(el("div", {
       style:"display:flex; align-items:center; gap:12px; padding: 4px 0 2px;"
     },
-      el("div", {
+      isSelfView ? null : el("div", {
         style:`width:40px;height:40px;border-radius:50%;background:color-mix(in oklab, ${emp.color} 22%, transparent);color:${emp.color};display:grid;place-items:center;font-weight:700;font-size:15px;flex:0 0 auto;`
       }, emp.displayName.charAt(0)),
       el("div", {style:"flex:1; min-width:0"},
-        el("div", {class:"sd-name"}, emp.displayName),
+        isSelfView ? null : el("div", {class:"sd-name", style:`color:${emp.color}`}, emp.displayName),
         el("div", {class:"sd-date"}, fmtDateLong(sh.date)),
       ),
       el("div", {
@@ -4355,7 +4435,7 @@
           class:"btn full",
           style: "margin-top:8px;",
           onclick: () => { state.modal = "editShiftComment"; history.pushState({ modal: true }, ""); render(); },
-        }, tr("editShiftCommentAction")));
+        }, sh.comment ? tr("editShiftCommentAction") : tr("addNoteAction")));
       }
       root.appendChild(el("button", {
         class:"btn primary full",
@@ -4398,10 +4478,11 @@
   }
 
   function renderShiftCard(sh) {
+    // <9h flags potentially anomalous shifts (incomplete clock-out, half-day,
+    // accidental). Real shifts under this threshold are uncommon for hospice
+    // work — surface for admin glance, not a hard error.
     const ok = sh.hours >= 9;
     const shDate = new Date(sh.date + "T00:00:00");
-    const inTz  = sh.clockInTz  ? tzShort(sh.clockInTz,  shDate) : "";
-    const outTz = sh.clockOutTz ? tzShort(sh.clockOutTz, shDate) : "";
     const editedN = sh.adminEdits?.length || 0;
     return el("div", {
       class: `hist-shift-card ${editedN > 0 ? "edited" : ""}`,
@@ -4416,19 +4497,11 @@
         ),
         el("div", {class:`hrs ${ok ? "ok":"warn"}`}, `${sh.hours.toFixed(1)}${tr("hoursShort")}`),
       ),
-      el("div", {class:"chips"},
-        el("span", {class:"chip"},
-          el("span", {},
-            `${tr("start")} ${fmt12(sh.start)}`,
-            inTz ? el("span", {class:"tz-inline"}, inTz) : null,
-          ),
-        ),
-        el("span", {class:"chip"},
-          el("span", {},
-            `${tr("end")} ${fmt12(sh.end)}`,
-            outTz ? el("span", {class:"tz-inline"}, outTz) : null,
-          ),
-        ),
+      // Single-line time range (was two `.chip` rectangles for Start / End,
+      // which created a heavy second row of visual noise on the history list).
+      // Matches the day-detail table treatment.
+      el("div", {class:"shift-time-line"},
+        timeRangeWithTz(sh.start, sh.end, sh.clockInTz, sh.clockOutTz, shDate),
       ),
       sh.comment ? el("div", {class:"comment"}, `"${sh.comment}"`) : null,
     );
@@ -4440,7 +4513,7 @@
   function appendGroupedShifts(root, sortedShifts, empId) {
     if (!sortedShifts.length) return;
     if (state.expandedHistoryWeeks == null) {
-      state.expandedHistoryWeeks = new Set([thisWeekStart()]);
+      state.expandedHistoryWeeks = new Set();
     }
     const expanded = state.expandedHistoryWeeks;
 
@@ -4536,9 +4609,9 @@
           }
           right.appendChild(pill);
         }
-        right.appendChild(el("span", {class: `chevron ${isOpen ? "up" : ""}`}, "▾"));
+        right.appendChild(el("span", {class: `chevron ${isOpen ? "up" : ""}`}, "›"));
 
-        const group = el("div", {class: `week-group ${status || ""}`});
+        const group = el("div", {class: `week-group week-rollup ${status || ""}`});
         group.appendChild(el("div", {
           class:"hist-week-head expandable",
           onclick: () => {
@@ -4749,10 +4822,13 @@
       );
       const err = el("div", {class:"err", style:"display:none"});
       card.appendChild(el("h3", {}, tr("addUser")));
+      card.appendChild(el("label", {class:"field-label"}, tr("fullName")));
       card.appendChild(nameIn);
+      card.appendChild(el("label", {class:"field-label"}, tr("username")));
       card.appendChild(userIn);
+      card.appendChild(el("label", {class:"field-label"}, tr("password")));
       card.appendChild(passIn);
-      card.appendChild(el("div", {class:"field-label", style:"font-size:11px; font-weight:700; letter-spacing:.4px; text-transform:uppercase; color:var(--text-secondary); margin:2px 4px 6px;"}, tr("role")));
+      card.appendChild(el("label", {class:"field-label"}, tr("role")));
       card.appendChild(roleSel);
       card.appendChild(err);
       // Add user is always opened from inside Manage users — Cancel/Save
@@ -4824,7 +4900,7 @@
               el("div", {class:"who", style:`color:${emp.color}`}, emp.displayName),
               el("div", {class:"total"},
                 `${wkHours.toFixed(1)}${tr("hoursShort")}`,
-                el("span", {class: `chevron ${isExpanded ? "up" : ""}`}, "▾"),
+                el("span", {class: `chevron ${isExpanded ? "up" : ""}`}, "›"),
               ),
             ),
             el("div", {class:"week"}, `${fmtDateWD(w.weekStart)} – ${fmtDateWD(weekEndOf(w.weekStart))} · ${wkShifts.length} ${tr("shifts").toLowerCase()}`),
@@ -5012,7 +5088,7 @@
         el("span", {class:"tz-row-label"}, tr("timezone")),
         tzIn,
       ));
-      card.appendChild(el("label", {class:"field-label"}, tr("commentLabel")));
+      card.appendChild(el("label", {class:"field-label"}, tr("reasonRequiredLabel")));
       card.appendChild(noteIn);
       card.appendChild(err);
       card.appendChild(el("div", {class:"actions"},
@@ -5094,13 +5170,13 @@
       const endIn   = el("input", { type:"time", value: sh.end });
       const noteIn  = el("textarea", { rows: 3, placeholder: tr("editComment") });
       const err = el("div", {class:"err", style:"display:none"});
-      card.appendChild(el("h3", {}, tr("editShiftTitle")));
-      card.appendChild(el("p", {}, fmtDateLong(sh.date)));
+      card.appendChild(el("h3", {}, tr("requestEditTitle")));
+      card.appendChild(el("p", {}, fmtDateLong(sh.date) + " · " + tr("requestEditHelper")));
       card.appendChild(el("label", {class:"field-label"}, tr("start")));
       card.appendChild(startIn);
       card.appendChild(el("label", {class:"field-label"}, tr("end")));
       card.appendChild(endIn);
-      card.appendChild(el("label", {class:"field-label"}, tr("commentLabel")));
+      card.appendChild(el("label", {class:"field-label"}, tr("reasonRequiredLabel")));
       card.appendChild(noteIn);
       card.appendChild(err);
       card.appendChild(el("div", {class:"actions"},
@@ -5135,7 +5211,7 @@
             err.textContent = e.message || (state.lang === "es" ? "No se pudo enviar" : "Couldn't submit");
             err.style.display = "block";
           }
-        }}, tr("save")),
+        }}, tr("requestEditSubmit")),
       ));
     } else if (state.modal === "adminEditShift") {
       // Admin/owner direct-edit: saves the shift immediately (no approval loop)
@@ -5153,7 +5229,7 @@
       card.appendChild(startIn);
       card.appendChild(el("label", {class:"field-label"}, tr("end")));
       card.appendChild(endIn);
-      card.appendChild(el("label", {class:"field-label"}, tr("adminEditReason")));
+      card.appendChild(el("label", {class:"field-label"}, tr("reasonRequiredLabel")));
       card.appendChild(noteIn);
       card.appendChild(err);
       card.appendChild(el("div", {class:"actions"},

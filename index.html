@@ -847,7 +847,9 @@
     line-height: 1.4;
   }
   /* Same shape as the read-only .sd-comment so the two render identically
-     at a glance; the textarea variant just becomes editable on focus. */
+     at a glance; the textarea variant just becomes editable on focus. Starts
+     at a single line and grows naturally as the user types (see the JS
+     autosize wiring on input). No manual resize handle. */
   .sd-comment-input {
     display: block;
     width: 100%;
@@ -860,7 +862,8 @@
     font-style: italic;
     line-height: 1.4;
     font-family: inherit;
-    resize: vertical;
+    resize: none;
+    overflow: hidden;
     min-height: 44px;
     outline: none;
     transition: border-color 150ms ease, background 150ms ease;
@@ -1134,6 +1137,10 @@
     transition: border-color 150ms ease;
   }
   .modal-card input:focus, .modal-card textarea:focus { border-color: var(--accent-blue); }
+  /* Marker class: textarea auto-grows from one line via JS (see the
+     `autosize` handler attached per field). Disable manual resize + hide
+     the transient scrollbar that briefly appears while scrollHeight settles. */
+  .modal-card textarea.ta-autosize { resize: none; overflow: hidden; }
 
   /* Prevent iOS Safari from auto-zooming the viewport when a form field is
      focused. It only zooms if the focused field's computed font-size is under
@@ -1266,10 +1273,46 @@
 
   /* History screen */
   .hist-shift-card {
+    position: relative;
     background: transparent;
     border-bottom: 1px solid var(--outline-soft);
-    padding: 14px 4px;
+    padding: 14px 22px 14px 4px;
     margin-top: 0;
+    touch-action: manipulation;
+    transition: background 150ms ease;
+  }
+  /* Tap affordance: every shift card opens a detail sheet. A small right-
+     edge chevron hints at that without crowding the row; it sharpens on
+     hover/press so the affordance is felt, not just seen. */
+  .hist-shift-card::after {
+    content: "›";
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: var(--tf-display);
+    font-size: 20px;
+    line-height: 1;
+    color: var(--text-muted);
+    opacity: .45;
+    pointer-events: none;
+    transition: opacity 150ms ease, transform 150ms ease, right 150ms ease;
+  }
+  @media (hover: hover) {
+    .hist-shift-card:hover {
+      background: color-mix(in oklab, var(--text-primary) 4%, transparent);
+    }
+    .hist-shift-card:hover::after {
+      opacity: .95;
+      right: 1px;
+    }
+  }
+  .hist-shift-card:active {
+    background: color-mix(in oklab, var(--text-primary) 7%, transparent);
+  }
+  .hist-shift-card:active::after {
+    opacity: 1;
+    transform: translateY(-50%) translateX(1px);
   }
   .hist-shift-card .top {
     display: flex; justify-content: space-between; align-items: center;
@@ -1459,7 +1502,7 @@
      this so we don't have to chain three selectors here. */
   .week-rollup .hist-shift-card {
     margin-top: 0;
-    padding: 12px 0;
+    padding: 12px 22px 12px 0;
     background: transparent;
     border-bottom: 1px dotted var(--outline-soft);
   }
@@ -1838,21 +1881,6 @@
     font-style: italic;
     color: var(--text-secondary);
     line-height: 1.35;
-  }
-
-  /* "Approved — locked for editing" notice shown to the employee when they
-     try to open a shift in an admin-approved week. */
-  .sd-locked-notice {
-    margin-top: 8px;
-    padding: 10px 12px;
-    font-size: 12px;
-    color: var(--accent-green-light);
-    background: rgba(16,185,129,.08);
-    border: 1px dashed rgba(16,185,129,.35);
-    border-radius: 8px;
-    text-align: center;
-    font-weight: 600;
-    letter-spacing: 0.2px;
   }
 
   /* "✎" admin-edit marker on a shift card — placed next to the date so the
@@ -3251,7 +3279,6 @@
       confirmReject: "Reject with reason",
       rejectedByAdmin: "Rejected by admin",
       resubmit: "Resubmit",
-      lockedAfterApproval: "Approved — locked for editing",
       weekClosedTitle: "This week is approved",
       weekClosedBody: "Your admin has already approved this week's timesheet. New shifts can't be added until next week. If something needs to change, ask your admin to reopen the week.",
       weekPendingTitle: "Week submitted",
@@ -3289,7 +3316,7 @@
       requestEditSubmit: "Send request",
       requestEditHelper: "Your admin will review and apply this.",
       reasonRequiredLabel: "Reason (required)",
-      editComment: "Tell your admin what needs to change…",
+      editComment: "Why does this shift need to change?",
       editShiftCommentPlaceholder: "Add a comment about this shift…",
       noteSaved: "Comment saved",
       addShiftAction: "Add shift",
@@ -3392,7 +3419,6 @@
       confirmReject: "Rechazar con motivo",
       rejectedByAdmin: "Rechazada por el admin",
       resubmit: "Enviar de nuevo",
-      lockedAfterApproval: "Aprobada — bloqueada para editar",
       weekClosedTitle: "Esta semana está aprobada",
       weekClosedBody: "Tu admin ya aprobó la planilla de esta semana. No se pueden añadir turnos hasta la próxima semana. Si algo debe cambiar, pide a tu admin que reabra la semana.",
       weekPendingTitle: "Semana enviada",
@@ -3430,7 +3456,7 @@
       requestEditSubmit: "Enviar solicitud",
       requestEditHelper: "Tu admin lo revisará y lo aplicará.",
       reasonRequiredLabel: "Motivo (obligatorio)",
-      editComment: "Cuéntale a tu admin qué debe cambiar…",
+      editComment: "¿Por qué necesita cambiar este turno?",
       editShiftCommentPlaceholder: "Añade un comentario sobre este turno…",
       noteSaved: "Comentario guardado",
       addShiftAction: "Añadir turno",
@@ -5304,11 +5330,20 @@
       root.appendChild(el("div", {class:"sd-section-label"}, tr("commentLabel")));
       const ta = el("textarea", {
         class: "sd-comment-input",
-        rows: 2,
+        rows: 1,
         placeholder: tr("editShiftCommentPlaceholder"),
       });
       ta.value = sh.comment || "";
       root.appendChild(ta);
+      // Auto-grow: starts at one line; grows to fit the content as the user
+      // types. `overflow: hidden` in CSS prevents the scrollbar flicker that
+      // would otherwise appear for a single frame when the height snaps.
+      const autosize = () => {
+        ta.style.height = "auto";
+        ta.style.height = ta.scrollHeight + "px";
+      };
+      ta.addEventListener("input", autosize);
+      queueMicrotask(autosize);
       const original = sh.comment || "";
       const shiftId = sh.id;
       pendingCommentFlush = async () => {
@@ -5426,9 +5461,6 @@
         style: "margin-top:8px;",
         onclick: () => openModal("editShift"),
       }, tr("requestEdit")));
-    } else if (!editReq && isEmployee(u) && u.id === sh.empId && weekIsLocked) {
-      // Approved-week lock notice.
-      root.appendChild(el("div", {class:"sd-locked-notice"}, tr("lockedAfterApproval")));
     }
 
     root.appendChild(el("div", {style:"height:40px"}));
@@ -5895,7 +5927,7 @@
       if (!sh) { close(); return; }
       const startIn = el("input", { type:"time", value: sh.start });
       const endIn   = el("input", { type:"time", value: sh.end });
-      const noteIn  = el("textarea", { rows: 3, placeholder: tr("editComment") });
+      const noteIn  = el("textarea", { class:"ta-autosize", rows: 1, placeholder: tr("editComment") });
       const err = el("div", {class:"err", style:"display:none"});
       card.appendChild(el("h3", {}, tr("requestEditTitle")));
       card.appendChild(el("p", {}, fmtDateLong(sh.date) + " · " + tr("requestEditHelper")));
@@ -5905,10 +5937,14 @@
       card.appendChild(endIn);
       card.appendChild(el("label", {class:"field-label"}, tr("reasonRequiredLabel")));
       card.appendChild(noteIn);
+      const autosizeNote = () => {
+        noteIn.style.height = "auto";
+        noteIn.style.height = noteIn.scrollHeight + "px";
+      };
+      noteIn.addEventListener("input", autosizeNote);
+      queueMicrotask(autosizeNote);
       card.appendChild(err);
-      card.appendChild(el("div", {class:"actions"},
-        el("button", {class:"btn", onclick: close}, tr("cancel")),
-        el("button", {class:"btn primary", onclick: async (ev) => {
+      const submitBtn = el("button", {class:"btn primary", disabled: true, onclick: async (ev) => {
           const start = startIn.value;
           const end = endIn.value;
           const comment = noteIn.value.trim();
@@ -5938,7 +5974,16 @@
             err.textContent = e.message || (state.lang === "es" ? "No se pudo enviar" : "Couldn't submit");
             err.style.display = "block";
           }
-        }}, tr("requestEditSubmit")),
+        }}, tr("requestEditSubmit"));
+      // Live gate: Send stays disabled until the reason has real text.
+      noteIn.addEventListener("input", () => {
+        submitBtn.disabled = noteIn.value.trim().length === 0;
+      });
+      // No Cancel button on this sheet — tapping the scrim or using back
+      // dismisses it, consistent with how the user already interacts with
+      // other drill-in sheets.
+      card.appendChild(el("div", {class:"actions"},
+        submitBtn,
       ));
     } else if (state.modal === "adminEditShift") {
       // Admin/owner direct-edit: saves the shift immediately (no approval loop)

@@ -2927,6 +2927,52 @@
   function getToken() { try { return localStorage.getItem(TOKEN_KEY); } catch { return null; } }
   function setToken(t) { try { t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY); } catch {} }
 
+  // Mid-shift clock state ("in" or "out", with start time, coords, tz, and
+  // comment-in-progress) must survive a reload — closing the tab in the
+  // middle of a shift used to lose everything because state.clock and
+  // friends are in-memory only. Persist per-user so signing in as a
+  // different user doesn't inherit the previous user's open shift.
+  const CLOCK_KEY = (uid) => `pc_clock_${uid}`;
+  function saveClockState() {
+    const u = state.currentUser;
+    if (!u) return;
+    const key = CLOCK_KEY(u.id);
+    if (state.clock === "idle") {
+      try { localStorage.removeItem(key); } catch {}
+      return;
+    }
+    const payload = {
+      clock: state.clock,
+      clockIn:  state.clockIn  ? state.clockIn.toISOString()  : null,
+      clockOut: state.clockOut ? state.clockOut.toISOString() : null,
+      clockInCoord:  state.clockInCoord  || null,
+      clockOutCoord: state.clockOutCoord || null,
+      clockInTz:  state.clockInTz  || null,
+      clockOutTz: state.clockOutTz || null,
+      comment: state.comment || "",
+    };
+    try { localStorage.setItem(key, JSON.stringify(payload)); } catch {}
+  }
+  function restoreClockState() {
+    const u = state.currentUser;
+    if (!u) return;
+    const key = CLOCK_KEY(u.id);
+    let raw;
+    try { raw = localStorage.getItem(key); } catch { return; }
+    if (!raw) return;
+    let p;
+    try { p = JSON.parse(raw); } catch { return; }
+    if (!p || !p.clock || p.clock === "idle") return;
+    state.clock = p.clock;
+    state.clockIn  = p.clockIn  ? new Date(p.clockIn)  : null;
+    state.clockOut = p.clockOut ? new Date(p.clockOut) : null;
+    state.clockInCoord  = p.clockInCoord  || null;
+    state.clockOutCoord = p.clockOutCoord || null;
+    state.clockInTz  = p.clockInTz  || null;
+    state.clockOutTz = p.clockOutTz || null;
+    state.comment = p.comment || "";
+  }
+
   class ApiError extends Error {
     constructor(status, message) { super(message); this.status = status; }
   }
@@ -3024,6 +3070,10 @@
     state.calYear = 2026; state.calMonth = 3;
     const dbResp = await api.db();
     hydrateFromDb(dbResp);
+    // Restore an in-progress clock state if we left one on a previous
+    // visit. No-op for admins (they never clock); no-op if the user has
+    // no saved state (the common case).
+    restoreClockState();
   }
 
   // Version tag reads Last-Modified from the current page — which GitHub
@@ -3662,6 +3712,9 @@
     state.selectedDay = null;
     state.calYear = 2026; state.calMonth = 3;
     state.screen = isAdminLike(u) ? "admin_home" : "employee_home";
+    // Restore mid-shift clock state if this user had one saved from a
+    // previous session (closed the tab between clock-in and submit).
+    restoreClockState();
     history.replaceState({ depth: 0 }, "");
     render();
   }
@@ -4613,9 +4666,11 @@
           state.clockIn = new Date();
           state.clockInCoord = null;
           state.clockInTz = currentTimezone();
+          saveClockState();
           render();
           const c = await getCurrentCoord();
           state.clockInCoord = c.real ? { lat: c.lat, lng: c.lng } : null;
+          saveClockState();
           const t = gpsToast(c, "Clock-in");
           toast(t.msg, { kind: t.kind, pill: t.pill });
           render();
@@ -4647,9 +4702,11 @@
           state.clockOut = new Date();
           state.clockOutCoord = null;
           state.clockOutTz = currentTimezone();
+          saveClockState();
           render();
           const c = await getCurrentCoord();
           state.clockOutCoord = c.real ? { lat: c.lat, lng: c.lng } : null;
+          saveClockState();
           const t = gpsToast(c, "Clock-out");
           toast(t.msg, { kind: t.kind, pill: t.pill });
           render();
@@ -4664,7 +4721,7 @@
     const commentField = el("textarea", {
       class: "comment-field",
       placeholder: tr("comments"),
-      oninput: (e) => { state.comment = e.target.value; updateSubmitState(); },
+      oninput: (e) => { state.comment = e.target.value; saveClockState(); updateSubmitState(); },
     });
     commentField.value = state.comment;
 
@@ -4741,6 +4798,7 @@
           state.clockInCoord = state.clockOutCoord = null;
           state.clockInTz = state.clockOutTz = null;
           state.comment = "";
+          saveClockState(); // clears the per-user localStorage key
           toast(tr("shiftLogged"), {kind:"success", pill:"✓"});
           render();
         } catch (e) {

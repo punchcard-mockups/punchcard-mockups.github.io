@@ -5328,14 +5328,6 @@
     // Admin view: show employee history (shift list + map)
     const empShifts = shifts.filter(s => s.empId === e.id)
       .sort((a,b) => b.date.localeCompare(a.date) || b.start.localeCompare(a.start));
-    const total = empShifts.reduce((s,x)=>s+x.hours,0);
-
-    root.appendChild(el("div", {class:"info-card"},
-      el("div", {class:"row"},
-        stat("blue", String(empShifts.length), tr("shifts")),
-        stat("green", total.toFixed(1), tr("hours")),
-      ),
-    ));
 
     // Map
     const withCoords = empShifts.filter(s => s.clockIn || s.clockOut);

@@ -350,6 +350,27 @@
   .cal .cell.selected .pair,
   .cal .cell.selected .pair .mid,
   .cal .cell.selected .pair .emp { color: rgba(255,255,255,.9); }
+  /* Admin-view dots: one per employee who worked that day, colored by
+     the employee's accent. Sits under the day number; wraps as needed. */
+  .cal .inner .dots {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 3px;
+    margin-top: 2px;
+    min-height: 6px;
+  }
+  .cal .inner .dots .dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .cal .cell.selected .inner .dots .dot {
+    outline: 1px solid rgba(255,255,255,.6);
+    outline-offset: 1px;
+  }
   .cal .heat-1 .inner { background: rgba(59,130,246,.04); }
   .cal .heat-2 .inner { background: rgba(59,130,246,.08); }
   .cal .heat-3 .inner { background: rgba(59,130,246,.12); }
@@ -3150,13 +3171,28 @@
           ? `${Math.round(displayedHours)}${tr("hoursShort")}`
           : displayedHours > 0 ? `${displayedHours.toFixed(1)}${tr("hoursShort")}` : "";
 
-        if (hasShifts && showHoursText) {
-          const pair = el("span", {class:"pair"}, el("span", {}, showHoursText));
-          if (!scopeEmpId && empCount > 0) {
-            pair.appendChild(el("span", {class:"mid"}, "·"));
-            pair.appendChild(el("span", {class:"emp"}, String(empCount)));
+        if (hasShifts) {
+          if (scopeEmpId) {
+            // Employee view: the little "8h" hour total under the date.
+            if (showHoursText) {
+              inner.appendChild(el("span", {class:"pair"}, el("span", {}, showHoursText)));
+            }
+          } else {
+            // Admin view: one colored dot per unique employee who worked
+            // that day, in order of most-hours first. Tells "who worked"
+            // at a glance without needing to tap in.
+            const dots = el("span", {class:"dots"});
+            for (const [empIdStr] of byEmp) {
+              const emp = userById[Number(empIdStr)];
+              if (!emp) continue;
+              dots.appendChild(el("span", {
+                class: "dot",
+                style: `background:${emp.color}`,
+                title: emp.displayName,
+              }));
+            }
+            inner.appendChild(dots);
           }
-          inner.appendChild(pair);
         }
 
         let heatClass = "";

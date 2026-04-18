@@ -1272,47 +1272,53 @@
   }
 
   /* History screen */
+  /* Each shift renders as a real tappable card, iOS-style: solid surface
+     fill + rounded corners + a prominent right-edge chevron + press
+     highlight. No border-bottom divider — separation comes from the gap
+     between cards and the contrast between card surface and page background. */
   .hist-shift-card {
     position: relative;
-    background: transparent;
-    border-bottom: 1px solid var(--outline-soft);
-    padding: 14px 22px 14px 4px;
-    margin-top: 0;
+    background: var(--surface-card);
+    border: 1px solid var(--outline-soft);
+    border-radius: 12px;
+    padding: 12px 36px 12px 14px;
+    margin-top: 8px;
+    min-height: 44px;
     touch-action: manipulation;
-    transition: background 150ms ease;
+    transition: background 150ms ease, border-color 150ms ease, transform 80ms ease;
   }
-  /* Tap affordance: every shift card opens a detail sheet. A small right-
-     edge chevron hints at that without crowding the row; it sharpens on
-     hover/press so the affordance is felt, not just seen. */
+  .hist-shift-card:first-of-type { margin-top: 10px; }
   .hist-shift-card::after {
-    content: "›";
+    content: "";
     position: absolute;
-    right: 4px;
+    right: 14px;
     top: 50%;
-    transform: translateY(-50%);
-    font-family: var(--tf-display);
-    font-size: 20px;
-    line-height: 1;
-    color: var(--text-muted);
-    opacity: .45;
+    width: 9px;
+    height: 9px;
+    border-right: 2px solid var(--text-muted);
+    border-top: 2px solid var(--text-muted);
+    transform: translateY(-50%) rotate(45deg);
     pointer-events: none;
-    transition: opacity 150ms ease, transform 150ms ease, right 150ms ease;
+    transition: border-color 150ms ease, right 150ms ease;
   }
   @media (hover: hover) {
     .hist-shift-card:hover {
-      background: color-mix(in oklab, var(--text-primary) 4%, transparent);
+      background: var(--surface-card-hi, color-mix(in oklab, var(--text-primary) 4%, var(--surface-card)));
+      border-color: color-mix(in oklab, var(--text-primary) 14%, transparent);
     }
     .hist-shift-card:hover::after {
-      opacity: .95;
-      right: 1px;
+      border-right-color: var(--text-secondary);
+      border-top-color: var(--text-secondary);
+      right: 12px;
     }
   }
   .hist-shift-card:active {
-    background: color-mix(in oklab, var(--text-primary) 7%, transparent);
+    background: color-mix(in oklab, var(--text-primary) 7%, var(--surface-card));
+    transform: scale(.995);
   }
   .hist-shift-card:active::after {
-    opacity: 1;
-    transform: translateY(-50%) translateX(1px);
+    border-right-color: var(--text-primary);
+    border-top-color: var(--text-primary);
   }
   .hist-shift-card .top {
     display: flex; justify-content: space-between; align-items: center;
@@ -1500,12 +1506,15 @@
      date demoted from a Gloock headline to a body-font data row. The
      marker class `.week-rollup` is added to every container that wants
      this so we don't have to chain three selectors here. */
+  /* Inside an expanded week (on History or the admin employee profile),
+     shift cards keep the same tappable card treatment as on Home. They
+     stack with a small gap between each so the week reads as a grouped
+     list, but each card still feels like its own distinct tap target. */
   .week-rollup .hist-shift-card {
-    margin-top: 0;
-    padding: 12px 22px 12px 0;
-    background: transparent;
-    border-bottom: 1px dotted var(--outline-soft);
+    margin-top: 8px;
+    padding: 12px 36px 12px 14px;
   }
+  .week-rollup .hist-shift-card:first-of-type { margin-top: 10px; }
   .week-rollup .hist-shift-card .date {
     font-family: var(--tf-body);
     font-weight: 600;
@@ -1513,12 +1522,6 @@
     letter-spacing: 0;
     color: var(--text-secondary);
   }
-  .week-rollup .hist-shift-card:first-of-type {
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px dashed var(--outline-soft);
-  }
-  .week-rollup .hist-shift-card:last-of-type { border-bottom: 0; padding-bottom: 0; }
 
   /* Map */
   /* Compact thumbnail variant for the clock-in/out card: shorter, no legend,

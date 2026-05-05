@@ -3153,6 +3153,7 @@
     decideEditRequest: (id, status)    => apiCall("POST", "/edit-requests", { action: "decide", id, status }),
     adminEdit:         (body)          => apiCall("POST", "/admin-edits",   body),
     adminAddShift:     (body)          => apiCall("POST", "/admin-shifts",  body),
+    deleteShift:       (id, reason)    => apiCall("POST", "/shifts/delete", { id, reason }),
     createUser:        (body)          => apiCall("POST", "/users",         body),
     updateUser:        (body)          => apiCall("POST", "/users/update",          body),
     resetPassword:     (id, password)  => apiCall("POST", "/users/reset-password",  { id, password }),
@@ -3368,6 +3369,10 @@
       adminEditReasonRequired: "A reason is required — this edit will be logged.",
       adminEditSaved: "Shift edited",
       adminEditLog: "Admin edit log",
+      deleteShift: "Delete shift",
+      deleteShiftConfirmTitle: "Delete this shift?",
+      deleteShiftConfirmBody: (name, date) => `${name}'s shift on ${date} will be erased. The audit log entries on this shift will be lost too — only the deletion reason survives, in the data repo's commit history.`,
+      shiftDeleted: "Shift deleted",
       editedByAdmin: "Edited by admin",
       editedNTimes: (n) => n === 1 ? "1 admin edit" : `${n} admin edits`,
       pendingApprovals: "Pending approvals",
@@ -3521,6 +3526,10 @@
       adminEditReasonRequired: "Se requiere una explicación — este cambio quedará registrado.",
       adminEditSaved: "Turno editado",
       adminEditLog: "Historial de cambios",
+      deleteShift: "Borrar turno",
+      deleteShiftConfirmTitle: "¿Borrar este turno?",
+      deleteShiftConfirmBody: (name, date) => `Se eliminará el turno de ${name} del ${date}. El historial de cambios de este turno también se perderá — solo queda el motivo del borrado, en el historial de commits del repositorio de datos.`,
+      shiftDeleted: "Turno borrado",
       editedByAdmin: "Editado por admin",
       editedNTimes: (n) => n === 1 ? "1 edición del admin" : `${n} ediciones del admin`,
       pendingApprovals: "Aprobaciones pendientes",
@@ -5585,7 +5594,17 @@
         style: "margin-top:8px;",
         onclick: () => openModal("adminEditShift"),
       }, tr("adminEditTitle")));
-    } else if (!editReq && isEmployee(u) && u.id === sh.empId && !weekIsLocked) {
+    }
+    // Owner-only: hard-delete the shift. Logged via the data repo's commit
+    // history (the row itself is gone, so there's no adminEdits to attach).
+    if (isOwner(u)) {
+      root.appendChild(el("button", {
+        class:"btn danger full",
+        style: "margin-top:8px;",
+        onclick: () => openModal("confirmDeleteShift"),
+      }, tr("deleteShift")));
+    }
+    if (!canApprove(u) && !editReq && isEmployee(u) && u.id === sh.empId && !weekIsLocked) {
       // Employee on own active shift: "Request edit" still lives in a
       // sub-sheet (time changes go through admin approval). Comment edits
       // happen inline via the editable textarea rendered above.
@@ -6317,6 +6336,46 @@
       card.appendChild(el("div", {class:"actions"},
         el("button", {class:"btn", onclick: close}, tr("cancel")),
         delBtn,
+      ));
+    } else if (state.modal === "confirmDeleteShift") {
+      // Owner-only hard-delete of a shift. The data repo's commit history
+      // is the audit log — the typed reason becomes the commit message,
+      // so it must be non-empty. After delete, navBack() exits the now-
+      // empty shift detail sheet.
+      const sh = shifts.find(s => s.id === state.viewingShiftId);
+      if (!sh) { close(); return; }
+      const emp = userById[sh.empId];
+      const reasonIn = el("textarea", { rows: 3, placeholder: tr("adminEditReason") });
+      const err = el("div", {class:"err", style:"display:none"});
+      card.appendChild(el("h3", {}, tr("deleteShiftConfirmTitle")));
+      card.appendChild(el("p", {}, tr("deleteShiftConfirmBody", emp?.displayName ?? "", fmtDateLong(sh.date))));
+      card.appendChild(el("label", {class:"field-label"}, tr("reasonRequiredLabel")));
+      card.appendChild(reasonIn);
+      card.appendChild(err);
+      card.appendChild(el("div", {class:"actions"},
+        el("button", {class:"btn", onclick: close}, tr("cancel")),
+        el("button", {class:"btn danger-confirm", onclick: async (ev) => {
+          const reason = reasonIn.value.trim();
+          if (!reason) {
+            err.textContent = tr("adminEditReasonRequired");
+            err.style.display = "block";
+            reasonIn.focus();
+            return;
+          }
+          if (ev.currentTarget.disabled) return;
+          ev.currentTarget.disabled = true;
+          try {
+            await api.deleteShift(sh.id, reason);
+            hydrateFromDb(await api.db());
+            toast(tr("shiftDeleted"), {kind:"success", pill:"✓"});
+            state.modal = null;
+            navBack();
+          } catch (e) {
+            ev.currentTarget.disabled = false;
+            err.textContent = e.message || (state.lang === "es" ? "No se pudo borrar" : "Couldn't delete");
+            err.style.display = "block";
+          }
+        }}, tr("delete")),
       ));
     }
 

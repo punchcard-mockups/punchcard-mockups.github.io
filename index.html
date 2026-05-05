@@ -2866,9 +2866,10 @@
     viewingEmployeeId: null,
     nav: [],            // screen history for back button
     lang: "en",
-    // calendar
-    calYear: 2026,
-    calMonth: 3,
+    // calendar — default to the viewer's current month; login() and loadDB()
+    // re-snap this on every session start so a long-lived tab doesn't drift.
+    calYear: new Date().getFullYear(),
+    calMonth: new Date().getMonth(),
     selectedDay: null,
     lastAnim: 0,
     // clock flow (employee)
@@ -3205,7 +3206,7 @@
 
     state.currentUser = me.user;
     state.screen = isAdminLike(me.user) ? "admin_home" : "employee_home";
-    state.calYear = 2026; state.calMonth = 3;
+    { const now = new Date(); state.calYear = now.getFullYear(); state.calMonth = now.getMonth(); }
     const dbResp = await api.db();
     hydrateFromDb(dbResp);
     // Restore an in-progress clock state if we left one on a previous
@@ -3937,7 +3938,7 @@
     state.currentUser = u;
     state.nav = [];
     state.selectedDay = null;
-    state.calYear = 2026; state.calMonth = 3;
+    { const now = new Date(); state.calYear = now.getFullYear(); state.calMonth = now.getMonth(); }
     state.screen = isAdminLike(u) ? "admin_home" : "employee_home";
     // Restore mid-shift clock state if this user had one saved from a
     // previous session (closed the tab between clock-in and submit).

@@ -1137,6 +1137,64 @@
     transition: border-color 150ms ease;
   }
   .modal-card input:focus, .modal-card textarea:focus { border-color: var(--accent-blue); }
+
+  /* Password input + inline reveal toggle. The wrapper carries the
+     bottom-margin so the underlying input still flows like every other
+     `.modal-card input`; the input itself drops its own margin and adds
+     right-padding so text doesn't slide under the eye button. The toggle
+     is a 44×44 hit target (mobile-first rule) with the icon centered. */
+  .pw-wrap { position: relative; margin-bottom: 10px; }
+  .pw-wrap input { margin-bottom: 0 !important; padding-right: 44px !important; }
+  .pw-toggle {
+    position: absolute; top: 50%; right: 0;
+    transform: translateY(-50%);
+    width: 44px; height: 44px;
+    display: grid; place-items: center;
+    background: transparent; border: 0; padding: 0; margin: 0;
+    color: var(--text-muted); cursor: pointer;
+    border-radius: 2px;
+    touch-action: manipulation;
+  }
+  .pw-toggle:hover { color: var(--text-primary); }
+  .pw-toggle:focus-visible { outline: 2px solid var(--accent-blue); outline-offset: -2px; }
+
+  /* On the login form (underline-style fields, not the boxed modal style)
+     the toggle sits a hair above the underline to stay visually balanced. */
+  .login-form .pw-wrap { margin-bottom: 0; }
+  .login-form .pw-wrap input { padding-right: 44px !important; }
+
+  /* Reveal-after-reset card: the password is shown back to the owner in a
+     monospace pill so they can read it back to the user without misreading
+     l/I/1/0/O. Tap the pill to copy. */
+  .pw-reveal {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--surface-dark);
+    border: 1px solid var(--outline-soft);
+    border-radius: 2px;
+    padding: 10px 12px;
+    margin: 6px 0 10px;
+  }
+  .pw-reveal .pw-reveal-value {
+    flex: 1; min-width: 0;
+    font-family: var(--tf-mono, ui-monospace, Menlo, monospace);
+    font-size: 18px;
+    letter-spacing: 0.5px;
+    color: var(--text-primary);
+    word-break: break-all;
+    user-select: all;
+  }
+  .pw-reveal .pw-reveal-copy {
+    flex: 0 0 auto;
+    background: transparent;
+    border: 1px solid var(--outline-soft);
+    border-radius: 2px;
+    padding: 6px 10px;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    min-height: 32px;
+  }
   /* Marker class: textarea auto-grows from one line via JS (see the
      `autosize` handler attached per field). Disable manual resize + hide
      the transient scrollbar that briefly appears while scrollHeight settles. */
@@ -2759,11 +2817,15 @@
   .eu-screen .eu-actions > .btn { flex: 1; }
   .eu-screen .eu-admin-actions {
     display: flex; gap: 10px;
+    flex-wrap: wrap;
     margin: 22px 0 0;
     padding-top: 16px;
     border-top: 1px dashed var(--outline-soft);
   }
-  .eu-screen .eu-admin-actions > .btn { flex: 1; }
+  /* Three buttons (Reset / Deactivate / Delete permanently) — give each a
+     min-width so the longer labels stay readable; wrap to a second row on
+     narrow viewports rather than squeezing the type. */
+  .eu-screen .eu-admin-actions > .btn { flex: 1 1 130px; min-width: 130px; }
   .eu-screen .eu-err {
     font-family: var(--tf-body);
     font-size: var(--fs-sm);
@@ -2820,6 +2882,14 @@
     comment: "",
     // modals
     modal: null,        // "addEmployee" | "approvals" | "submitWeek"
+    // Cleartext password to reveal back to the owner after a successful
+    // password reset. Set when /users/reset-password succeeds; cleared on
+    // sheet close so re-opening the sheet starts fresh.
+    resetPasswordRevealed: null,
+    // Live text in the "type the username to confirm" field on the hard-
+    // delete sheet. Tracked in state so re-renders during the modal don't
+    // wipe what they've typed.
+    confirmDeleteText: "",
     // When a modal opens on top of another (e.g. "Edit shift" from inside
     // shiftDetail), the outer modal is pushed onto this stack so popstate
     // can restore it instead of nuking the whole stack.
@@ -3088,6 +3158,7 @@
     resetPassword:     (id, password)  => apiCall("POST", "/users/reset-password",  { id, password }),
     deactivateUser:    (id)            => apiCall("POST", "/users/deactivate",      { id }),
     reactivateUser:    (id)            => apiCall("POST", "/users/reactivate",      { id }),
+    deleteUser:        (id, confirmUsername) => apiCall("POST", "/users/delete",    { id, confirmUsername }),
   };
 
   // Present a Worker error as a user-facing toast. Network/5xx get a generic
@@ -3351,11 +3422,24 @@
       editEmployee: "Edit user",
       resetPassword: "Reset password",
       newPassword: "New password",
+      showPassword: "Show password",
+      hidePassword: "Hide password",
+      passwordResetDoneTitle: "Send this to the user",
+      passwordResetDoneBody: (name) => `${name}'s new password is shown below. Send it to them now — it isn't stored anywhere you can look up later.`,
+      copyPassword: "Copy",
+      passwordCopied: "Copied",
+      done: "Done",
       deactivate: "Deactivate",
       reactivate: "Reactivate",
       deactivated: "Deactivated",
       deactivateConfirmTitle: "Deactivate this employee?",
       deactivateConfirmBody: (name) => `${name} will no longer be able to sign in. Past shifts and history stay in place. You can reactivate them later.`,
+      deleteUser: "Delete permanently",
+      deleteUserConfirmTitle: "Delete this user permanently?",
+      deleteUserConfirmBody: (name) => `${name}'s account, all of their shifts, week approvals, and edit requests will be erased. This cannot be undone — deactivate instead if you might want them back.`,
+      deleteUserConfirmType: (username) => `Type ${username} to confirm`,
+      delete: "Delete",
+      userDeleted: "User deleted",
       saveChanges: "Save",
       passwordChanged: "Password updated",
       userUpdated: "User updated",
@@ -3491,11 +3575,24 @@
       editEmployee: "Editar usuario",
       resetPassword: "Restablecer contraseña",
       newPassword: "Nueva contraseña",
+      showPassword: "Mostrar contraseña",
+      hidePassword: "Ocultar contraseña",
+      passwordResetDoneTitle: "Envíasela al usuario",
+      passwordResetDoneBody: (name) => `La nueva contraseña de ${name} se muestra abajo. Envíasela ahora — no queda guardada en ningún sitio que puedas consultar después.`,
+      copyPassword: "Copiar",
+      passwordCopied: "Copiada",
+      done: "Listo",
       deactivate: "Desactivar",
       reactivate: "Reactivar",
       deactivated: "Desactivado",
       deactivateConfirmTitle: "¿Desactivar este empleado?",
       deactivateConfirmBody: (name) => `${name} ya no podrá iniciar sesión. Los turnos y el historial se conservan. Puedes reactivarle después.`,
+      deleteUser: "Borrar permanentemente",
+      deleteUserConfirmTitle: "¿Borrar este usuario para siempre?",
+      deleteUserConfirmBody: (name) => `La cuenta de ${name}, todos sus turnos, aprobaciones de semana y solicitudes de cambio se eliminarán. Esta acción no se puede deshacer — desactiva en lugar de borrar si quieres recuperarle después.`,
+      deleteUserConfirmType: (username) => `Escribe ${username} para confirmar`,
+      delete: "Borrar",
+      userDeleted: "Usuario borrado",
       saveChanges: "Guardar",
       passwordChanged: "Contraseña actualizada",
       userUpdated: "Usuario actualizado",
@@ -3538,6 +3635,33 @@
     }
     return n;
   }
+  // Password field with an inline eye toggle. Returns { input, wrap }: callers
+  // append `wrap` to the DOM but read the value from `input`. The toggle flips
+  // the input's `type` between "password" and "text" so users can verify what
+  // they typed (critical on mobile, requested by the owner). Class hooks
+  // mirror `.modal-card input` styling; the login form uses a separate
+  // override so the underline treatment carries over.
+  function passwordField(opts = {}) {
+    const input = el("input", { type: "password", ...opts });
+    let shown = false;
+    const btn = el("button", {
+      type: "button",
+      class: "pw-toggle",
+      tabindex: "-1",
+      "aria-label": tr("showPassword"),
+    }, ICON("eye", 18));
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      shown = !shown;
+      input.type = shown ? "text" : "password";
+      btn.innerHTML = "";
+      btn.appendChild(ICON(shown ? "eyeOff" : "eye", 18));
+      btn.setAttribute("aria-label", tr(shown ? "hidePassword" : "showPassword"));
+    });
+    const wrap = el("div", { class: "pw-wrap" }, input, btn);
+    return { input, wrap };
+  }
+
   function svg(paths, w=20) {
     const ns = "http://www.w3.org/2000/svg";
     const s = document.createElementNS(ns, "svg");
@@ -3573,6 +3697,7 @@
       lock: "M5 11h14v11H5z|M8 11V7a4 4 0 1 1 8 0v4",
       inbox: "M22 12h-6l-2 3h-4l-2-3H2|M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z",
       eye: "M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z|M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
+      eyeOff: "M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a19.5 19.5 0 0 1 5.06-5.94|M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a19.5 19.5 0 0 1-3.17 4.19|M14.12 14.12A3 3 0 1 1 9.88 9.88|M1 1l22 22",
       mapPin: "M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z|M12 8a2 2 0 1 0 0 4 2 2 0 0 0 0-4z",
     };
     return svg(paths[name], w);
@@ -3792,6 +3917,8 @@
         state.modal = null;
       }
       state.expandedApproval = null;
+      state.resetPasswordRevealed = null;
+      state.confirmDeleteText = "";
       render();
     } else if (state.nav.length) {
       navBack();
@@ -4216,9 +4343,8 @@
       spellcheck: "false",
       inputmode: "text",
     });
-    const passIn = el("input", {
+    const { input: passIn, wrap: passWrap } = passwordField({
       placeholder: s.password,
-      type: "password",
       autocomplete: "current-password",
       autocapitalize: "off",
       autocorrect: "off",
@@ -4251,7 +4377,7 @@
     }, s.signIn);
 
     const form = el("form", {class:"login-form", onsubmit: (e) => { e.preventDefault(); attempt(userIn.value.trim(), passIn.value); }},
-      userIn, passIn, goBtn);
+      userIn, passWrap, goBtn);
 
     const langRow = el("div", {style:"display:flex; justify-content:flex-end; width:100%;"},
       langToggle()
@@ -5178,6 +5304,10 @@
         class:"btn danger",
         onclick: () => { state.modal = "confirmDeactivate"; history.pushState({ modal: true }, ""); render(); },
       }, tr("deactivate")));
+      adminActions.appendChild(el("button", {
+        class:"btn danger",
+        onclick: () => { state.modal = "confirmDeleteUser"; state.confirmDeleteText = ""; history.pushState({ modal: true }, ""); render(); },
+      }, tr("deleteUser")));
     }
     root.appendChild(adminActions);
 
@@ -5755,7 +5885,13 @@
     if (state.modal === "addEmployee") {
       const nameIn = el("input", { placeholder: strings[state.lang].fullName });
       const userIn = el("input", { placeholder: strings[state.lang].username, autocapitalize:"off", autocorrect:"off", spellcheck:"false" });
-      const passIn = el("input", { placeholder: strings[state.lang].password, type:"password" });
+      const { input: passIn, wrap: passWrap } = passwordField({
+        placeholder: strings[state.lang].password,
+        autocomplete: "new-password",
+        autocapitalize: "off",
+        autocorrect: "off",
+        spellcheck: "false",
+      });
       const roleSel = el("select", {},
         el("option", { value: "employee" }, tr("employee")),
         el("option", { value: "admin" }, tr("admin")),
@@ -5768,7 +5904,7 @@
       card.appendChild(el("label", {class:"field-label"}, tr("username")));
       card.appendChild(userIn);
       card.appendChild(el("label", {class:"field-label"}, tr("password")));
-      card.appendChild(passIn);
+      card.appendChild(passWrap);
       card.appendChild(el("label", {class:"field-label"}, tr("role")));
       card.appendChild(roleSel);
       card.appendChild(err);
@@ -6041,34 +6177,76 @@
         }}, tr("save")),
       ));
     } else if (state.modal === "resetPasswordUser") {
-      // Sheet on top of the Edit User screen. Cancel = dismiss the sheet
-      // (history.back); Save = dismiss + a success toast underneath.
+      // Two-step sheet on top of Edit User:
+      //   1. Type the new password (with show/hide toggle so the owner can
+      //      verify what they typed before committing).
+      //   2. After save: show the new password back in a copy-friendly card
+      //      so she has something concrete to send to the user out-of-band.
+      //      Worker only stores the hash, so this is the one and only
+      //      moment to surface the cleartext.
       const target = users.find(x => x.id === state.manageTargetId);
       if (!target) { close(); return; }
-      const passIn = el("input", { type: "password", placeholder: tr("newPassword"), autocapitalize:"off", autocorrect:"off", spellcheck:"false" });
-      const err = el("div", {class:"err", style:"display:none"});
-      card.appendChild(el("h3", {}, tr("resetPassword")));
-      card.appendChild(el("p", {style:"color:var(--text-muted); margin:-4px 0 10px;"}, `${target.displayName} (@${target.username})`));
-      card.appendChild(passIn);
-      card.appendChild(err);
-      card.appendChild(el("div", {class:"actions"},
-        el("button", {class:"btn", onclick: close}, tr("cancel")),
-        el("button", {class:"btn primary", onclick: async (ev) => {
-          const pw = passIn.value.trim();
-          if (!pw) { err.textContent = state.lang === "es" ? "Contraseña obligatoria" : "Password required"; err.style.display = "block"; return; }
-          if (ev.currentTarget.disabled) return;
-          ev.currentTarget.disabled = true;
+      const stage = state.resetPasswordRevealed;
+      if (!stage) {
+        const { input: passIn, wrap: passWrap } = passwordField({
+          placeholder: tr("newPassword"),
+          autocomplete: "new-password",
+          autocapitalize: "off",
+          autocorrect: "off",
+          spellcheck: "false",
+        });
+        const err = el("div", {class:"err", style:"display:none"});
+        card.appendChild(el("h3", {}, tr("resetPassword")));
+        card.appendChild(el("p", {style:"color:var(--text-muted); margin:-4px 0 10px;"}, `${target.displayName} (@${target.username})`));
+        card.appendChild(passWrap);
+        card.appendChild(err);
+        card.appendChild(el("div", {class:"actions"},
+          el("button", {class:"btn", onclick: close}, tr("cancel")),
+          el("button", {class:"btn primary", onclick: async (ev) => {
+            const pw = passIn.value.trim();
+            if (!pw) { err.textContent = state.lang === "es" ? "Contraseña obligatoria" : "Password required"; err.style.display = "block"; return; }
+            if (ev.currentTarget.disabled) return;
+            ev.currentTarget.disabled = true;
+            try {
+              await api.resetPassword(target.id, pw);
+              toast(tr("passwordChanged"), {kind:"success", pill:"✓"});
+              state.resetPasswordRevealed = pw;
+              render();
+            } catch (e) {
+              ev.currentTarget.disabled = false;
+              err.textContent = e.message || (state.lang === "es" ? "No se pudo cambiar" : "Couldn't update");
+              err.style.display = "block";
+            }
+          }}, tr("saveChanges")),
+        ));
+      } else {
+        // Stage 2 — reveal the cleartext password back so it can be copied
+        // and sent to the user. Closing this card discards the cleartext;
+        // there's no recovery path, so the copy button is the primary action.
+        const valueEl = el("div", {class:"pw-reveal-value"}, stage);
+        const copyBtn = el("button", {class:"pw-reveal-copy", onclick: async () => {
           try {
-            await api.resetPassword(target.id, pw);
-            toast(tr("passwordChanged"), {kind:"success", pill:"✓"});
-            close();
-          } catch (e) {
-            ev.currentTarget.disabled = false;
-            err.textContent = e.message || (state.lang === "es" ? "No se pudo cambiar" : "Couldn't update");
-            err.style.display = "block";
+            await navigator.clipboard.writeText(stage);
+            toast(tr("passwordCopied"), {kind:"success", pill:"✓"});
+          } catch {
+            // Clipboard API can be blocked (insecure context, permission). Fall
+            // back to a manual selection so the owner can ⌘C / long-press copy.
+            const r = document.createRange();
+            r.selectNodeContents(valueEl);
+            const sel = window.getSelection();
+            sel.removeAllRanges(); sel.addRange(r);
           }
-        }}, tr("saveChanges")),
-      ));
+        }}, tr("copyPassword"));
+        card.appendChild(el("h3", {}, tr("passwordResetDoneTitle")));
+        card.appendChild(el("p", {style:"color:var(--text-muted); margin:-4px 0 10px;"}, tr("passwordResetDoneBody", target.displayName)));
+        card.appendChild(el("div", {class:"pw-reveal"}, valueEl, copyBtn));
+        card.appendChild(el("div", {class:"actions"},
+          el("button", {class:"btn primary", onclick: () => {
+            state.resetPasswordRevealed = null;
+            close();
+          }}, tr("done")),
+        ));
+      }
     } else if (state.modal === "confirmDeactivate") {
       // Confirmation sheet on top of Edit User. On confirm, dismiss the sheet
       // AND pop the Edit User screen (since the user no longer exists in the
@@ -6096,6 +6274,49 @@
             toastApiError(e, state.lang === "es" ? "No se pudo desactivar" : "Couldn't deactivate");
           }
         }}, tr("deactivate")),
+      ));
+    } else if (state.modal === "confirmDeleteUser") {
+      // Hard-delete confirmation. The Worker also re-validates the typed
+      // username, but doing it client-side keeps the Delete button disabled
+      // until they've actually typed it — so the destructive button only
+      // becomes tappable once they've proven they meant to.
+      const target = users.find(x => x.id === state.manageTargetId);
+      if (!target) { close(); return; }
+      const typeIn = el("input", {
+        placeholder: target.username,
+        autocapitalize: "off", autocorrect: "off", spellcheck: "false",
+        value: state.confirmDeleteText || "",
+      });
+      const delBtn = el("button", {class:"btn danger-confirm"}, tr("delete"));
+      delBtn.disabled = (state.confirmDeleteText || "").trim() !== target.username;
+      typeIn.addEventListener("input", () => {
+        state.confirmDeleteText = typeIn.value;
+        delBtn.disabled = typeIn.value.trim() !== target.username;
+      });
+      delBtn.addEventListener("click", async () => {
+        if (delBtn.disabled) return;
+        delBtn.disabled = true;
+        try {
+          await api.deleteUser(target.id, target.username);
+          hydrateFromDb(await api.db());
+          toast(tr("userDeleted"), {kind:"success", pill:"✓"});
+          // Close the sheet AND pop the Edit User screen — the user is gone,
+          // so its detail screen would be empty. Lands back on Manage users.
+          state.modal = null;
+          state.confirmDeleteText = "";
+          navBack();
+        } catch (e) {
+          delBtn.disabled = false;
+          toastApiError(e, state.lang === "es" ? "No se pudo borrar" : "Couldn't delete");
+        }
+      });
+      card.appendChild(el("h3", {}, tr("deleteUserConfirmTitle")));
+      card.appendChild(el("p", {}, tr("deleteUserConfirmBody", target.displayName)));
+      card.appendChild(el("label", {class:"field-label"}, tr("deleteUserConfirmType", target.username)));
+      card.appendChild(typeIn);
+      card.appendChild(el("div", {class:"actions"},
+        el("button", {class:"btn", onclick: close}, tr("cancel")),
+        delBtn,
       ));
     }
 

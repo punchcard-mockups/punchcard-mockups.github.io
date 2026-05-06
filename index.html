@@ -2863,6 +2863,31 @@
     border-radius: 8px;
     margin-bottom: 12px;
   }
+  .eu-screen .eu-checkbox-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 4px 0 14px;
+  }
+  .eu-screen .eu-checkbox-row input[type="checkbox"] {
+    margin-top: 2px;
+    width: 18px; height: 18px;
+    flex: 0 0 auto;
+    accent-color: var(--accent-primary);
+  }
+  .eu-screen .eu-checkbox-row label { cursor: pointer; }
+  .eu-screen .eu-checkbox-label {
+    font-family: var(--tf-body);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .eu-screen .eu-checkbox-help {
+    font-family: var(--tf-body);
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
 
   /* Roster screen — same emp-row visuals, no extra wrapper. */
   .roster-screen .section-header { margin-top: 8px; }
@@ -3542,6 +3567,8 @@
       errCouldntDeactivate: "Couldn't deactivate",
       errCouldntDelete: "Couldn't delete",
       youSuffix: " (you)",
+      noteOptional: "Allow short shifts without a note",
+      noteOptionalHelp: "Skip the under-9-hour comment requirement for this user.",
     },
     es: {
       appName: "PunchCard",
@@ -3736,6 +3763,8 @@
       errCouldntDeactivate: "No se pudo desactivar",
       errCouldntDelete: "No se pudo borrar",
       youSuffix: " (tú)",
+      noteOptional: "Permitir turnos cortos sin nota",
+      noteOptionalHelp: "Omite la nota obligatoria para turnos menos de 9 horas.",
     },
   };
   function tr(k, ...args) {
@@ -3887,7 +3916,11 @@
   }
   function fmtDateShort(dateStr) {
     const d = new Date(dateStr + "T00:00:00");
-    return d.toLocaleDateString(locale(), { month:"short", day:"numeric" });
+    // Long month name avoids the abbreviated-Spanish ambiguity ("4 may"
+    // looks identical to English "May 4"). Strip Spanish " de " connector
+    // so the output is "4 mayo" instead of "4 de mayo".
+    return d.toLocaleDateString(locale(), { month:"long", day:"numeric" })
+      .replace(/ de /, " ");
   }
   // Mid-length: weekday + short month + day — e.g. "Mon, Apr 6" / "lun, 6 abr".
   // Used where readers need to scan by weekday without the full prose of fmtDateLong.
@@ -4922,7 +4955,9 @@
       a.date.localeCompare(b.date) || a.start.localeCompare(b.start));
     for (const sh of sorted) {
       const shDate = new Date(sh.date + "T00:00:00");
-      const hrsCls = sh.hours < 9 ? "h warn" : "h ok";
+      // noteOptional users normally work short shifts — don't flag them as a
+      // problem.
+      const hrsCls = (sh.hours < 9 && !userById[sh.empId]?.noteOptional) ? "h warn" : "h ok";
       const drow = el("div", {
         class: "drow tappable",
         onclick: () => openModal("shiftDetail", { viewingShiftId: sh.id }),
@@ -5112,7 +5147,11 @@
       commentField,
     );
 
-    if (hrs < 9) {
+    // Per-user opt-out (e.g. a part-time hire whose normal day is < 9hrs):
+    // owner sets noteOptional on the user, and the under-9hr comment rule
+    // stops applying to them everywhere.
+    const noteRequired = hrs < 9 && !state.currentUser?.noteOptional;
+    if (noteRequired) {
       summaryEl.appendChild(el("div", {class:"comment-required-note"}, tr("commentRequired")));
     }
     wrap.appendChild(summaryEl);
@@ -5120,7 +5159,7 @@
     const submitBtn = el("button", {
       class: "btn primary full",
       onclick: async (ev) => {
-        if (hrs < 9 && !state.comment.trim()) {
+        if (noteRequired && !state.comment.trim()) {
           commentField.focus();
           commentField.classList.add("required");
           return;
@@ -5395,6 +5434,17 @@
     if (isSelf) roleSel.disabled = true;
     const err = el("div", {class:"eu-err", style:"display:none"});
 
+    const noteOptId = `eu-note-opt-${target.id}`;
+    const noteOptIn = el("input", { type:"checkbox", id: noteOptId });
+    noteOptIn.checked = target.noteOptional === true;
+    const noteOptRow = el("div", {class:"eu-checkbox-row"},
+      noteOptIn,
+      el("label", {for: noteOptId},
+        el("div", {class:"eu-checkbox-label"}, tr("noteOptional")),
+        el("div", {class:"eu-checkbox-help"}, tr("noteOptionalHelp")),
+      ),
+    );
+
     const form = el("div", {class:"eu-form"},
       el("label", {class:"field-label"}, tr("username")),
       userIn,
@@ -5402,6 +5452,7 @@
       nameIn,
       el("label", {class:"field-label"}, tr("role")),
       roleSel,
+      noteOptRow,
       err,
       el("div", {class:"eu-actions"},
         el("button", {class:"btn", onclick: navBack}, tr("cancel")),
@@ -5412,11 +5463,17 @@
             id: target.id,
             username: userIn.value.trim().toLowerCase(),
             displayName: nameIn.value.trim(),
+            noteOptional: noteOptIn.checked,
           };
           if (!isSelf) patch.role = roleSel.value;
           try {
             await api.updateUser(patch);
             hydrateFromDb(await api.db());
+            // If the owner toggled the flag on their own account, the live
+            // state.currentUser reference is stale (hydrateFromDb replaced
+            // the users array). Re-point it so the rule-bypass takes effect
+            // immediately without a re-login.
+            if (isSelf && userById[target.id]) state.currentUser = userById[target.id];
             toast(tr("userUpdated"), {kind:"success", pill:"✓"});
             navBack();
           } catch (e) {
@@ -5536,8 +5593,9 @@
     // Hospice nurses typically work full ≥9-hour shifts; anything shorter is
     // usually an incomplete clock-out, half-day, or accidental tap. Surface it
     // visually (red `warn` vs green `ok`) so admins notice on glance — not a
-    // hard error, just a nudge.
-    const ok = sh.hours >= 9;
+    // hard error, just a nudge. Suppressed for users with the noteOptional
+    // bypass (part-time hires whose shift length is intentionally short).
+    const ok = sh.hours >= 9 || emp?.noteOptional === true;
     const u = state.currentUser;
     const editReq = pendingEditRequestFor(sh.id);
 
@@ -5775,8 +5833,9 @@
   function renderShiftCard(sh) {
     // <9h flags potentially anomalous shifts (incomplete clock-out, half-day,
     // accidental). Real shifts under this threshold are uncommon for hospice
-    // work — surface for admin glance, not a hard error.
-    const ok = sh.hours >= 9;
+    // work — surface for admin glance, not a hard error. Suppressed for
+    // users with the noteOptional bypass (intentional part-time shifts).
+    const ok = sh.hours >= 9 || userById[sh.empId]?.noteOptional === true;
     const shDate = new Date(sh.date + "T00:00:00");
     const editedN = sh.adminEdits?.length || 0;
     return el("div", {

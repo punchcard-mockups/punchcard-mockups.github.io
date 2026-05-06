@@ -58,13 +58,14 @@
     --tf-mono: "Azeret Mono", ui-monospace, monospace;
 
     /* Type scale — one source of truth.
-       Body floor is --fs-xs (13px); caps-style pills/badges may drop to
-       --fs-cap (11px) where uppercase + letter-spacing carry the read.
-       Touch-input minimum stays 16px (iOS no-zoom).
+       16px is the hard floor — comments are read at body weight, and
+       nothing in the app should ask the eye to drop below that. The
+       cap/xs/sm aliases collapse to base on purpose so existing rules
+       still type-check, but every "small" surface renders at 16.
        Android at arm's length, end-of-shift readability is the bar. */
-    --fs-cap:  11px;  /* uppercase/letterspaced badges & pills only */
-    --fs-xs:   13px;  /* metadata, captions, table-head */
-    --fs-sm:   14px;  /* secondary text, hint copy */
+    --fs-cap:  16px;  /* was 11 — uppercase/letterspaced badges & pills */
+    --fs-xs:   16px;  /* was 13 — metadata, captions, table-head */
+    --fs-sm:   16px;  /* was 14 — secondary text, hint copy */
     --fs-base: 16px;  /* default body */
     --fs-md:   17px;  /* emphasized body */
     --fs-lg:   20px;  /* small section titles */
@@ -486,7 +487,7 @@
   }
   .dd-table .cmt {
     grid-column: 1 / -1;
-    font-size: var(--fs-xs); color: var(--text-secondary);
+    font-size: var(--fs-sm); color: var(--text-secondary);
     font-style: italic; margin-top: 2px; opacity: .8;
   }
 
@@ -895,10 +896,10 @@
     background: var(--surface-card);
     border: 1px solid var(--outline-soft);
     border-radius: 8px;
-    font-size: var(--fs-sm);
+    font-size: var(--fs-base);
     color: var(--text-secondary);
     font-style: italic;
-    line-height: 1.4;
+    line-height: 1.45;
   }
   /* Same shape as the read-only .sd-comment so the two render identically
      at a glance; the textarea variant just becomes editable on focus. Starts
@@ -911,10 +912,10 @@
     background: var(--surface-card);
     border: 1px solid var(--outline-soft);
     border-radius: 8px;
-    font-size: var(--fs-sm);
+    font-size: var(--fs-base);
     color: var(--text-secondary);
     font-style: italic;
-    line-height: 1.4;
+    line-height: 1.45;
     font-family: inherit;
     resize: none;
     overflow: hidden;
@@ -952,9 +953,10 @@
   }
   .sd-edit-comment {
     margin-top: 6px;
-    font-size: var(--fs-sm);
+    font-size: var(--fs-base);
     font-style: italic;
     color: var(--text-secondary);
+    line-height: 1.45;
   }
 
   .sd-action-row {
@@ -1024,7 +1026,7 @@
     border-bottom: 1.5px solid var(--outline-soft);
     color: var(--text-primary);
     font-family: var(--tf-body);
-    font-size: var(--fs-sm);
+    font-size: var(--fs-base);
     width: 100%;
     resize: none;
     outline: none;
@@ -1939,7 +1941,7 @@
     width: 100%;
     box-sizing: border-box;
     font-family: inherit;
-    font-size: var(--fs-sm);
+    font-size: var(--fs-base);
     padding: 8px 10px;
     border-radius: 8px;
     border: 1px solid var(--outline-soft);
@@ -1972,10 +1974,10 @@
     margin-bottom: 2px;
   }
   .rejection-notice .reason {
-    font-size: var(--fs-sm);
+    font-size: var(--fs-base);
     font-style: italic;
     color: var(--text-primary);
-    line-height: 1.35;
+    line-height: 1.45;
   }
   /* Rejected past-week rows — status already visible via rejectionNotice banner. */
 
@@ -2023,10 +2025,10 @@
     color: var(--text-primary);
   }
   .sd-admin-log-entry .reason {
-    font-size: var(--fs-xs);
+    font-size: var(--fs-base);
     font-style: italic;
     color: var(--text-secondary);
-    line-height: 1.35;
+    line-height: 1.45;
   }
   /* Editable textarea inside a comment entry — blend into the card instead
      of standing out as a white input field. */
@@ -2037,8 +2039,8 @@
     padding: 0;
     font-style: italic;
     color: var(--text-secondary);
-    font-size: var(--fs-xs);
-    line-height: 1.35;
+    font-size: var(--fs-base);
+    line-height: 1.45;
     min-height: 0;
   }
   .sd-admin-log-entry .sd-comment-input:hover { border-color: transparent; }
@@ -2056,7 +2058,7 @@
   .hist-shift-card .edit-badge {
     display: inline-grid;
     place-items: center;
-    width: 20px; height: 20px;
+    width: 24px; height: 24px;
     border-radius: 50%;
     background: var(--accent-amber);
     color: #1a1a1a;
@@ -2558,18 +2560,18 @@
   .tabbar .tab { position: relative; }
   .tabbar .tab .tab-badge {
     position: absolute;
-    top: 4px;
-    right: calc(50% - 24px);
-    min-width: 18px;
-    height: 18px;
-    padding: 0 5px;
+    top: 2px;
+    right: calc(50% - 28px);
+    min-width: 24px;
+    height: 24px;
+    padding: 0 7px;
     border-radius: 999px;
     background: var(--accent-amber);
     color: var(--t-bg);
     font-family: var(--tf-body);
     font-size: var(--fs-cap);
     font-weight: 700;
-    line-height: 18px;
+    line-height: 24px;
     text-align: center;
     letter-spacing: 0;
     box-shadow: 0 0 0 2px var(--t-bg);
@@ -2802,9 +2804,9 @@
   .edit-req-card .er-reason {
     font-family: var(--tf-body);
     font-style: italic;
-    font-size: var(--fs-sm);
+    font-size: var(--fs-base);
     color: var(--text-secondary);
-    line-height: 1.4;
+    line-height: 1.45;
     margin-top: 6px;
   }
   .edit-req-card .er-actions {

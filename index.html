@@ -6,24 +6,19 @@
 <title>PunchCard</title>
 <script>
   // Set <html lang> BEFORE any other parsing so Chrome's language detector
-  // doesn't offer to translate the page on Spanish-speaking grandparents'
-  // phones (real-world complaint — kept getting prompted to translate to
-  // Spanish even when content was already Spanish, because the static
+  // doesn't offer to translate the page (e.g. asking to translate-to-Spanish
+  // on a Spanish-speaking grandparent's phone because the static
   // <html lang="en"> attribute outranked the visible text).
   //
-  // Order of precedence:
-  //   1. Saved choice in localStorage (user toggled the EN/ES switch)
-  //   2. Browser preferred language — if it starts with "es", default to es
-  //   3. Otherwise leave as "en"
+  // Default is Spanish — the audience for this app is Spanish-speaking
+  // nurses, and the previous browser-locale fallback meant English browsers
+  // landed in English by default. The toggle (now in the account menu) lets
+  // anyone flip to English; we just don't make the toggle the gate.
   (function () {
     try {
       var v = localStorage.getItem("pc_lang");
-      if (v !== "en" && v !== "es") {
-        var nav = (navigator.language || (navigator.languages && navigator.languages[0]) || "en").toLowerCase();
-        v = nav.indexOf("es") === 0 ? "es" : "en";
-      }
+      if (v !== "en" && v !== "es") v = "es";
       document.documentElement.lang = v;
-      // Belt-and-suspenders for translation hints that some browsers also read.
       var m = document.createElement("meta");
       m.httpEquiv = "content-language";
       m.content = v;
@@ -247,6 +242,13 @@
     border-radius: 999px;
     background: var(--surface-dark);
     color: var(--text-secondary);
+  }
+  .user-menu-lang {
+    display: flex;
+    justify-content: center;
+    padding: 6px 12px 8px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid var(--outline-soft);
   }
   .user-menu-signout,
   .user-menu-add {
@@ -2977,17 +2979,13 @@
     viewingEmployeeId: null,
     nav: [],            // screen history for back button
     lang: (() => {
-      // Mirror the inline-script logic in <head> so first paint and
-      // first JS-render agree: localStorage > navigator.language > "en".
+      // Mirror the inline-script logic in <head>: explicit choice wins,
+      // otherwise default to Spanish (the app's primary audience).
       try {
         const v = localStorage.getItem("pc_lang");
         if (v === "en" || v === "es") return v;
       } catch {}
-      try {
-        const n = (navigator.language || (navigator.languages && navigator.languages[0]) || "en").toLowerCase();
-        if (n.indexOf("es") === 0) return "es";
-      } catch {}
-      return "en";
+      return "es";
     })(),
     // calendar — default to the viewer's current month; login() and loadDB()
     // re-snap this on every session start so a long-lived tab doesn't drift.
@@ -4428,8 +4426,6 @@
 
     root.appendChild(el("div", { class:"spacer" }));
 
-    root.appendChild(langToggle());
-
     root.appendChild(renderUserMenu());
   }
 
@@ -4467,6 +4463,7 @@
             ? el("div", {class: "user-menu-role"}, tr(roleKey))
             : null,
         ),
+        el("div", {class: "user-menu-lang"}, langToggle()),
         u?.role === "owner"
           ? el("button", {
               class: "user-menu-add",

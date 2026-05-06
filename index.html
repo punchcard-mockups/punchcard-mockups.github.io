@@ -2947,7 +2947,7 @@
     clockOutTz: null,
     comment: "",
     // modals
-    modal: null,        // "addEmployee" | "approvals" | "submitWeek"
+    modal: null,        // "addEmployee" | "shiftDetail" | etc.
     // Cleartext password to reveal back to the owner after a successful
     // password reset. Set when /users/reset-password succeeds; cleared on
     // sheet close so re-opening the sheet starts fresh.
@@ -2960,25 +2960,12 @@
     // shiftDetail), the outer modal is pushed onto this stack so popstate
     // can restore it instead of nuking the whole stack.
     modalStack: [],
-    // drill-in: "empId:weekStart" of approval row currently expanded in approvals modal
-    expandedApproval: null,
-    // key of the approval row currently in rejection-reason entry mode
-    rejectingApproval: null,
     // history week-expansion: Set<weekStart>. Lazy-init.
     expandedHistoryWeeks: null,
-    // inbox week-expansion: Set<`${empId}|${weekStart}`>
-    expandedInboxWeeks: null,
     // direction tracker for screen transitions: 1 = forward push, -1 = back
     navDir: 0,
     // user menu (account dropdown) open state
     userMenuOpen: false,
-    // admin-only: which approved-week pill dropdown is open. Format:
-    // `${empId}|${wkStart}` or null.
-    weekMenuKey: null,
-    // whether the open reopen-menu is primed for confirm (first tap
-    // switched the button into "tap again" state).
-    weekReopenConfirm: false,
-    // flashing toast for banner animation
   };
 
   // =============================================================
@@ -3339,37 +3326,6 @@
     );
   }
 
-  function weekStatus(empId, weekStart) {
-    const wa = weekApprovals.find(w => w.empId === empId && w.weekStart === weekStart);
-    return wa ? wa.status : null;
-  }
-  function weekRejectionComment(empId, weekStart) {
-    const wa = weekApprovals.find(w => w.empId === empId && w.weekStart === weekStart);
-    return wa?.status === "rejected" ? (wa.rejectionComment || "") : "";
-  }
-  // Count of admin direct-edits across every shift in the given week.
-  // Used for the "N admin edits" badge on the week header.
-  function weekAdminEditCount(empId, weekStart) {
-    const start = new Date(weekStart + "T00:00:00");
-    const end = new Date(start); end.setDate(end.getDate() + 7);
-    let n = 0;
-    for (const sh of shifts) {
-      if (sh.empId !== empId) continue;
-      const d = new Date(sh.date + "T00:00:00");
-      if (d < start || d >= end) continue;
-      n += (sh.adminEdits?.length || 0);
-    }
-    return n;
-  }
-  // Merge a server-authoritative week approval entry into the local array.
-  // Called after POST /approvals returns — replaces a matching (empId, weekStart)
-  // row with the server's version, or pushes a new one.
-  function upsertWeekApproval(entry) {
-    const i = weekApprovals.findIndex(w => w.empId === entry.empId && w.weekStart === entry.weekStart);
-    if (i >= 0) weekApprovals[i] = entry;
-    else weekApprovals.push(entry);
-  }
-
   // =============================================================
   // LOCALIZATION
   // =============================================================
@@ -3440,7 +3396,7 @@
       adminEditLog: "Admin edit log",
       deleteShift: "Delete shift",
       deleteShiftConfirmTitle: "Delete this shift?",
-      deleteShiftConfirmBody: (name, date) => `${name}'s shift on ${date} will be erased. The audit log entries on this shift will be lost too — only the deletion reason survives, in the data repo's commit history.`,
+      deleteShiftConfirmBody: (name, date) => `${name}'s shift on ${date} will be erased. This can't be undone.`,
       shiftDeleted: "Shift deleted",
       editedByAdmin: "Edited by admin",
       editedNTimes: (n) => n === 1 ? "1 admin edit" : `${n} admin edits`,
@@ -3636,7 +3592,7 @@
       adminEditLog: "Historial de cambios",
       deleteShift: "Borrar turno",
       deleteShiftConfirmTitle: "¿Borrar este turno?",
-      deleteShiftConfirmBody: (name, date) => `Se eliminará el turno de ${name} del ${date}. El historial de cambios de este turno también se perderá — solo queda el motivo del borrado, en el historial de commits del repositorio de datos.`,
+      deleteShiftConfirmBody: (name, date) => `Se eliminará el turno de ${name} del ${date}. Esta acción no se puede deshacer.`,
       shiftDeleted: "Turno borrado",
       editedByAdmin: "Editado por admin",
       editedNTimes: (n) => n === 1 ? "1 edición del admin" : `${n} ediciones del admin`,
@@ -3952,10 +3908,6 @@
       new Date(s.date + "T00:00:00") >= start &&
       new Date(s.date + "T00:00:00") < end);
   }
-  function pendingApprovals() {
-    return weekApprovals.filter(w => w.status === "pending");
-  }
-
   // =============================================================
   // TOAST
   // =============================================================
@@ -4089,7 +4041,6 @@
       } else {
         state.modal = null;
       }
-      state.expandedApproval = null;
       state.resetPasswordRevealed = null;
       state.confirmDeleteText = "";
       render();
@@ -4122,7 +4073,6 @@
     flushPendingComment();
     state.modal = null;
     state.modalStack = [];
-    state.expandedApproval = null;
     state.expandedHistoryWeeks = null;
     state.clock = "idle"; state.clockIn = state.clockOut = null; state.clockInTz = state.clockOutTz = null; state.comment = "";
     history.replaceState({ depth: 0 }, "");
@@ -4469,31 +4419,16 @@
       return node;
     };
 
-    // Employee: Home / History tabs. The History tab carries a badge
-    // with the count of unsubmitted/rejected past weeks — same pattern
-    // as the admin Inbox badge. Past weeks themselves live in History;
-    // the badge is the affordance that pulls users there.
+    // Employee: Home / History.
     if (isEmployee(u) && (state.screen === "employee_home" || state.screen === "history")) {
-      const unsignedCount = unsignedPastWeeks(u.id).length;
       root.appendChild(el("div", {class: "tabbar"},
         tab("home", "home", "employee_home"),
-        tab("history", "history", "history", unsignedCount),
+        tab("history", "history", "history"),
       ));
       return;
     }
-
-    // Admin / owner / readonly: Home / Inbox. Inbox carries a badge with
-    // the count of pending weeks + edit requests. (The roster lives inside
-    // Home — having a dedicated tab for it left both screens too thin.)
-    if (isAdminLike(u) && (state.screen === "admin_home" || state.screen === "inbox")) {
-      const inboxCount = canApprove(u)
-        ? (pendingApprovals().length + pendingEditRequests().length)
-        : 0;
-      root.appendChild(el("div", {class: "tabbar"},
-        tab("home", "home", "admin_home"),
-        tab("inbox", "inbox", "inbox", inboxCount),
-      ));
-    }
+    // Admin/owner/readonly: a single "home" view holds calendar + roster, so
+    // there's nothing to switch to — no tabbar needed.
   }
 
   // =============================================================
@@ -4573,80 +4508,37 @@
     root.appendChild(el("div", {class:"today-label"}, `${tr("today")} · ${todayLabel}`));
     root.appendChild(el("div", {style:"height:12px"}));
 
-    // Always: Clock In → Current week. Past weeks live on the History
-    // tab now (with their own urgent styling + rejection notice + Submit
-    // footer), so they don't get duplicated here. The History tab carries
-    // a numeric badge with the count of unsubmitted/rejected past weeks
-    // — that's the affordance that pulls users over.
     root.appendChild(clockSection());
-    root.appendChild(el("div", {class:"signoff-label", style:"margin-top:14px"}, tr("weeklySignoff")));
-    root.appendChild(weekSignoffCard());
-
     root.appendChild(el("div", {style:"height:40px"}));
   }
 
   // ============================================================
-  // UNIFIED WEEK CARD — used on Home (current + past weeks),
-  // History, and Inbox. Header (range + hours + status) +
-  // optional body (shift cards) + optional footer (actions).
-  // Variants:
-  //   mode "home-current"  — always-expanded, footer = Submit/Resubmit
-  //                          or Pull-back, or lock notice if approved.
-  //   mode "home-past"     — always-expanded, footer = Submit/Resubmit.
-  //   mode "history"       — collapsible, status pill (Reopen menu for admin
-  //                          on approved). No primary footer action.
-  //   mode "inbox"         — collapsible. Footer = Approve / Reject (or
-  //                          a reject-reason form when in rejecting mode).
+  // WEEK CARD — collapsible week roll-up showing range + hours,
+  // expanding to a list of shift cards. Used on the History tab and
+  // on per-employee admin views. (Weekly submission/approval flow
+  // was removed: shifts now just stack up with no status pill, no
+  // submit button, and no admin inbox.)
   // ============================================================
   function renderWeekRow(opts) {
     const {
-      empId, weekStart, mode,
+      empId, weekStart,
       showEmployee = false,
       forceExpanded = false,
     } = opts;
 
     const wkShifts = shiftsForWeek(empId, weekStart);
     const wkHours = wkShifts.reduce((s, x) => s + x.hours, 0);
-    const status = weekStatus(empId, weekStart);
-    const rejectionComment = weekRejectionComment(empId, weekStart);
     const wkEnd = weekEndOf(weekStart);
     const emp = userById[empId];
-    const u = state.currentUser;
 
     // ---- expansion state ----
-    let expanded;
-    let toggleExpand = null;
-    if (forceExpanded || mode === "home-current" || mode === "home-past") {
-      expanded = true;
-    } else if (mode === "history") {
-      if (state.expandedHistoryWeeks == null) state.expandedHistoryWeeks = new Set();
-      const set = state.expandedHistoryWeeks;
-      expanded = set.has(weekStart);
-      toggleExpand = () => {
-        if (expanded) set.delete(weekStart); else set.add(weekStart);
-        render();
-      };
-    } else if (mode === "inbox") {
-      if (state.expandedInboxWeeks == null) state.expandedInboxWeeks = new Set();
-      const key = `${empId}|${weekStart}`;
-      const set = state.expandedInboxWeeks;
-      expanded = set.has(key);
-      toggleExpand = () => {
-        if (expanded) set.delete(key); else set.add(key);
-        render();
-      };
-    }
-
-    // ---- card classes ----
-    // Urgent/rejected styling applies wherever a past, unsubmitted-or-
-    // rejected week appears — home-past AND history. Drives the colored
-    // border so the eye lands on the weeks that need action first.
-    const classes = ["week-card", "week-rollup"];
-    const isPastWeek = weekStart < thisWeekStart();
-    const needsAction = !status || status === "rejected";
-    if (mode === "home-past" || (mode === "history" && isPastWeek && needsAction)) {
-      classes.push(rejectionComment ? "rejected" : "urgent");
-    }
+    if (state.expandedHistoryWeeks == null) state.expandedHistoryWeeks = new Set();
+    const set = state.expandedHistoryWeeks;
+    let expanded = forceExpanded || set.has(weekStart);
+    const toggleExpand = forceExpanded ? null : () => {
+      if (set.has(weekStart)) set.delete(weekStart); else set.add(weekStart);
+      render();
+    };
 
     // ---- title + meta block ----
     const titleBlock = el("div", {class:"wc-title-block"});
@@ -4658,289 +4550,28 @@
     titleBlock.appendChild(el("div", {class:"wc-sub"},
       `${wkHours.toFixed(1)}${tr("hoursShort")} · ${wkShifts.length} ${tr("shifts").toLowerCase()}`));
 
-    // ---- right side: hours + optional status pill + chevron ----
-    const right = el("div", {class:"wc-right"});
-    // Past unsubmitted weeks get a filled amber "Unsubmitted" pseudo-pill
-    // wherever they appear (history + home-past). Same visual slot as the
-    // other status pills, so the eye learns "right side = state of this
-    // week" — there's never an empty/ambiguous past row.
-    const showUnsubmittedPill = !status
-      && isPastWeek
-      && (mode === "history" || mode === "home-past");
-    if (showUnsubmittedPill) {
-      right.appendChild(el("span", {class:"wc-status unsubmitted"}, tr("weekUnsubmitted")));
-    } else if (status) {
-      const label = status === "approved" ? tr("weekApproved")
-                  : status === "rejected" ? tr("weekRejected")
-                  : tr("weekPending");
-      const canReopen = mode === "history"
-        && status === "approved"
-        && canApprove(u);
-      const menuKey = `${empId}|${weekStart}`;
-      const isMenuOpen = canReopen && state.weekMenuKey === menuKey;
-      const pill = el("span", {
-        class: `wc-status ${status}${canReopen ? " has-menu" : ""}${isMenuOpen ? " open" : ""}`,
-      }, label);
-      if (canReopen) {
-        pill.addEventListener("click", (ev) => {
-          ev.stopPropagation();
-          state.weekMenuKey = isMenuOpen ? null : menuKey;
-          state.weekReopenConfirm = false;
-          render();
-        });
-        if (isMenuOpen) {
-          const primed = state.weekReopenConfirm;
-          const menu = el("div", {class:"w-status-menu"},
-            el("button", {
-              class: `w-status-menu-item${primed ? " confirm" : ""}`,
-              onclick: async (ev) => {
-                ev.stopPropagation();
-                if (!primed) { state.weekReopenConfirm = true; render(); return; }
-                if (ev.currentTarget.disabled) return;
-                ev.currentTarget.disabled = true;
-                try {
-                  await api.setApproval(empId, weekStart, "unsubmitted");
-                  const i = weekApprovals.findIndex(w => w.empId === empId && w.weekStart === weekStart);
-                  if (i >= 0) weekApprovals.splice(i, 1);
-                  state.weekMenuKey = null;
-                  state.weekReopenConfirm = false;
-                  toast(tr("weekReopened"), {kind:"warn", pill:"↺"});
-                  render();
-                } catch (e) {
-                  ev.currentTarget.disabled = false;
-                  toastApiError(e, tr("errCouldntReopen"));
-                }
-              },
-            }, primed ? tr("reopenWeekConfirm") : tr("reopenWeek")),
-          );
-          pill.appendChild(menu);
-        }
-      }
-      right.appendChild(pill);
-    } else {
-      right.appendChild(el("span", {class:"wc-hrs"}, `${wkHours.toFixed(1)}${tr("hoursShort")}`));
-    }
+    // ---- right side: hours + chevron ----
+    const right = el("div", {class:"wc-right"},
+      el("span", {class:"wc-hrs"}, `${wkHours.toFixed(1)}${tr("hoursShort")}`),
+    );
     if (toggleExpand) {
       right.appendChild(el("span", {class:`chevron ${expanded ? "up" : ""}`}, "›"));
     }
 
-    // ---- header (tappable when collapsible) ----
     const head = el("div", {
       class: "wc-head" + (toggleExpand ? " tappable" : ""),
       onclick: toggleExpand || null,
     }, titleBlock, right);
 
-    const card = el("div", {class: classes.join(" ")}, head);
+    const card = el("div", {class:"week-card week-rollup"}, head);
 
-    // attestation line for unsigned/rejected current week
-    if (mode === "home-current" && (!status || status === "rejected")) {
-      card.appendChild(el("div", {class:"wc-attest"}, tr("signoffAttest")));
-    }
-
-    // rejection notice (employee sees admin's reason). Visible everywhere
-    // except inbox (where the admin already sees the week and chose to
-    // reject — they don't need their own reason echoed back).
-    if (rejectionComment && mode !== "inbox") {
-      card.appendChild(el("div", {style:"margin-top:10px"}, rejectionNotice(rejectionComment)));
-    }
-
-    // expanded body — list of shift cards
     if (expanded && wkShifts.length > 0) {
       const sorted = [...wkShifts].sort((a,b) =>
         a.date.localeCompare(b.date) || a.start.localeCompare(b.start));
       for (const sh of sorted) card.appendChild(renderShiftCard(sh));
     }
 
-    // footer: contextual actions / lock notice
-    const footer = renderWeekFooter({ mode, empId, weekStart, status, wkShifts });
-    if (footer) card.appendChild(footer);
-
     return card;
-  }
-
-  // Builds the contextual footer for a week-card. Returns null if the week
-  // has nothing to do at the moment (e.g., approved week in history).
-  function renderWeekFooter(opts) {
-    const { mode, empId, weekStart, status, wkShifts } = opts;
-    const u = state.currentUser;
-
-    // Approved week on home: a calm "approved & locked" notice. No action.
-    if (mode === "home-current" && status === "approved") {
-      return el("div", {class:"wc-footer"},
-        el("div", {class:"wc-lock approved"},
-          ICON("lock", 16),
-          el("span", {}, tr("weekClosedBody")),
-        ),
-      );
-    }
-    // Pending week on home (employee submitted, awaiting admin):
-    // lock notice + Pull Back action.
-    if (mode === "home-current" && status === "pending") {
-      return el("div", {class:"wc-footer"},
-        el("div", {class:"wc-lock"},
-          ICON("eye", 16),
-          el("span", {}, tr("weekPendingBody")),
-        ),
-        el("div", {class:"wc-footer-actions", style:"margin-top:10px;"},
-          el("button", {
-            class:"btn",
-            onclick: async (ev) => {
-              if (ev.currentTarget.disabled) return;
-              ev.currentTarget.disabled = true;
-              try {
-                await api.setApproval(empId, weekStart, "unsubmitted");
-                const i = weekApprovals.findIndex(w => w.empId === empId && w.weekStart === weekStart);
-                if (i >= 0) weekApprovals.splice(i, 1);
-                toast(tr("weekPulledBack"), {kind:"warn", pill:"↺"});
-                render();
-              } catch (e) {
-                ev.currentTarget.disabled = false;
-                toastApiError(e, tr("errCouldntPullBack"));
-              }
-            },
-          }, tr("pullBack")),
-        ),
-      );
-    }
-
-    // History mode: a past unsubmitted/rejected week shown to its owning
-    // employee gets the same Submit/Resubmit footer that home-past used to
-    // show. Admins viewing the same row get no footer — they shouldn't be
-    // submitting on the employee's behalf from this surface (they have
-    // admin-edit and add-shift for that). Implemented by treating it as a
-    // home-past mode for the subsequent generic block.
-    let effectiveMode = mode;
-    if (mode === "history"
-        && weekStart < thisWeekStart()
-        && (!status || status === "rejected")
-        && isEmployee(u) && empId === u.id) {
-      effectiveMode = "home-past";
-    }
-
-    // Unsigned current or past week (or rejected — same Submit affordance):
-    // Submit / Resubmit. Disabled if user is currently clocked in.
-    if ((effectiveMode === "home-current" || effectiveMode === "home-past")
-        && (!status || status === "rejected")) {
-      const openShift = state.clock === "in";
-      const label = status === "rejected" ? tr("resubmit") : tr("submitWeek");
-      const wrap = el("div", {class:"wc-footer"});
-      if (openShift) {
-        wrap.appendChild(el("div", {class:"wc-warn"}, tr("submitBlockedOpenShift")));
-      }
-      wrap.appendChild(el("div", {class:"wc-footer-actions", style: openShift ? "margin-top:8px;" : ""},
-        el("button", {
-          class:"btn primary",
-          disabled: openShift || undefined,
-          onclick: async (ev) => {
-            if (ev.currentTarget.disabled) return;
-            const btn = ev.currentTarget;
-            btn.disabled = true;
-            const cardNode = btn.closest(".week-card");
-            try {
-              const { entry } = await api.setApproval(empId, weekStart, "pending");
-              if (mode === "home-past") {
-                animateOutAndThen(cardNode, () => {
-                  upsertWeekApproval(entry);
-                  toast(tr("weekSubmitted"), {kind:"success", pill:"✓"});
-                  render();
-                });
-              } else {
-                upsertWeekApproval(entry);
-                animateShrinkAndThen(btn, () => {
-                  toast(tr("weekSubmitted"), {kind:"success", pill:"✓"});
-                  render();
-                  const pill = document.querySelector(".week-card .wc-status.pending");
-                  if (pill) pill.classList.add("pop-in");
-                });
-              }
-            } catch (e) {
-              btn.disabled = false;
-              toastApiError(e, tr("errCouldntSubmitWeek"));
-            }
-          },
-        }, label),
-      ));
-      return wrap;
-    }
-
-    // Inbox row: Approve / Reject. If currently in rejecting-reason mode
-    // for this row, swap actions for the textarea + danger-confirm submit.
-    if (mode === "inbox" && status === "pending" && canApprove(u)) {
-      const key = `${empId}|${weekStart}`;
-      const isRejecting = state.rejectingApproval === key;
-      const wrap = el("div", {class:"wc-footer"});
-      if (isRejecting) {
-        let submitBtn;
-        const reasonField = el("textarea", {
-          class:"reject-reason-field",
-          placeholder: tr("rejectReasonPlaceholder"),
-          rows: 3,
-          oninput: () => { if (submitBtn) submitBtn.disabled = !reasonField.value.trim(); },
-        });
-        wrap.appendChild(el("div", {class:"reject-reason-title"}, tr("rejectReasonTitle")));
-        wrap.appendChild(reasonField);
-        submitBtn = el("button", {
-          class:"btn danger-confirm",
-          disabled: true,
-          onclick: async (ev) => {
-            const reason = reasonField.value.trim();
-            if (!reason) { reasonField.focus(); return; }
-            if (ev.currentTarget.disabled) return;
-            ev.currentTarget.disabled = true;
-            const cardNode = ev.currentTarget.closest(".week-card");
-            try {
-              const { entry } = await api.setApproval(empId, weekStart, "rejected", reason);
-              animateOutAndThen(cardNode, () => {
-                upsertWeekApproval(entry);
-                state.rejectingApproval = null;
-                state.expandedInboxWeeks?.delete(key);
-                toast(tr("weekRejectedToast"), {kind:"warn", pill:"↺"});
-                render();
-              });
-            } catch (e) {
-              ev.currentTarget.disabled = false;
-              toastApiError(e, tr("errCouldntReject"));
-            }
-          },
-        }, tr("reject"));
-        const cancelBtn = el("button", {
-          class:"btn",
-          onclick: () => { state.rejectingApproval = null; render(); },
-        }, tr("cancel"));
-        wrap.appendChild(el("div", {class:"wc-footer-actions", style:"margin-top:10px;"}, submitBtn, cancelBtn));
-        setTimeout(() => reasonField.focus(), 0);
-      } else {
-        wrap.appendChild(el("div", {class:"wc-footer-actions"},
-          el("button", {
-            class:"btn danger",
-            onclick: () => { state.rejectingApproval = key; render(); },
-          }, tr("reject")),
-          el("button", {
-            class:"btn primary",
-            onclick: async (ev) => {
-              if (ev.currentTarget.disabled) return;
-              ev.currentTarget.disabled = true;
-              const cardNode = ev.currentTarget.closest(".week-card");
-              try {
-                const { entry } = await api.setApproval(empId, weekStart, "approved");
-                animateOutAndThen(cardNode, () => {
-                  upsertWeekApproval(entry);
-                  state.expandedInboxWeeks?.delete(key);
-                  toast(tr("weekApprovedToast"), {kind:"success", pill:"✓"});
-                  render();
-                });
-              } catch (e) {
-                ev.currentTarget.disabled = false;
-                toastApiError(e, tr("errCouldntApprove"));
-              }
-            },
-          }, tr("approve")),
-        ));
-      }
-      return wrap;
-    }
-
-    return null;
   }
 
   // Shared compact shift list used by admin approvals drill-in,
@@ -4976,82 +4607,12 @@
     return details;
   }
 
-  function weekSignoffCard() {
-    const u = state.currentUser;
-    return renderWeekRow({
-      empId: u.id,
-      weekStart: thisWeekStart(),
-      mode: "home-current",
-    });
-  }
-
-  // Amber-outlined banner showing the admin's rejection reason.
-  function rejectionNotice(reason) {
-    return el("div", {class:"rejection-notice"},
-      el("div", {class:"label"}, tr("rejectedByAdmin")),
-      el("div", {class:"reason"}, `"${reason}"`),
-    );
-  }
-
-  // Past weeks that need the employee's action: unsigned (no status yet) OR
-  // rejected (admin sent back). Approved / pending weeks are excluded.
-  function unsignedPastWeeks(empId) {
-    const thisWk = thisWeekStart();
-    const weeks = new Map(); // wkStart -> {hours, count}
-    for (const sh of shifts) {
-      if (sh.empId !== empId) continue;
-      const wkStart = weekStartOf(sh.date);
-      if (wkStart >= thisWk) continue;
-      const st = weekStatus(empId, wkStart);
-      if (st === "pending" || st === "approved") continue;
-      const agg = weeks.get(wkStart) || {hours:0, count:0};
-      agg.hours += sh.hours;
-      agg.count += 1;
-      weeks.set(wkStart, agg);
-    }
-    return [...weeks.entries()]
-      .map(([wkStart, agg]) => ({
-        wkStart, ...agg,
-        rejectionComment: weekRejectionComment(empId, wkStart),
-      }))
-      .sort((a,b) => b.wkStart.localeCompare(a.wkStart));
-  }
-
-  function pastWeeksSignoffSection() {
-    const u = state.currentUser;
-    const past = unsignedPastWeeks(u.id);
-    if (!past.length) return null;
-    const wrap = document.createDocumentFragment();
-    wrap.appendChild(el("div", {
-      id: "past-weeks-section",
-      class: "signoff-label signoff-label--urgent",
-    }, tr("needsAttention")));
-    for (const w of past) {
-      wrap.appendChild(renderWeekRow({
-        empId: u.id,
-        weekStart: w.wkStart,
-        mode: "home-past",
-      }));
-    }
-    return wrap;
-  }
-
   function clockSection() {
-    const u = state.currentUser;
-    // Three states only — Idle / In progress / Just finished. Week-locked
-    // signaling (approved / pending) lives on the WeekRow below: the week
-    // IS the locked thing. When the week is locked AND the user is idle,
-    // we render the Clock In button disabled with a calm explanation; the
-    // weekRow's footer carries the actionable lock notice + Pull Back.
-    const wkStart = thisWeekStart();
-    const wkSt = state.clock === "idle" ? weekStatus(u.id, wkStart) : null;
-    const weekIsLocked = wkSt === "approved" || wkSt === "pending";
-
+    // Three states only — Idle / In progress / Just finished.
     if (state.clock === "idle") {
       const btn = el("button", {
-        class: `btn hero clock-in${weekIsLocked ? " disabled" : ""}`,
-        disabled: weekIsLocked || undefined,
-        onclick: weekIsLocked ? null : async () => {
+        class: "btn hero clock-in",
+        onclick: async () => {
           state.clock = "in";
           state.clockIn = new Date();
           state.clockInCoord = null;
@@ -5241,7 +4802,6 @@
       el("small", {}, `${employees().length} ${tr("registered")}`),
     ));
     for (const e of employees()) {
-      const hasPending = weekApprovals.some(w => w.empId === e.id && w.status === "pending");
       root.appendChild(el("div", {
         class: "emp-row",
         onclick: () => navTo("admin_employee", { viewingEmployeeId: e.id, selectedDay: null }),
@@ -5250,86 +4810,12 @@
         el("div", {class:"body"},
           el("div", {class:"name"},
             el("span", {style:`color:${e.color}`}, e.displayName),
-            hasPending ? el("span", {class:"badge"}, tr("weekPending")) : null,
           ),
           el("div", {class:"meta"}, "@" + e.username),
         ),
         el("div", {class:"chev"}, ICON("chevRight")),
       ));
     }
-    root.appendChild(el("div", {style:"height:60px"}));
-  }
-
-  // Admin "Inbox" tab — pending weeks + edit requests in a single feed.
-  // Replaces the old `state.modal === "approvals"` pop-up. Each week is a
-  // unified WeekRow (mode "inbox") with Approve/Reject in the footer.
-  function renderInbox() {
-    const u = state.currentUser;
-    const root = document.getElementById("scrollRoot");
-    root.innerHTML = "";
-
-    root.appendChild(greetingBlock(u, { showRole: true }));
-
-    const pending = pendingApprovals();
-    const pendingEdits = pendingEditRequests();
-
-    if (!pending.length && !pendingEdits.length) {
-      root.appendChild(el("div", {class:"inbox-empty"}, tr("inboxNothing")));
-      root.appendChild(el("div", {style:"height:60px"}));
-      return;
-    }
-
-    if (pending.length) {
-      root.appendChild(el("div", {class:"inbox-section-label"}, tr("inboxPendingWeeks")));
-      for (const w of pending) {
-        root.appendChild(renderWeekRow({
-          empId: w.empId,
-          weekStart: w.weekStart,
-          mode: "inbox",
-          showEmployee: true,
-        }));
-      }
-    }
-
-    if (pendingEdits.length) {
-      root.appendChild(el("div", {class:"inbox-section-label", style:"margin-top:24px"}, tr("editRequests")));
-      for (const r of pendingEdits) {
-        const emp = userById[r.empId];
-        const sh = shifts.find(s => s.id === r.shiftId);
-        const shDate = sh ? new Date(sh.date + "T00:00:00") : null;
-        root.appendChild(el("div", {class:"edit-req-card"},
-          el("div", {class:"er-head"},
-            el("span", {class:"er-name", style:`color:${emp.color}`}, emp.displayName),
-            el("span", {class:"er-date"}, sh ? fmtDateWD(sh.date) : ""),
-          ),
-          el("div", {class:"er-times"},
-            sh ? el("span", {class:"strike"},
-              timeRangeWithTz(sh.start, sh.end, sh.clockInTz, sh.clockOutTz, shDate)) : null,
-            el("span", {class:"arrow"}, "→"),
-            el("span", {class:"new"},
-              timeRangeWithTz(r.start, r.end, sh?.clockInTz, sh?.clockOutTz, shDate)),
-          ),
-          el("div", {class:"er-reason"}, `"${r.comment}"`),
-          canApprove(u) ? el("div", {class:"er-actions"},
-            el("button", {
-              class:"btn danger",
-              onclick: (ev) => {
-                const cardNode = ev.currentTarget.closest(".edit-req-card");
-                animateOutAndThen(cardNode, () => rejectEditRequest(r.id));
-              },
-            }, tr("rejectEdit")),
-            el("button", {
-              class:"btn primary",
-              onclick: (ev) => {
-                const cardNode = ev.currentTarget.closest(".edit-req-card");
-                animateOutAndThen(cardNode, () => approveEditRequest(r.id));
-              },
-            }, tr("approveEdit")),
-          ) : null,
-        ));
-      }
-    }
-
     root.appendChild(el("div", {style:"height:60px"}));
   }
 
@@ -5560,11 +5046,6 @@
     const mine = shifts.filter(s => s.empId === u.id)
       .sort((a,b) => b.date.localeCompare(a.date) || b.start.localeCompare(a.start));
 
-    const withCoords = mine.filter(s => s.clockIn || s.clockOut);
-    if (withCoords.length > 0) {
-      root.appendChild(miniMap(withCoords));
-    }
-
     appendGroupedShifts(root, mine, u.id);
     root.appendChild(el("div", {style:"height:40px"}));
   }
@@ -5649,10 +5130,7 @@
     // is flushed to the server when the sheet closes (or a sub-modal opens
     // on top). Everyone else — admins viewing someone else's shift, or the
     // employee themselves after submission — sees a read-only display.
-    const weekSt = weekStatus(sh.empId, weekStartOf(sh.date));
-    const weekIsLocked = weekSt === "approved";
-    const weekIsOpen = weekSt !== "pending" && !weekIsLocked;
-    const canEditComment = isEmployee(u) && u.id === sh.empId && weekIsOpen;
+    const canEditComment = isEmployee(u) && u.id === sh.empId;
     if (canEditComment) {
       root.appendChild(el("div", {class:"sd-section-label"}, tr("commentLabel")));
       const ta = el("textarea", {
@@ -5695,14 +5173,18 @@
       root.appendChild(el("div", {class:"sd-comment"}, `"${sh.comment}"`));
     }
 
-    // Map for just this shift
-    const locShifts = [];
-    if (sh.clockIn || sh.clockOut) locShifts.push(sh);
-    if (locShifts.length > 0) {
-      root.appendChild(el("div", {class:"sd-section-label"}, tr("locationCaptured")));
-      root.appendChild(miniMap(locShifts));
-    } else {
-      root.appendChild(el("div", {class:"sd-no-loc"}, tr("noLocation")));
+    // Map for just this shift — admins/owners only. Employees viewing their
+    // own shifts don't need to see GPS pins; that's a glance-tool for whoever
+    // is reviewing them.
+    if (!isSelfView) {
+      const locShifts = [];
+      if (sh.clockIn || sh.clockOut) locShifts.push(sh);
+      if (locShifts.length > 0) {
+        root.appendChild(el("div", {class:"sd-section-label"}, tr("locationCaptured")));
+        root.appendChild(miniMap(locShifts));
+      } else {
+        root.appendChild(el("div", {class:"sd-no-loc"}, tr("noLocation")));
+      }
     }
 
     // Pending edit request banner
@@ -5753,12 +5235,11 @@
     }
 
     // Actions:
-    //   - owner/admin: can approve/reject a pending employee edit request,
-    //     and can directly edit the shift (requires a reason, logged).
-    //   - employee on own shift: can request an edit — UNLESS the week has
-    //     already been admin-approved, in which case the shift is locked.
-    //   (weekSt / weekIsLocked / weekIsOpen are computed above, next to
-    //    the comment editor, since both sections key off them.)
+    //   - owner/admin: can approve/reject a stale pending employee edit
+    //     request that's still in the data, and can directly edit the shift
+    //     (requires a reason, logged).
+    //   - employees no longer have any action surface here — they'll text
+    //     the owner if a shift needs fixing.
 
     if (editReq && canApprove(u)) {
       root.appendChild(el("div", {class:"sd-action-row"},
@@ -5789,16 +5270,9 @@
         onclick: () => openModal("confirmDeleteShift"),
       }, tr("deleteShift")));
     }
-    if (!canApprove(u) && !editReq && isEmployee(u) && u.id === sh.empId && !weekIsLocked) {
-      // Employee on own active shift: "Request edit" still lives in a
-      // sub-sheet (time changes go through admin approval). Comment edits
-      // happen inline via the editable textarea rendered above.
-      root.appendChild(el("button", {
-        class:"btn primary full",
-        style: "margin-top:8px;",
-        onclick: () => openModal("editShift"),
-      }, tr("requestEdit")));
-    }
+    // No "Request edit" button for employees — they'll text the owner if
+    // a shift's times need fixing. Comment edits happen inline via the
+    // editable textarea rendered above.
 
     root.appendChild(el("div", {style:"height:40px"}));
   }
@@ -5904,11 +5378,9 @@
       }
       const wKeys = [...byWeek.keys()].sort().reverse();
       for (const wkStart of wKeys) {
-        // History uses the unified WeekRow (mode "history") — collapsible
-        // header, status pill (with Reopen menu for admin/owner on approved
-        // weeks), and shift cards inside when expanded.
+        // Collapsible week roll-up; expands into shift cards on tap.
         root.appendChild(renderWeekRow({
-          empId, weekStart: wkStart, mode: "history",
+          empId, weekStart: wkStart,
         }));
       }
     }
@@ -6155,13 +5627,6 @@
           }
         }}, tr("add")),
       ));
-    } else if (state.modal === "approvals") {
-      // Legacy approvals modal — replaced by the Inbox tab (renderInbox).
-      // Kept guarded as a no-op in case any in-flight history entry asks
-      // for it; close immediately and route to inbox.
-      state.modal = null;
-      navTab("inbox");
-      return;
     } else if (state.modal === "shiftDetail") {
       // A bottom-sheet variant of the old full-screen shift detail. The
       // internal layout (header with avatar + hours, time rows, map, audit
@@ -6520,34 +5985,22 @@
         delBtn,
       ));
     } else if (state.modal === "confirmDeleteShift") {
-      // Owner-only hard-delete of a shift. The data repo's commit history
-      // is the audit log — the typed reason becomes the commit message,
-      // so it must be non-empty. After delete, navBack() exits the now-
-      // empty shift detail sheet.
+      // Owner-only hard-delete of a shift. After delete, navBack() exits
+      // the now-empty shift detail sheet.
       const sh = shifts.find(s => s.id === state.viewingShiftId);
       if (!sh) { close(); return; }
       const emp = userById[sh.empId];
-      const reasonIn = el("textarea", { rows: 3, placeholder: tr("adminEditReason") });
       const err = el("div", {class:"err", style:"display:none"});
       card.appendChild(el("h3", {}, tr("deleteShiftConfirmTitle")));
       card.appendChild(el("p", {}, tr("deleteShiftConfirmBody", emp?.displayName ?? "", fmtDateLong(sh.date))));
-      card.appendChild(el("label", {class:"field-label"}, tr("reasonRequiredLabel")));
-      card.appendChild(reasonIn);
       card.appendChild(err);
       card.appendChild(el("div", {class:"actions"},
         el("button", {class:"btn", onclick: close}, tr("cancel")),
         el("button", {class:"btn danger-confirm", onclick: async (ev) => {
-          const reason = reasonIn.value.trim();
-          if (!reason) {
-            err.textContent = tr("adminEditReasonRequired");
-            err.style.display = "block";
-            reasonIn.focus();
-            return;
-          }
           if (ev.currentTarget.disabled) return;
           ev.currentTarget.disabled = true;
           try {
-            await api.deleteShift(sh.id, reason);
+            await api.deleteShift(sh.id, "");
             hydrateFromDb(await api.db());
             toast(tr("shiftDeleted"), {kind:"success", pill:"✓"});
             state.modal = null;
@@ -6606,8 +6059,6 @@
       renderHistory();
     } else if (state.screen === "admin_home") {
       renderAdminHome();
-    } else if (state.screen === "inbox") {
-      renderInbox();
     } else if (state.screen === "admin_employee") {
       renderAdminEmployee();
     } else if (state.screen === "manage_users") {
@@ -6623,17 +6074,10 @@
   // Children of the trigger / menu stop propagation so the menu survives
   // internal clicks.
   document.addEventListener("click", () => {
-    let needsRender = false;
     if (state.userMenuOpen) {
       state.userMenuOpen = false;
       renderTopbar();
     }
-    if (state.weekMenuKey) {
-      state.weekMenuKey = null;
-      state.weekReopenConfirm = false;
-      needsRender = true;
-    }
-    if (needsRender) render();
   });
 
   // Keyboard-aware viewport: lift the bottom sheet (and anything that reads

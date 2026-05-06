@@ -3865,14 +3865,13 @@
     return svg(paths[name], w);
   }
 
-  function fmt12(hhmm) {
+  function fmtHM(hhmm) {
     const [h, m] = hhmm.split(":").map(Number);
-    // Build a Date so the formatter can render the AM/PM marker in the
-    // current locale (e.g. "PM" in en-US, "p. m." in es-ES). Forcing
-    // hour12 keeps the format identical between languages — Spanish
-    // would otherwise default to 24-hour and clash with the rest of the UI.
+    // 24-hour format everywhere — both languages render "07:30" / "16:15"
+    // identically, and Spanish 24h ("16:15") matches how nurses actually
+    // write times on a punch card.
     const d = new Date(2000, 0, 1, h, m);
-    return d.toLocaleTimeString(locale(), { hour: "numeric", minute: "2-digit", hour12: true });
+    return d.toLocaleTimeString(locale(), { hour: "2-digit", minute: "2-digit", hour12: false });
   }
   // True when the shift wraps past midnight (end-of-day before start-of-day).
   // Both args are "HH:MM"; null/empty inputs return false.
@@ -3912,17 +3911,14 @@
     return node;
   }
   function fmtTimeDate(d) {
-    // Force 12-hour: every other time on the page comes from fmt12() which
-    // always renders "10:00 PM". Without hour12 here, Spanish locale would
-    // give "22:00" and the live clock-in label would clash with the rest.
-    return d.toLocaleTimeString(locale(), { hour: "numeric", minute: "2-digit", hour12: true });
+    return d.toLocaleTimeString(locale(), { hour: "2-digit", minute: "2-digit", hour12: false });
   }
 
   // Render a single time-of-day followed by its tz tag (if any) as a span.
   function timeWithTz(timeStr, tz, dateHint) {
     const short = tz ? tzShort(tz, dateHint) : "";
     return el("span", {class:"twtz"},
-      fmt12(timeStr),
+      fmtHM(timeStr),
       short ? el("span", {class:"tz-inline"}, short) : null,
     );
   }
@@ -3938,15 +3934,15 @@
     const overnightBadge = overnight ? el("span", {class:"overnight-badge"}, "+1d") : null;
     if (s && e && s === e) {
       return el("span", {class:"twtz"},
-        `${fmt12(startStr)} – ${fmt12(endStr)}`,
+        `${fmtHM(startStr)} – ${fmtHM(endStr)}`,
         el("span", {class:"tz-inline"}, s),
         overnightBadge,
       );
     }
-    const parts = [fmt12(startStr)];
+    const parts = [fmtHM(startStr)];
     if (s) parts.push(el("span", {class:"tz-inline"}, s));
     parts.push(" – ");
-    parts.push(fmt12(endStr));
+    parts.push(fmtHM(endStr));
     if (e) parts.push(el("span", {class:"tz-inline"}, e));
     if (overnightBadge) parts.push(overnightBadge);
     return el("span", {class:"twtz"}, ...parts);
@@ -5213,7 +5209,7 @@
     const times = el("div", {class:"sd-rows"});
     const startRow = el("div", {class:"sd-row"},
       el("span", {class:"sd-label"}, tr("start")),
-      el("span", {class:"sd-value"}, fmt12(sh.start)),
+      el("span", {class:"sd-value"}, fmtHM(sh.start)),
     );
     if (inTz) startRow.appendChild(el("span", {class:"sd-tz"}, inTz));
     times.appendChild(startRow);
@@ -5223,7 +5219,7 @@
     // off-center.
     const overnight = isOvernight(sh.start, sh.end);
     const endValue = el("span", {class:"sd-value-wrap"},
-      el("span", {class:"sd-value"}, fmt12(sh.end)),
+      el("span", {class:"sd-value"}, fmtHM(sh.end)),
       overnight ? el("span", {class:"overnight-badge"}, "+1d") : null,
     );
     const endRow = el("div", {class:"sd-row"},
@@ -5302,20 +5298,20 @@
             el("div", {class:"meta"},
               el("span", {class:"who"}, editor ? editor.displayName : tr("admin")),
               when ? el("span", {class:"when"}, when.toLocaleString(locale(), {
-                month: "short", day: "numeric", hour: "numeric", minute: "2-digit", hour12: true,
+                month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false,
               })) : null,
             ),
             e.action === "created" || !e.oldStart || !e.oldEnd
               ? el("div", {class:"diff"},
-                  el("span", {class:"after"}, `${fmt12(e.newStart)} – ${fmt12(e.newEnd)}`),
+                  el("span", {class:"after"}, `${fmtHM(e.newStart)} – ${fmtHM(e.newEnd)}`),
                   isOvernight(e.newStart, e.newEnd) ? el("span", {class:"overnight-badge"}, "+1d") : null,
                 )
               : (e.oldStart !== e.newStart || e.oldEnd !== e.newEnd)
                 ? el("div", {class:"diff"},
-                    el("span", {class:"before"}, `${fmt12(e.oldStart)} – ${fmt12(e.oldEnd)}`),
+                    el("span", {class:"before"}, `${fmtHM(e.oldStart)} – ${fmtHM(e.oldEnd)}`),
                     isOvernight(e.oldStart, e.oldEnd) ? el("span", {class:"overnight-badge"}, "+1d") : null,
                     el("span", {class:"arrow"}, "→"),
-                    el("span", {class:"after"}, `${fmt12(e.newStart)} – ${fmt12(e.newEnd)}`),
+                    el("span", {class:"after"}, `${fmtHM(e.newStart)} – ${fmtHM(e.newEnd)}`),
                     isOvernight(e.newStart, e.newEnd) ? el("span", {class:"overnight-badge"}, "+1d") : null,
                   )
                 : null,
@@ -5330,7 +5326,7 @@
           const empStyle = emp?.color ? `color:${emp.color}` : "";
           const when = item.at ? new Date(item.at) : null;
           const whenEl = when ? el("span", {class:"when"}, when.toLocaleString(locale(), {
-            month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+            month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false,
           })) : null;
           if (canEditComment) {
             const ta = el("textarea", {

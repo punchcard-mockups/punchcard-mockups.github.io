@@ -860,6 +860,11 @@
     font-variant-numeric: tabular-nums;
     color: var(--text-primary);
   }
+  .sd-value-wrap {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+  }
   .sd-row .sd-tz {
     font-size: 10px;
     font-weight: 700;
@@ -5227,12 +5232,20 @@
     );
     if (inTz) startRow.appendChild(el("span", {class:"sd-tz"}, inTz));
     times.appendChild(startRow);
+    // Group value + overnight badge so the row stays a 3-element flex
+    // layout (label · value · tz). Without this, the +1d badge becomes a
+    // fourth child and `justify-content: space-between` shoves the time
+    // off-center.
+    const overnight = isOvernight(sh.start, sh.end);
+    const endValue = el("span", {class:"sd-value-wrap"},
+      el("span", {class:"sd-value"}, fmt12(sh.end)),
+      overnight ? el("span", {class:"overnight-badge"}, "+1d") : null,
+    );
     const endRow = el("div", {class:"sd-row"},
       el("span", {class:"sd-label"}, tr("end")),
-      el("span", {class:"sd-value"}, fmt12(sh.end)),
+      endValue,
     );
     if (outTz) endRow.appendChild(el("span", {class:"sd-tz"}, outTz));
-    if (isOvernight(sh.start, sh.end)) endRow.appendChild(el("span", {class:"overnight-badge"}, "+1d"));
     times.appendChild(endRow);
     root.appendChild(times);
     // Heads-up if the employee clocked out in a different tz than they clocked in

@@ -1944,7 +1944,10 @@
   }
   .sd-admin-log-entry .meta .who {
     font-weight: 700;
-    color: var(--text-primary);
+    /* Admin/owner entries default to amber. Self (employee) entries get
+       their personal user color set inline at render time so a roster of
+       employees stays visually distinct in shared views. */
+    color: var(--accent-amber);
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
@@ -1971,11 +1974,27 @@
     color: var(--text-secondary);
     line-height: 1.35;
   }
-  /* Editable textarea inside a comment entry — match the surrounding card so
-     it doesn't read as a separate input field. */
+  /* Editable textarea inside a comment entry — blend into the card instead
+     of standing out as a white input field. */
   .sd-admin-log-entry .sd-comment-input {
     margin-top: 4px;
-    background: var(--surface-card);
+    background: transparent;
+    border-color: transparent;
+    padding: 0;
+    font-style: italic;
+    color: var(--text-secondary);
+    font-size: 11px;
+    line-height: 1.35;
+    min-height: 0;
+  }
+  .sd-admin-log-entry .sd-comment-input:hover { border-color: transparent; }
+  .sd-admin-log-entry .sd-comment-input:focus {
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+  }
+  @media (pointer: coarse) {
+    .sd-admin-log-entry .sd-comment-input { font-size: 16px; }
   }
 
   /* "✎" admin-edit marker on a shift card — placed next to the date so the
@@ -4517,6 +4536,18 @@
     root.appendChild(el("div", {style:"height:12px"}));
 
     root.appendChild(clockSection());
+
+    // Current week roll-up. Same component used on History — keeps the
+    // employee aware of the shifts they've logged this week without making
+    // them switch tabs. Auto-rolls to the next week whenever the page
+    // re-renders past midnight Sunday since thisWeekStart() is recomputed.
+    const wkStart = thisWeekStart();
+    const wkShifts = shiftsForWeek(u.id, wkStart);
+    if (wkShifts.length > 0) {
+      root.appendChild(el("div", {class:"signoff-label", style:"margin-top:14px"}, tr("thisWeek")));
+      root.appendChild(renderWeekRow({ empId: u.id, weekStart: wkStart, forceExpanded: true }));
+    }
+
     root.appendChild(el("div", {style:"height:40px"}));
   }
 
@@ -4540,7 +4571,12 @@
     const emp = userById[empId];
 
     // ---- expansion state ----
-    if (state.expandedHistoryWeeks == null) state.expandedHistoryWeeks = new Set();
+    // Lazy-init: pre-expand the current week so it's open by default
+    // wherever the week card is rendered (home + history).
+    if (state.expandedHistoryWeeks == null) {
+      state.expandedHistoryWeeks = new Set();
+      state.expandedHistoryWeeks.add(thisWeekStart());
+    }
     const set = state.expandedHistoryWeeks;
     let expanded = forceExpanded || set.has(weekStart);
     const toggleExpand = forceExpanded ? null : () => {
@@ -5212,9 +5248,16 @@
             e.comment ? el("div", {class:"reason"}, `"${e.comment}"`) : null,
           ));
         } else {
-          // Employee entry — editable for self, read-only otherwise.
-          const empName = userById[sh.empId]?.displayName ?? "";
+          // Employee entry — editable for self, read-only otherwise. Name
+          // is colored with the user's profile color so a roster of
+          // employees stays visually distinct.
+          const emp = userById[sh.empId];
+          const empName = emp?.displayName ?? "";
+          const empStyle = emp?.color ? `color:${emp.color}` : "";
           const when = item.at ? new Date(item.at) : null;
+          const whenEl = when ? el("span", {class:"when"}, when.toLocaleString(locale(), {
+            month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+          })) : null;
           if (canEditComment) {
             const ta = el("textarea", {
               class: "sd-comment-input",
@@ -5230,10 +5273,8 @@
             queueMicrotask(autosize);
             logWrap.appendChild(el("div", {class:"sd-admin-log-entry"},
               el("div", {class:"meta"},
-                el("span", {class:"who"}, empName),
-                when ? el("span", {class:"when"}, when.toLocaleString(locale(), {
-                  month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
-                })) : null,
+                el("span", {class:"who", style: empStyle}, empName),
+                whenEl,
               ),
               ta,
             ));
@@ -5257,10 +5298,8 @@
           } else {
             logWrap.appendChild(el("div", {class:"sd-admin-log-entry"},
               el("div", {class:"meta"},
-                el("span", {class:"who"}, empName),
-                when ? el("span", {class:"when"}, when.toLocaleString(locale(), {
-                  month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
-                })) : null,
+                el("span", {class:"who", style: empStyle}, empName),
+                whenEl,
               ),
               empComment ? el("div", {class:"reason"}, `"${empComment}"`) : null,
             ));
@@ -5378,10 +5417,10 @@
     if (!sortedShifts.length) return;
     if (state.expandedHistoryWeeks == null) {
       state.expandedHistoryWeeks = new Set();
-      // Read-only viewers (e.g. a spouse checking hours) have nothing to do
-      // on this screen except look at the current week — so it expands by
-      // default for them, instead of requiring a tap.
-      if (isReadonly(state.currentUser)) state.expandedHistoryWeeks.add(thisWeekStart());
+      // Pre-expand the current week so the most relevant shifts are visible
+      // without an extra tap. Older weeks stay collapsed and can be opened
+      // individually.
+      state.expandedHistoryWeeks.add(thisWeekStart());
     }
 
     const byMonth = new Map();

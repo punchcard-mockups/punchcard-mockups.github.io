@@ -4,6 +4,33 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,interactive-widget=resizes-content" />
 <title>PunchCard</title>
+<script>
+  // Set <html lang> BEFORE any other parsing so Chrome's language detector
+  // doesn't offer to translate the page on Spanish-speaking grandparents'
+  // phones (real-world complaint — kept getting prompted to translate to
+  // Spanish even when content was already Spanish, because the static
+  // <html lang="en"> attribute outranked the visible text).
+  //
+  // Order of precedence:
+  //   1. Saved choice in localStorage (user toggled the EN/ES switch)
+  //   2. Browser preferred language — if it starts with "es", default to es
+  //   3. Otherwise leave as "en"
+  (function () {
+    try {
+      var v = localStorage.getItem("pc_lang");
+      if (v !== "en" && v !== "es") {
+        var nav = (navigator.language || (navigator.languages && navigator.languages[0]) || "en").toLowerCase();
+        v = nav.indexOf("es") === 0 ? "es" : "en";
+      }
+      document.documentElement.lang = v;
+      // Belt-and-suspenders for translation hints that some browsers also read.
+      var m = document.createElement("meta");
+      m.httpEquiv = "content-language";
+      m.content = v;
+      document.head.appendChild(m);
+    } catch (e) {}
+  })();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;500;600;700&family=Gloock&family=Vollkorn:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
@@ -1647,7 +1674,8 @@
   }
   .mini-map .leaflet-bar a { border-radius: 0; }
   .mini-map.mini-map--locked::after {
-    content: "Click map to enable scroll zoom";
+    /* Set from JS via --mini-map-hint so the string is i18n'd. */
+    content: var(--mini-map-hint, "Click map to enable scroll zoom");
     position: absolute; inset: 0;
     display: flex; align-items: center; justify-content: center;
     color: #fff; font-size: 12px; font-weight: 600;
@@ -2865,7 +2893,19 @@
     screen: "login",
     viewingEmployeeId: null,
     nav: [],            // screen history for back button
-    lang: "en",
+    lang: (() => {
+      // Mirror the inline-script logic in <head> so first paint and
+      // first JS-render agree: localStorage > navigator.language > "en".
+      try {
+        const v = localStorage.getItem("pc_lang");
+        if (v === "en" || v === "es") return v;
+      } catch {}
+      try {
+        const n = (navigator.language || (navigator.languages && navigator.languages[0]) || "en").toLowerCase();
+        if (n.indexOf("es") === 0) return "es";
+      } catch {}
+      return "en";
+    })(),
     // calendar — default to the viewer's current month; login() and loadDB()
     // re-snap this on every session start so a long-lived tab doesn't drift.
     calYear: new Date().getFullYear(),
@@ -2946,7 +2986,7 @@
   function tzShort(tz, when) {
     if (!tz) return "";
     try {
-      const parts = new Intl.DateTimeFormat("en", {
+      const parts = new Intl.DateTimeFormat(locale(), {
         timeZone: tz,
         timeZoneName: "short",
       }).formatToParts(when || new Date());
@@ -2960,7 +3000,7 @@
   // Fake business next to the Pentagon (Arlington, VA)
   const BIZ = { lat: 38.87185, lng: -77.0563 };
   function gpsNoteText(coord) {
-    if (!coord) return "Locating…";
+    if (!coord) return tr("locating");
     return `📍 ${coord.lat.toFixed(5)}, ${coord.lng.toFixed(5)}`;
   }
 
@@ -3029,19 +3069,22 @@
   }
 
   // Map a getCurrentCoord() result to a user-facing toast.
+  // `action` is "in" or "out" (clock direction), used to pick the right
+  // localized "Clock-in/out location captured" string.
   function gpsToast(result, action) {
     if (result.real) {
-      return { msg: `${action} location captured`, kind: "success", pill: "📍" };
+      const key = action === "out" ? "clockOutLocCaptured" : "clockInLocCaptured";
+      return { msg: tr(key), kind: "success", pill: "📍" };
     }
-    const reasons = {
-      blocked:     "Location blocked — enable it for this site in your browser settings",
-      declined:    "Location not shared",
-      unavailable: "Location unavailable — check that Location Services are on",
-      timeout:     "Location timed out — try again",
-      unsupported: "Location not supported by this browser",
-      unknown:     "Location not captured",
-    };
-    return { msg: reasons[result.reason] || reasons.unknown, kind: "warn", pill: "⚠" };
+    const reasonKey = {
+      blocked: "gpsBlocked",
+      declined: "gpsDeclined",
+      unavailable: "gpsUnavailable",
+      timeout: "gpsTimeout",
+      unsupported: "gpsUnsupported",
+      unknown: "gpsUnknown",
+    }[result.reason] || "gpsUnknown";
+    return { msg: tr(reasonKey), kind: "warn", pill: "⚠" };
   }
 
   // Hydrated from db.json by loadDB(). Weekly Mon–Sun approvals keyed by
@@ -3462,6 +3505,43 @@
       manageUsersTitle: "Manage users",
       backToManage: "All users",
       weekUnsubmitted: "Unsubmitted",
+      tableTime: "Time",
+      dowAbbr: ["M","T","W","T","F","S","S"],
+      shiftNotFound: "Shift not found",
+      apiUnreachable: "Couldn't reach the PunchCard API — check your connection.",
+      mapZoomHint: "Click map to enable scroll zoom",
+      locating: "Locating…",
+      gpsBlocked: "Location blocked — enable it for this site in your browser settings",
+      gpsDeclined: "Location not shared",
+      gpsUnavailable: "Location unavailable — check that Location Services are on",
+      gpsTimeout: "Location timed out — try again",
+      gpsUnsupported: "Location not supported by this browser",
+      gpsUnknown: "Location not captured",
+      clockInLocCaptured: "Clock-in location captured",
+      clockOutLocCaptured: "Clock-out location captured",
+      tzCrossNote: (a, b) => `Clocked in ${a}, clocked out ${b}`,
+      errCouldntSignIn: "Couldn't sign in — check your connection",
+      errCouldntReopen: "Couldn't reopen",
+      errCouldntPullBack: "Couldn't pull back",
+      errCouldntSubmitWeek: "Couldn't submit week",
+      errCouldntReject: "Couldn't reject",
+      errCouldntApprove: "Couldn't approve",
+      errCouldntSaveShift: "Couldn't save the shift",
+      errCouldntReactivate: "Couldn't reactivate",
+      errCouldntSave: "Couldn't save",
+      errAllFieldsRequired: "All fields are required",
+      errUsernameTaken: "Username already exists",
+      userAddedToast: "User added",
+      errCouldntAddUser: "Couldn't add user",
+      errDateAndHoursRequired: "Date, start, and end are required",
+      errCouldntAddShift: "Couldn't add shift",
+      errStartEndRequired: "Start and end times are required",
+      errCouldntSubmit: "Couldn't submit",
+      errPasswordRequired: "Password required",
+      errCouldntUpdate: "Couldn't update",
+      errCouldntDeactivate: "Couldn't deactivate",
+      errCouldntDelete: "Couldn't delete",
+      youSuffix: " (you)",
     },
     es: {
       appName: "PunchCard",
@@ -3619,6 +3699,43 @@
       manageUsersTitle: "Administrar usuarios",
       backToManage: "Todos los usuarios",
       weekUnsubmitted: "Sin enviar",
+      tableTime: "Horario",
+      dowAbbr: ["L","M","M","J","V","S","D"],
+      shiftNotFound: "Turno no encontrado",
+      apiUnreachable: "No se pudo conectar con la API de PunchCard — revisa tu conexión.",
+      mapZoomHint: "Toca el mapa para activar el zoom",
+      locating: "Localizando…",
+      gpsBlocked: "Ubicación bloqueada — actívala para este sitio en la configuración del navegador",
+      gpsDeclined: "Ubicación no compartida",
+      gpsUnavailable: "Ubicación no disponible — revisa que los servicios de ubicación estén activados",
+      gpsTimeout: "La ubicación tardó demasiado — inténtalo de nuevo",
+      gpsUnsupported: "Este navegador no admite ubicación",
+      gpsUnknown: "No se capturó la ubicación",
+      clockInLocCaptured: "Ubicación de entrada registrada",
+      clockOutLocCaptured: "Ubicación de salida registrada",
+      tzCrossNote: (a, b) => `Entrada en ${a}, salida en ${b}`,
+      errCouldntSignIn: "No se pudo iniciar sesión — revisa tu conexión",
+      errCouldntReopen: "No se pudo reabrir",
+      errCouldntPullBack: "No se pudo retirar",
+      errCouldntSubmitWeek: "No se pudo enviar la semana",
+      errCouldntReject: "No se pudo rechazar",
+      errCouldntApprove: "No se pudo aprobar",
+      errCouldntSaveShift: "No se pudo guardar el turno",
+      errCouldntReactivate: "No se pudo reactivar",
+      errCouldntSave: "No se pudo guardar",
+      errAllFieldsRequired: "Todos los campos son obligatorios",
+      errUsernameTaken: "Ese nombre de usuario ya existe",
+      userAddedToast: "Usuario agregado",
+      errCouldntAddUser: "No se pudo agregar el usuario",
+      errDateAndHoursRequired: "Fecha y horas son obligatorias",
+      errCouldntAddShift: "No se pudo añadir el turno",
+      errStartEndRequired: "Las horas de inicio y fin son obligatorias",
+      errCouldntSubmit: "No se pudo enviar",
+      errPasswordRequired: "Contraseña obligatoria",
+      errCouldntUpdate: "No se pudo actualizar",
+      errCouldntDeactivate: "No se pudo desactivar",
+      errCouldntDelete: "No se pudo borrar",
+      youSuffix: " (tú)",
     },
   };
   function tr(k, ...args) {
@@ -3627,6 +3744,19 @@
     return v ?? k;
   }
   const locale = () => state.lang === "es" ? "es-ES" : "en-US";
+  // Mirror state.lang onto <html lang> + localStorage. Without this, Chrome's
+  // language detector sees "en" (or stray English fragments) and offers to
+  // auto-translate the page — even when the user has already picked Spanish.
+  function applyLang() {
+    try { document.documentElement.lang = state.lang; } catch {}
+    try { document.documentElement.style.setProperty("--mini-map-hint", JSON.stringify(tr("mapZoomHint"))); } catch {}
+  }
+  function setLang(l) {
+    state.lang = (l === "es") ? "es" : "en";
+    try { localStorage.setItem("pc_lang", state.lang); } catch {}
+    applyLang();
+  }
+  applyLang();
 
   // =============================================================
   // SHARED HELPERS
@@ -3988,9 +4118,7 @@
     const data = dataByDay(state.calYear, state.calMonth, scopeEmpId);
     const today = new Date();
 
-    const dowKey = state.lang === "es"
-      ? ["L","M","M","J","V","S","D"]
-      : ["M","T","W","T","F","S","S"];
+    const dowKey = tr("dowAbbr");
     const dows = el("div", {class:"dows"}, ...dowKey.map(d => el("span", {}, d)));
     const grid = el("div", {class:"grid"});
     grid.dataset.scope = scopeEmpId == null ? "" : String(scopeEmpId);
@@ -4142,9 +4270,9 @@
     for (const sh of dayShifts) (groups[sh.empId] = groups[sh.empId] || []).push(sh);
     const t = el("div", {class:"dd-table"});
     t.appendChild(el("div", {class:"head"},
-      el("span", {}, state.lang === "es" ? "Empleado" : "Employee"),
-      el("span", {class:"r"}, state.lang === "es" ? "Horario" : "Time"),
-      el("span", {class:"r"}, state.lang === "es" ? "Horas" : "Hours"),
+      el("span", {}, tr("employee")),
+      el("span", {class:"r"}, tr("tableTime")),
+      el("span", {class:"r"}, tr("hours")),
     ));
     for (const [empIdStr, list] of Object.entries(groups)) {
       const emp = userById[Number(empIdStr)];
@@ -4180,7 +4308,7 @@
     const isEs = state.lang === "es";
     return el("div", {
       class: `lang-toggle ${isEs ? "es" : ""}`,
-      onclick: () => { state.lang = isEs ? "en" : "es"; render(); }
+      onclick: () => { setLang(isEs ? "en" : "es"); render(); }
     },
       el("div", {class:"slider"}),
       el("div", {class: `opt ${!isEs ? "active" : ""}`}, "EN"),
@@ -4373,9 +4501,7 @@
       } catch (e) {
         if (!errorBox) errorBox = el("div", {class:"err"}, s.invalidCreds);
         form.insertBefore(errorBox, goBtn);
-        errorBox.textContent = e.status === 401 ? s.invalidCreds :
-          (state.lang === "es" ? "No se pudo iniciar sesión — revisa tu conexión"
-                               : "Couldn't sign in — check your connection");
+        errorBox.textContent = e.status === 401 ? s.invalidCreds : tr("errCouldntSignIn");
       } finally {
         goBtn.disabled = false;
       }
@@ -4549,7 +4675,7 @@
                   render();
                 } catch (e) {
                   ev.currentTarget.disabled = false;
-                  toastApiError(e, state.lang === "es" ? "No se pudo reabrir" : "Couldn't reopen");
+                  toastApiError(e, tr("errCouldntReopen"));
                 }
               },
             }, primed ? tr("reopenWeekConfirm") : tr("reopenWeek")),
@@ -4636,7 +4762,7 @@
                 render();
               } catch (e) {
                 ev.currentTarget.disabled = false;
-                toastApiError(e, state.lang === "es" ? "No se pudo retirar" : "Couldn't pull back");
+                toastApiError(e, tr("errCouldntPullBack"));
               }
             },
           }, tr("pullBack")),
@@ -4696,7 +4822,7 @@
               }
             } catch (e) {
               btn.disabled = false;
-              toastApiError(e, state.lang === "es" ? "No se pudo enviar la semana" : "Couldn't submit week");
+              toastApiError(e, tr("errCouldntSubmitWeek"));
             }
           },
         }, label),
@@ -4740,7 +4866,7 @@
               });
             } catch (e) {
               ev.currentTarget.disabled = false;
-              toastApiError(e, state.lang === "es" ? "No se pudo rechazar" : "Couldn't reject");
+              toastApiError(e, tr("errCouldntReject"));
             }
           },
         }, tr("reject"));
@@ -4772,7 +4898,7 @@
                 });
               } catch (e) {
                 ev.currentTarget.disabled = false;
-                toastApiError(e, state.lang === "es" ? "No se pudo aprobar" : "Couldn't approve");
+                toastApiError(e, tr("errCouldntApprove"));
               }
             },
           }, tr("approve")),
@@ -4900,7 +5026,7 @@
           const c = await getCurrentCoord();
           state.clockInCoord = c.real ? { lat: c.lat, lng: c.lng } : null;
           saveClockState();
-          const t = gpsToast(c, "Clock-in");
+          const t = gpsToast(c, "in");
           toast(t.msg, { kind: t.kind, pill: t.pill });
           render();
         },
@@ -4936,7 +5062,7 @@
           const c = await getCurrentCoord();
           state.clockOutCoord = c.real ? { lat: c.lat, lng: c.lng } : null;
           saveClockState();
-          const t = gpsToast(c, "Clock-out");
+          const t = gpsToast(c, "out");
           toast(t.msg, { kind: t.kind, pill: t.pill });
           render();
         }
@@ -5032,7 +5158,7 @@
           render();
         } catch (e) {
           ev.currentTarget.disabled = false;
-          toastApiError(e, state.lang === "es" ? "No se pudo guardar el turno" : "Couldn't save the shift");
+          toastApiError(e, tr("errCouldntSaveShift"));
         }
       }
     }, el("span", {}, tr("submit")));
@@ -5197,7 +5323,7 @@
           u.displayName.charAt(0)),
         el("div", {class:"mu-body"},
           el("div", {class:"mu-name", style:`color:${u.color || "var(--text-primary)"}`},
-            u.displayName + (isSelf ? " (you)" : "")),
+            u.displayName + (isSelf ? tr("youSuffix") : "")),
           el("div", {class:"mu-meta"}, `@${u.username} · ${tr(u.role)}`),
         ),
         el("div", {class:"chev"}, ICON("chevRight")),
@@ -5228,7 +5354,7 @@
             render();
           } catch (e) {
             ev.currentTarget.disabled = false;
-            toastApiError(e, state.lang === "es" ? "No se pudo reactivar" : "Couldn't reactivate");
+            toastApiError(e, tr("errCouldntReactivate"));
           }
         }}, tr("reactivate")));
         root.appendChild(row);
@@ -5295,7 +5421,7 @@
             navBack();
           } catch (e) {
             ev.currentTarget.disabled = false;
-            err.textContent = e.message || (state.lang === "es" ? "No se pudo guardar" : "Couldn't save");
+            err.textContent = e.message || tr("errCouldntSave");
             err.style.display = "block";
           }
         }}, tr("saveChanges")),
@@ -5403,7 +5529,7 @@
     const root = rootEl;
     const sh = shifts.find(s => s.id === state.viewingShiftId);
     if (!sh) {
-      root.appendChild(el("div", {style:"text-align:center; padding:40px; color:var(--text-muted);"}, "Shift not found"));
+      root.appendChild(el("div", {style:"text-align:center; padding:40px; color:var(--text-muted);"}, tr("shiftNotFound")));
       return;
     }
     const emp = userById[sh.empId];
@@ -5456,7 +5582,7 @@
     // Heads-up if the employee clocked out in a different tz than they clocked in
     if (sh.clockInTz && sh.clockOutTz && sh.clockInTz !== sh.clockOutTz) {
       root.appendChild(el("div", {class:"sd-tz-note"},
-        `Clocked in ${inTz}, clocked out ${outTz}`));
+        tr("tzCrossNote", inTz, outTz)));
     }
 
     // Comment. If the viewer owns this shift and the week is still open
@@ -5503,7 +5629,7 @@
         } catch (e) {
           // Roll back so the UI matches server state.
           if (localSh) localSh.comment = original;
-          toastApiError(e, state.lang === "es" ? "No se pudo guardar" : "Couldn't save");
+          toastApiError(e, tr("errCouldntSave"));
         }
       };
     } else if (sh.comment) {
@@ -5631,7 +5757,7 @@
       toast(tr("editApproved"), { kind:"success", pill:"✓" });
       render();
     } catch (e) {
-      toastApiError(e, state.lang === "es" ? "No se pudo aprobar" : "Couldn't approve");
+      toastApiError(e, tr("errCouldntApprove"));
     }
   }
   async function rejectEditRequest(reqId) {
@@ -5642,7 +5768,7 @@
       toast(tr("editRejected"), { kind:"warn", pill:"↺" });
       render();
     } catch (e) {
-      toastApiError(e, state.lang === "es" ? "No se pudo rechazar" : "Couldn't reject");
+      toastApiError(e, tr("errCouldntReject"));
     }
   }
 
@@ -5683,6 +5809,10 @@
     if (!sortedShifts.length) return;
     if (state.expandedHistoryWeeks == null) {
       state.expandedHistoryWeeks = new Set();
+      // Read-only viewers (e.g. a spouse checking hours) have nothing to do
+      // on this screen except look at the current week — so it expands by
+      // default for them, instead of requiring a tap.
+      if (isReadonly(state.currentUser)) state.expandedHistoryWeeks.add(thisWeekStart());
     }
 
     const byMonth = new Map();
@@ -5937,16 +6067,12 @@
           const name = nameIn.value.trim(), u = userIn.value.trim(), p = passIn.value;
           const role = roleSel.value;
           if (!name || !u || !p) {
-            err.textContent = state.lang === "es"
-              ? "Todos los campos son obligatorios"
-              : "All fields are required";
+            err.textContent = tr("errAllFieldsRequired");
             err.style.display = "block";
             return;
           }
           if (users.some(x => x.username === u)) {
-            err.textContent = state.lang === "es"
-              ? "Ese nombre de usuario ya existe"
-              : "Username already exists";
+            err.textContent = tr("errUsernameTaken");
             err.style.display = "block";
             return;
           }
@@ -5961,11 +6087,11 @@
             });
             users.push(added);
             userById[added.id] = added;
-            toast(state.lang === "es" ? "Usuario agregado" : "User added", {kind:"success", pill:"+"});
+            toast(tr("userAddedToast"), {kind:"success", pill:"+"});
             close();
           } catch (e) {
             ev.currentTarget.disabled = false;
-            err.textContent = e.message || (state.lang === "es" ? "No se pudo agregar" : "Couldn't add user");
+            err.textContent = e.message || tr("errCouldntAddUser");
             err.style.display = "block";
           }
         }}, tr("add")),
@@ -6050,7 +6176,7 @@
           const start = startIn.value;
           const end = endIn.value;
           if (!date || !start || !end) {
-            err.textContent = state.lang === "es" ? "Fecha y horas son obligatorias" : "Date, start, and end are required";
+            err.textContent = tr("errDateAndHoursRequired");
             err.style.display = "block";
             return;
           }
@@ -6076,7 +6202,7 @@
             close();
           } catch (e) {
             ev.currentTarget.disabled = false;
-            err.textContent = e.message || (state.lang === "es" ? "No se pudo añadir" : "Couldn't add shift");
+            err.textContent = e.message || tr("errCouldntAddShift");
             err.style.display = "block";
           }
         }}, tr("saveChanges")),
@@ -6114,9 +6240,7 @@
             return;
           }
           if (!start || !end) {
-            err.textContent = state.lang === "es"
-              ? "Las horas de inicio y fin son obligatorias"
-              : "Start and end times are required";
+            err.textContent = tr("errStartEndRequired");
             err.style.display = "block";
             return;
           }
@@ -6130,7 +6254,7 @@
             close();
           } catch (e) {
             ev.currentTarget.disabled = false;
-            err.textContent = e.message || (state.lang === "es" ? "No se pudo enviar" : "Couldn't submit");
+            err.textContent = e.message || tr("errCouldntSubmit");
             err.style.display = "block";
           }
         }}, tr("requestEditSubmit"));
@@ -6176,9 +6300,7 @@
             return;
           }
           if (!start || !end) {
-            err.textContent = state.lang === "es"
-              ? "Las horas de inicio y fin son obligatorias"
-              : "Start and end times are required";
+            err.textContent = tr("errStartEndRequired");
             err.style.display = "block";
             return;
           }
@@ -6191,7 +6313,7 @@
             close();
           } catch (e) {
             ev.currentTarget.disabled = false;
-            err.textContent = e.message || (state.lang === "es" ? "No se pudo guardar" : "Couldn't save");
+            err.textContent = e.message || tr("errCouldntSave");
             err.style.display = "block";
           }
         }}, tr("save")),
@@ -6224,7 +6346,7 @@
           el("button", {class:"btn", onclick: close}, tr("cancel")),
           el("button", {class:"btn primary", onclick: async (ev) => {
             const pw = passIn.value.trim();
-            if (!pw) { err.textContent = state.lang === "es" ? "Contraseña obligatoria" : "Password required"; err.style.display = "block"; return; }
+            if (!pw) { err.textContent = tr("errPasswordRequired"); err.style.display = "block"; return; }
             if (ev.currentTarget.disabled) return;
             ev.currentTarget.disabled = true;
             try {
@@ -6234,7 +6356,7 @@
               render();
             } catch (e) {
               ev.currentTarget.disabled = false;
-              err.textContent = e.message || (state.lang === "es" ? "No se pudo cambiar" : "Couldn't update");
+              err.textContent = e.message || tr("errCouldntUpdate");
               err.style.display = "block";
             }
           }}, tr("saveChanges")),
@@ -6291,7 +6413,7 @@
             navBack();
           } catch (e) {
             ev.currentTarget.disabled = false;
-            toastApiError(e, state.lang === "es" ? "No se pudo desactivar" : "Couldn't deactivate");
+            toastApiError(e, tr("errCouldntDeactivate"));
           }
         }}, tr("deactivate")),
       ));
@@ -6327,7 +6449,7 @@
           navBack();
         } catch (e) {
           delBtn.disabled = false;
-          toastApiError(e, state.lang === "es" ? "No se pudo borrar" : "Couldn't delete");
+          toastApiError(e, tr("errCouldntDelete"));
         }
       });
       card.appendChild(el("h3", {}, tr("deleteUserConfirmTitle")));
@@ -6373,7 +6495,7 @@
             navBack();
           } catch (e) {
             ev.currentTarget.disabled = false;
-            err.textContent = e.message || (state.lang === "es" ? "No se pudo borrar" : "Couldn't delete");
+            err.textContent = e.message || tr("errCouldntDelete");
             err.style.display = "block";
           }
         }}, tr("delete")),
@@ -6476,7 +6598,7 @@
   loadDB().then(render).catch((err) => {
     console.error("Failed to load from the PunchCard API", err);
     const root = document.getElementById("scrollRoot");
-    if (root) root.textContent = "Couldn't reach the PunchCard API — check your connection.";
+    if (root) root.textContent = tr("apiUnreachable");
   });
 </script>
 

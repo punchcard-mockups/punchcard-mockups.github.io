@@ -1944,7 +1944,7 @@
   }
   .sd-admin-log-entry .meta .who {
     font-weight: 700;
-    color: var(--accent-amber);
+    color: var(--text-primary);
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
@@ -1971,13 +1971,9 @@
     color: var(--text-secondary);
     line-height: 1.35;
   }
-  /* Employee's own entry in the unified comment log — same card shape, but
-     the author tag uses the calmer primary text color (vs. amber for admin
-     entries) so the eye learns "amber = admin / not-amber = self/employee". */
-  .sd-admin-log-entry.sd-self .meta .who {
-    color: var(--text-primary);
-  }
-  .sd-admin-log-entry.sd-self .sd-comment-input {
+  /* Editable textarea inside a comment entry — match the surrounding card so
+     it doesn't read as a separate input field. */
+  .sd-admin-log-entry .sd-comment-input {
     margin-top: 4px;
     background: var(--surface-card);
   }
@@ -5167,86 +5163,109 @@
       ));
     }
 
-    // Unified comment log: all admin direct-edits + the employee's own note
-    // share one timeline. Each entry shows the author's name and body. The
-    // employee's own note on their own shift is rendered as an editable
-    // textarea pinned at the bottom; everyone else sees it read-only.
-    const adminEntries = (sh.adminEdits ?? []).slice()
-      .sort((a, b) => (a.at || "").localeCompare(b.at || ""));
-    const empName = userById[sh.empId]?.displayName ?? "";
-    const hasContent = adminEntries.length > 0 || !!sh.comment || canEditComment;
-    if (hasContent) {
+    // Unified comment log: every entry — admin direct-edits AND the
+    // employee's own note — sits in a single chronological timeline,
+    // sorted oldest-first. Each entry shows the author's name and body.
+    // For the employee on their own shift, their entry renders as an
+    // editable textarea instead of a static block.
+    const empComment = sh.comment || "";
+    // Fallback timestamp for legacy data where commentAt was never recorded:
+    // use the shift's date + start so the comment lands roughly when the
+    // shift was logged.
+    const empCommentAt = sh.commentAt
+      || (empComment ? `${sh.date}T${sh.start}:00` : null);
+    const entries = [];
+    for (const e of (sh.adminEdits ?? [])) {
+      entries.push({ kind: "admin", at: e.at, e });
+    }
+    if (empComment || canEditComment) {
+      entries.push({ kind: "self", at: empCommentAt });
+    }
+    entries.sort((a, b) => (a.at || "").localeCompare(b.at || ""));
+
+    if (entries.length > 0) {
       root.appendChild(el("div", {class:"sd-section-label"}, tr("commentsLabel")));
       const logWrap = el("div", {class:"sd-admin-log"});
-      for (const entry of adminEntries) {
-        const editor = userById[entry.by];
-        const when = entry.at ? new Date(entry.at) : null;
-        logWrap.appendChild(el("div", {class:"sd-admin-log-entry"},
-          el("div", {class:"meta"},
-            el("span", {class:"who"}, editor ? editor.displayName : tr("admin")),
-            when ? el("span", {class:"when"}, when.toLocaleString(locale(), {
-              month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
-            })) : null,
-          ),
-          entry.action === "created" || !entry.oldStart || !entry.oldEnd
-            ? el("div", {class:"diff"},
-                el("span", {class:"after"}, `${fmt12(entry.newStart)} – ${fmt12(entry.newEnd)}`),
-              )
-            : (entry.oldStart !== entry.newStart || entry.oldEnd !== entry.newEnd)
+      for (const item of entries) {
+        if (item.kind === "admin") {
+          const e = item.e;
+          const editor = userById[e.by];
+          const when = e.at ? new Date(e.at) : null;
+          logWrap.appendChild(el("div", {class:"sd-admin-log-entry"},
+            el("div", {class:"meta"},
+              el("span", {class:"who"}, editor ? editor.displayName : tr("admin")),
+              when ? el("span", {class:"when"}, when.toLocaleString(locale(), {
+                month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+              })) : null,
+            ),
+            e.action === "created" || !e.oldStart || !e.oldEnd
               ? el("div", {class:"diff"},
-                  el("span", {class:"before"}, `${fmt12(entry.oldStart)} – ${fmt12(entry.oldEnd)}`),
-                  el("span", {class:"arrow"}, "→"),
-                  el("span", {class:"after"}, `${fmt12(entry.newStart)} – ${fmt12(entry.newEnd)}`),
+                  el("span", {class:"after"}, `${fmt12(e.newStart)} – ${fmt12(e.newEnd)}`),
                 )
-              : null,
-          entry.comment ? el("div", {class:"reason"}, `"${entry.comment}"`) : null,
-        ));
-      }
-      // Employee's own note slot.
-      if (canEditComment) {
-        const ta = el("textarea", {
-          class: "sd-comment-input",
-          rows: 1,
-          placeholder: tr("editShiftCommentPlaceholder"),
-        });
-        ta.value = sh.comment || "";
-        const autosize = () => {
-          ta.style.height = "auto";
-          ta.style.height = ta.scrollHeight + "px";
-        };
-        ta.addEventListener("input", autosize);
-        queueMicrotask(autosize);
-        logWrap.appendChild(el("div", {class:"sd-admin-log-entry sd-self"},
-          el("div", {class:"meta"},
-            el("span", {class:"who self"}, `${empName}${tr("youSuffix")}`),
-          ),
-          ta,
-        ));
-        const original = sh.comment || "";
-        const shiftId = sh.id;
-        pendingCommentFlush = async () => {
-          const next = ta.value;
-          if (next === original) return;
-          // Optimistic local write so an immediate re-open of the sheet shows
-          // the new comment even before the server round-trip finishes.
-          const localSh = shifts.find(s => s.id === shiftId);
-          if (localSh) localSh.comment = next;
-          try {
-            const { shift: updated } = await api.updateShiftComment(shiftId, next);
-            if (localSh) Object.assign(localSh, updated);
-            toast(tr("noteSaved"), {kind:"success", pill:"✓"});
-          } catch (e) {
-            if (localSh) localSh.comment = original;
-            toastApiError(e, tr("errCouldntSave"));
+              : (e.oldStart !== e.newStart || e.oldEnd !== e.newEnd)
+                ? el("div", {class:"diff"},
+                    el("span", {class:"before"}, `${fmt12(e.oldStart)} – ${fmt12(e.oldEnd)}`),
+                    el("span", {class:"arrow"}, "→"),
+                    el("span", {class:"after"}, `${fmt12(e.newStart)} – ${fmt12(e.newEnd)}`),
+                  )
+                : null,
+            e.comment ? el("div", {class:"reason"}, `"${e.comment}"`) : null,
+          ));
+        } else {
+          // Employee entry — editable for self, read-only otherwise.
+          const empName = userById[sh.empId]?.displayName ?? "";
+          const when = item.at ? new Date(item.at) : null;
+          if (canEditComment) {
+            const ta = el("textarea", {
+              class: "sd-comment-input",
+              rows: 1,
+              placeholder: tr("editShiftCommentPlaceholder"),
+            });
+            ta.value = empComment;
+            const autosize = () => {
+              ta.style.height = "auto";
+              ta.style.height = ta.scrollHeight + "px";
+            };
+            ta.addEventListener("input", autosize);
+            queueMicrotask(autosize);
+            logWrap.appendChild(el("div", {class:"sd-admin-log-entry"},
+              el("div", {class:"meta"},
+                el("span", {class:"who"}, empName),
+                when ? el("span", {class:"when"}, when.toLocaleString(locale(), {
+                  month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+                })) : null,
+              ),
+              ta,
+            ));
+            const shiftId = sh.id;
+            pendingCommentFlush = async () => {
+              const next = ta.value;
+              if (next === empComment) return;
+              // Optimistic local write so an immediate re-open of the sheet
+              // shows the new comment even before the server round-trips.
+              const localSh = shifts.find(s => s.id === shiftId);
+              if (localSh) localSh.comment = next;
+              try {
+                const { shift: updated } = await api.updateShiftComment(shiftId, next);
+                if (localSh) Object.assign(localSh, updated);
+                toast(tr("noteSaved"), {kind:"success", pill:"✓"});
+              } catch (e) {
+                if (localSh) localSh.comment = empComment;
+                toastApiError(e, tr("errCouldntSave"));
+              }
+            };
+          } else {
+            logWrap.appendChild(el("div", {class:"sd-admin-log-entry"},
+              el("div", {class:"meta"},
+                el("span", {class:"who"}, empName),
+                when ? el("span", {class:"when"}, when.toLocaleString(locale(), {
+                  month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+                })) : null,
+              ),
+              empComment ? el("div", {class:"reason"}, `"${empComment}"`) : null,
+            ));
           }
-        };
-      } else if (sh.comment) {
-        logWrap.appendChild(el("div", {class:"sd-admin-log-entry sd-self"},
-          el("div", {class:"meta"},
-            el("span", {class:"who self"}, empName),
-          ),
-          el("div", {class:"reason"}, `"${sh.comment}"`),
-        ));
+        }
       }
       root.appendChild(logWrap);
     }

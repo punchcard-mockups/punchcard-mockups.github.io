@@ -774,6 +774,34 @@
     vertical-align: 1px;
   }
   .twtz { white-space: nowrap; }
+  /* "+1d" badge appended to a time range when the end time is on the next
+     calendar day. Same shape as .tz-inline, but tinted amber so it reads as
+     a small alert rather than a passive zone tag. */
+  .overnight-badge {
+    display: inline-block;
+    font-family: var(--tf-body);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    margin-left: 5px;
+    padding: 1px 5px;
+    border-radius: 2px;
+    background: color-mix(in oklab, var(--accent-amber) 22%, transparent);
+    color: var(--accent-amber);
+    text-transform: uppercase;
+    font-variant-numeric: tabular-nums;
+    vertical-align: 1px;
+    white-space: nowrap;
+  }
+  /* Live hours readout under the Add Shift / Edit Shift time inputs. */
+  .shift-hours-readout {
+    font-family: var(--tf-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.4px;
+    margin: -4px 0 8px;
+    min-height: 14px;
+  }
   .gps-note {
     font-size: 10px;
     color: var(--text-muted);
@@ -3861,6 +3889,43 @@
     const hr = ((h + 11) % 12) + 1;
     return `${hr}:${String(m).padStart(2,"0")} ${ampm}`;
   }
+  // True when the shift wraps past midnight (end-of-day before start-of-day).
+  // Both args are "HH:MM"; null/empty inputs return false.
+  function isOvernight(start, end) {
+    if (!start || !end) return false;
+    const [sh, sm] = start.split(":").map(Number);
+    const [eh, em] = end.split(":").map(Number);
+    return (eh * 60 + em) < (sh * 60 + sm);
+  }
+  // Hours between two HH:MM marks, treating end < start as next-day. Returns
+  // a number rounded to 1 decimal so display + storage agree.
+  function computeShiftHours(start, end) {
+    if (!start || !end) return 0;
+    const [sh, sm] = start.split(":").map(Number);
+    const [eh, em] = end.split(":").map(Number);
+    let mins = (eh * 60 + em) - (sh * 60 + sm);
+    if (mins < 0) mins += 24 * 60;
+    return Math.round((mins / 60) * 10) / 10;
+  }
+  // Live "X.Xh +1d" readout that updates as the user types into the start/end
+  // time inputs. Used inside Add Shift / Edit Shift / Admin Edit modals so
+  // the admin can see immediately whether their inputs add up to an overnight
+  // span (e.g. typing 11:00 PM end when they meant 11:00 AM).
+  function shiftHoursReadout(startIn, endIn) {
+    const node = el("div", {class:"shift-hours-readout"});
+    const update = () => {
+      const s = startIn.value, e = endIn.value;
+      if (!s || !e) { node.replaceChildren(); return; }
+      const h = computeShiftHours(s, e);
+      const text = `${h.toFixed(1)}${tr("hoursShort")}`;
+      const badge = isOvernight(s, e) ? el("span", {class:"overnight-badge"}, "+1d") : null;
+      node.replaceChildren(text, ...(badge ? [badge] : []));
+    };
+    startIn.addEventListener("input", update);
+    endIn.addEventListener("input", update);
+    update();
+    return node;
+  }
   function fmtTimeDate(d) {
     return d.toLocaleTimeString(locale(), { hour: "numeric", minute: "2-digit" });
   }
@@ -3876,13 +3941,18 @@
 
   // Render a "start – end" range with tz suffix. If both ends are in the same
   // tz, append it once at the end; if they differ, tag each end separately.
+  // Appends a "+1d" badge when the shift wraps past midnight so the reader
+  // doesn't have to mentally check whether end < start means next-day.
   function timeRangeWithTz(startStr, endStr, startTz, endTz, dateHint) {
     const s = startTz ? tzShort(startTz, dateHint) : "";
     const e = endTz   ? tzShort(endTz,   dateHint) : "";
+    const overnight = isOvernight(startStr, endStr);
+    const overnightBadge = overnight ? el("span", {class:"overnight-badge"}, "+1d") : null;
     if (s && e && s === e) {
       return el("span", {class:"twtz"},
         `${fmt12(startStr)} – ${fmt12(endStr)}`,
         el("span", {class:"tz-inline"}, s),
+        overnightBadge,
       );
     }
     const parts = [fmt12(startStr)];
@@ -3890,6 +3960,7 @@
     parts.push(" – ");
     parts.push(fmt12(endStr));
     if (e) parts.push(el("span", {class:"tz-inline"}, e));
+    if (overnightBadge) parts.push(overnightBadge);
     return el("span", {class:"twtz"}, ...parts);
   }
   function fmtDateLong(dateStr) {
@@ -4776,9 +4847,10 @@
         const pad = n => String(n).padStart(2,"0");
         const start = `${pad(state.clockIn.getHours())}:${pad(state.clockIn.getMinutes())}`;
         const end   = `${pad(state.clockOut.getHours())}:${pad(state.clockOut.getMinutes())}`;
-        const [sh, sm] = start.split(":").map(Number);
-        const [eh, em] = end.split(":").map(Number);
-        const computedHours = ((eh*60+em) - (sh*60+sm)) / 60;
+        // Use the actual Date diff so overnight shifts (end-time-of-day before
+        // start-time-of-day) compute correctly — the HH:MM strings drop the
+        // date and would otherwise yield a negative span.
+        const computedHours = Math.round(((state.clockOut - state.clockIn) / 3600000) * 10) / 10;
         try {
           const { shift } = await api.createShift({
             date: dateStr,
@@ -5160,6 +5232,7 @@
       el("span", {class:"sd-value"}, fmt12(sh.end)),
     );
     if (outTz) endRow.appendChild(el("span", {class:"sd-tz"}, outTz));
+    if (isOvernight(sh.start, sh.end)) endRow.appendChild(el("span", {class:"overnight-badge"}, "+1d"));
     times.appendChild(endRow);
     root.appendChild(times);
     // Heads-up if the employee clocked out in a different tz than they clocked in
@@ -5237,12 +5310,15 @@
             e.action === "created" || !e.oldStart || !e.oldEnd
               ? el("div", {class:"diff"},
                   el("span", {class:"after"}, `${fmt12(e.newStart)} – ${fmt12(e.newEnd)}`),
+                  isOvernight(e.newStart, e.newEnd) ? el("span", {class:"overnight-badge"}, "+1d") : null,
                 )
               : (e.oldStart !== e.newStart || e.oldEnd !== e.newEnd)
                 ? el("div", {class:"diff"},
                     el("span", {class:"before"}, `${fmt12(e.oldStart)} – ${fmt12(e.oldEnd)}`),
+                    isOvernight(e.oldStart, e.oldEnd) ? el("span", {class:"overnight-badge"}, "+1d") : null,
                     el("span", {class:"arrow"}, "→"),
                     el("span", {class:"after"}, `${fmt12(e.newStart)} – ${fmt12(e.newEnd)}`),
+                    isOvernight(e.newStart, e.newEnd) ? el("span", {class:"overnight-badge"}, "+1d") : null,
                   )
                 : null,
             e.comment ? el("div", {class:"reason"}, `"${e.comment}"`) : null,
@@ -5754,6 +5830,7 @@
       card.appendChild(startIn);
       card.appendChild(el("label", {class:"field-label"}, tr("end")));
       card.appendChild(endIn);
+      card.appendChild(shiftHoursReadout(startIn, endIn));
       card.appendChild(el("div", {class:"tz-row"},
         el("span", {class:"tz-row-label"}, tr("timezone")),
         tzIn,
@@ -5779,12 +5856,7 @@
             err.style.display = "block";
             return;
           }
-          // Compute hours the same way clockSection does (end - start in minutes → hours).
-          const [sh1, sm1] = start.split(":").map(Number);
-          const [sh2, sm2] = end.split(":").map(Number);
-          let mins = (sh2 * 60 + sm2) - (sh1 * 60 + sm1);
-          if (mins < 0) mins += 24 * 60;
-          const hours = Math.round((mins / 60) * 10) / 10;
+          const hours = computeShiftHours(start, end);
           if (ev.currentTarget.disabled) return;
           ev.currentTarget.disabled = true;
           try {
@@ -5818,6 +5890,7 @@
       card.appendChild(startIn);
       card.appendChild(el("label", {class:"field-label"}, tr("end")));
       card.appendChild(endIn);
+      card.appendChild(shiftHoursReadout(startIn, endIn));
       card.appendChild(el("label", {class:"field-label"}, tr("reasonRequiredLabel")));
       card.appendChild(noteIn);
       const autosizeNote = () => {
@@ -5882,6 +5955,7 @@
       card.appendChild(startIn);
       card.appendChild(el("label", {class:"field-label"}, tr("end")));
       card.appendChild(endIn);
+      card.appendChild(shiftHoursReadout(startIn, endIn));
       card.appendChild(el("label", {class:"field-label"}, tr("reasonRequiredLabel")));
       card.appendChild(noteIn);
       card.appendChild(err);

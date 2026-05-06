@@ -1134,6 +1134,7 @@
   }
   @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
   .modal-card {
+    position: relative;
     background: var(--t-bg);
     border: 1px solid var(--outline-soft);
     border-radius: 2px;
@@ -1143,6 +1144,29 @@
     overflow-y: auto;
     animation: modal-in 220ms cubic-bezier(.2,.8,.2,1) both;
   }
+  /* Close affordance in the top-right of every modal/sheet. Same icon-btn
+     visual as the floating back/account buttons on full-page screens —
+     44px hit target, transparent fill with hover surface-dark, x-icon at
+     20px. The scrim still closes on tap-out; this is the explicit option. */
+  .modal-close {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    display: grid; place-items: center;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    color: var(--text-secondary);
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background 150ms ease, color 100ms ease, transform 100ms ease;
+    z-index: 2;
+  }
+  .modal-close:hover { background: var(--surface-dark); color: var(--text-primary); }
+  .modal-close:active { transform: scale(.92); }
+  .modal-close svg { width: 20px; height: 20px; }
   /* Intra-modal re-renders (expand/collapse, switch sub-modals) keep the
      scrim and card in place visually — skip the entrance animations. */
   .modal-scrim.no-anim, .modal-card.no-anim { animation: none !important; }
@@ -1164,6 +1188,9 @@
   }
   .modal-card h3 {
     margin: 0 0 4px;
+    /* Reserve the top-right 44px hit zone for .modal-close. Without this,
+       a long title like "Eliminar usuario permanentemente" runs under the X. */
+    padding-right: 44px;
     font-size: var(--fs-xl);
     font-weight: 400;
     letter-spacing: -0.4px;
@@ -3390,7 +3417,7 @@
       invalidCreds: "Wrong username or password",
       addEmployee: "Add employee",
       fullName: "Full name",
-      cancel: "Cancel", add: "Add", save: "Save",
+      cancel: "Cancel", add: "Add", save: "Save", close: "Close",
       viewEmployee: "Viewing",
       shiftLogged: "Shift logged",
       hoursShort: "h",
@@ -3587,7 +3614,7 @@
       invalidCreds: "Usuario o contraseña incorrectos",
       addEmployee: "Agregar empleado",
       fullName: "Nombre completo",
-      cancel: "Cancelar", add: "Agregar", save: "Guardar",
+      cancel: "Cancelar", add: "Agregar", save: "Guardar", close: "Cerrar",
       viewEmployee: "Viendo a",
       shiftLogged: "Turno registrado",
       hoursShort: "h",
@@ -5188,7 +5215,7 @@
     // date so the eye lands on the relevant info (when + hours) faster.
     const isSelfView = isEmployee(u) && sh.empId === u.id;
     root.appendChild(el("div", {
-      style:"display:flex; align-items:center; gap:12px; padding: 4px 0 2px;"
+      style:"display:flex; align-items:center; gap:12px; padding: 4px 44px 2px 0;"
     },
       isSelfView ? null : el("div", {
         style:`width:40px;height:40px;border-radius:50%;background:color-mix(in oklab, ${emp.color} 22%, transparent);color:${emp.color};display:grid;place-items:center;font-weight:700;font-size:var(--fs-sm);flex:0 0 auto;`
@@ -5703,6 +5730,15 @@
 
     const close = () => { history.back(); };
     const card = el("div", {class: "modal-card" + (isFreshOpen ? "" : " no-anim")});
+    // Explicit close button — sits on every sheet so the X is always there
+    // regardless of which modal is rendered. Tap-outside still works via the
+    // scrim handler below.
+    card.appendChild(el("button", {
+      class: "modal-close",
+      type: "button",
+      "aria-label": tr("close"),
+      onclick: close,
+    }, ICON("x", 20)));
     const scrim = el("div", {
       class: "modal-scrim" + (isFreshOpen ? "" : " no-anim"),
       onclick: (e) => { if (e.target === scrim) close(); },

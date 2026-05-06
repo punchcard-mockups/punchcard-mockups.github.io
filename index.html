@@ -1971,6 +1971,16 @@
     color: var(--text-secondary);
     line-height: 1.35;
   }
+  /* Employee's own entry in the unified comment log — same card shape, but
+     the author tag uses the calmer primary text color (vs. amber for admin
+     entries) so the eye learns "amber = admin / not-amber = self/employee". */
+  .sd-admin-log-entry.sd-self .meta .who {
+    color: var(--text-primary);
+  }
+  .sd-admin-log-entry.sd-self .sd-comment-input {
+    margin-top: 4px;
+    background: var(--surface-card);
+  }
 
   /* "✎" admin-edit marker on a shift card — placed next to the date so the
      user can see which specific day was edited without opening the detail. */
@@ -3525,6 +3535,7 @@
       youSuffix: " (you)",
       noteOptional: "Allow short shifts without a note",
       noteOptionalHelp: "Skip the under-9-hour comment requirement for this user.",
+      commentsLabel: "Comments",
     },
     es: {
       appName: "PunchCard",
@@ -3721,6 +3732,7 @@
       youSuffix: " (tú)",
       noteOptional: "Permitir turnos cortos sin nota",
       noteOptionalHelp: "Omite la nota obligatoria para turnos menos de 9 horas.",
+      commentsLabel: "Comentarios",
     },
   };
   function tr(k, ...args) {
@@ -5124,54 +5136,7 @@
         tr("tzCrossNote", inTz, outTz)));
     }
 
-    // Comment. If the viewer owns this shift and the week is still open
-    // (not submitted-for-approval, not approved), the comment is an inline
-    // editable textarea — no "Edit" button, no sub-modal. The latest value
-    // is flushed to the server when the sheet closes (or a sub-modal opens
-    // on top). Everyone else — admins viewing someone else's shift, or the
-    // employee themselves after submission — sees a read-only display.
     const canEditComment = isEmployee(u) && u.id === sh.empId;
-    if (canEditComment) {
-      root.appendChild(el("div", {class:"sd-section-label"}, tr("commentLabel")));
-      const ta = el("textarea", {
-        class: "sd-comment-input",
-        rows: 1,
-        placeholder: tr("editShiftCommentPlaceholder"),
-      });
-      ta.value = sh.comment || "";
-      root.appendChild(ta);
-      // Auto-grow: starts at one line; grows to fit the content as the user
-      // types. `overflow: hidden` in CSS prevents the scrollbar flicker that
-      // would otherwise appear for a single frame when the height snaps.
-      const autosize = () => {
-        ta.style.height = "auto";
-        ta.style.height = ta.scrollHeight + "px";
-      };
-      ta.addEventListener("input", autosize);
-      queueMicrotask(autosize);
-      const original = sh.comment || "";
-      const shiftId = sh.id;
-      pendingCommentFlush = async () => {
-        const next = ta.value;
-        if (next === original) return;
-        // Optimistic local write so an immediate re-open of the sheet shows
-        // the new comment even before the server round-trip finishes.
-        const localSh = shifts.find(s => s.id === shiftId);
-        if (localSh) localSh.comment = next;
-        try {
-          const { shift: updated } = await api.updateShiftComment(shiftId, next);
-          if (localSh) Object.assign(localSh, updated);
-          toast(tr("noteSaved"), {kind:"success", pill:"✓"});
-        } catch (e) {
-          // Roll back so the UI matches server state.
-          if (localSh) localSh.comment = original;
-          toastApiError(e, tr("errCouldntSave"));
-        }
-      };
-    } else if (sh.comment) {
-      root.appendChild(el("div", {class:"sd-section-label"}, tr("commentLabel")));
-      root.appendChild(el("div", {class:"sd-comment"}, `"${sh.comment}"`));
-    }
 
     // Map for just this shift — admins/owners only. Employees viewing their
     // own shifts don't need to see GPS pins; that's a glance-tool for whoever
@@ -5202,20 +5167,26 @@
       ));
     }
 
-    // Admin edit log — every direct edit by admin/owner is recorded here and
-    // visible to everyone who can see the shift.
-    if (sh.adminEdits && sh.adminEdits.length > 0) {
-      root.appendChild(el("div", {class:"sd-section-label"}, tr("adminEditLog")));
+    // Unified comment log: all admin direct-edits + the employee's own note
+    // share one timeline. Each entry shows the author's name and body. The
+    // employee's own note on their own shift is rendered as an editable
+    // textarea pinned at the bottom; everyone else sees it read-only.
+    const adminEntries = (sh.adminEdits ?? []).slice()
+      .sort((a, b) => (a.at || "").localeCompare(b.at || ""));
+    const empName = userById[sh.empId]?.displayName ?? "";
+    const hasContent = adminEntries.length > 0 || !!sh.comment || canEditComment;
+    if (hasContent) {
+      root.appendChild(el("div", {class:"sd-section-label"}, tr("commentsLabel")));
       const logWrap = el("div", {class:"sd-admin-log"});
-      for (const entry of [...sh.adminEdits].reverse()) {
+      for (const entry of adminEntries) {
         const editor = userById[entry.by];
-        const when = new Date(entry.at);
+        const when = entry.at ? new Date(entry.at) : null;
         logWrap.appendChild(el("div", {class:"sd-admin-log-entry"},
           el("div", {class:"meta"},
             el("span", {class:"who"}, editor ? editor.displayName : tr("admin")),
-            el("span", {class:"when"}, when.toLocaleString(locale(), {
+            when ? el("span", {class:"when"}, when.toLocaleString(locale(), {
               month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
-            })),
+            })) : null,
           ),
           entry.action === "created" || !entry.oldStart || !entry.oldEnd
             ? el("div", {class:"diff"},
@@ -5228,7 +5199,53 @@
                   el("span", {class:"after"}, `${fmt12(entry.newStart)} – ${fmt12(entry.newEnd)}`),
                 )
               : null,
-          el("div", {class:"reason"}, `"${entry.comment}"`),
+          entry.comment ? el("div", {class:"reason"}, `"${entry.comment}"`) : null,
+        ));
+      }
+      // Employee's own note slot.
+      if (canEditComment) {
+        const ta = el("textarea", {
+          class: "sd-comment-input",
+          rows: 1,
+          placeholder: tr("editShiftCommentPlaceholder"),
+        });
+        ta.value = sh.comment || "";
+        const autosize = () => {
+          ta.style.height = "auto";
+          ta.style.height = ta.scrollHeight + "px";
+        };
+        ta.addEventListener("input", autosize);
+        queueMicrotask(autosize);
+        logWrap.appendChild(el("div", {class:"sd-admin-log-entry sd-self"},
+          el("div", {class:"meta"},
+            el("span", {class:"who self"}, `${empName}${tr("youSuffix")}`),
+          ),
+          ta,
+        ));
+        const original = sh.comment || "";
+        const shiftId = sh.id;
+        pendingCommentFlush = async () => {
+          const next = ta.value;
+          if (next === original) return;
+          // Optimistic local write so an immediate re-open of the sheet shows
+          // the new comment even before the server round-trip finishes.
+          const localSh = shifts.find(s => s.id === shiftId);
+          if (localSh) localSh.comment = next;
+          try {
+            const { shift: updated } = await api.updateShiftComment(shiftId, next);
+            if (localSh) Object.assign(localSh, updated);
+            toast(tr("noteSaved"), {kind:"success", pill:"✓"});
+          } catch (e) {
+            if (localSh) localSh.comment = original;
+            toastApiError(e, tr("errCouldntSave"));
+          }
+        };
+      } else if (sh.comment) {
+        logWrap.appendChild(el("div", {class:"sd-admin-log-entry sd-self"},
+          el("div", {class:"meta"},
+            el("span", {class:"who self"}, empName),
+          ),
+          el("div", {class:"reason"}, `"${sh.comment}"`),
         ));
       }
       root.appendChild(logWrap);
@@ -5717,7 +5734,6 @@
               empId: emp.id, date, start, end, hours,
               clockInTz: tzIn.value || null,
               clockOutTz: tzIn.value || null,
-              comment: note,
               reason: note,
             });
             shifts.push(shift);

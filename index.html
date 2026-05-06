@@ -109,43 +109,30 @@
     flex: 1;
     overflow-y: auto;
     overscroll-behavior: contain;
-    padding: 0 6px;
+    /* Top padding clears the floating back/account buttons (44px button + 8px
+       safe-area top margin + 4px breathing room). */
+    padding: 56px 6px 0;
     margin: 0 -6px;
   }
   .scroll::-webkit-scrollbar { width: 6px; }
   .scroll::-webkit-scrollbar-thumb { background: var(--surface-dark); border-radius: 3px; }
 
-  /* Topbar */
-  .topbar {
+  /* Floating chrome — back button (top-left) and account menu (top-right)
+     float over the scroll area with safe-area insets. The page itself
+     reserves padding-top: 56px so the first row of content sits clear of
+     them. They live above the scroll's transform stacking context (z:10)
+     and below the toast layer (z:1000). */
+  .float-back, .float-account {
+    position: fixed;
+    top: max(8px, env(safe-area-inset-top, 0px));
+    z-index: 12;
     display: flex;
     align-items: center;
-    gap: 4px;
-    padding: 14px 18px 4px;
-    min-height: 44px;
-    flex: 0 0 auto;
-    margin-bottom: 0;
-    border-bottom: 1px solid var(--outline-soft);
-    box-sizing: content-box;
-    /* The scroll area below gets transform-based screen-enter animations
-       which create a stacking context — without this, dropdowns anchored
-       inside the topbar (account menu) would paint behind the scroll. */
-    position: relative;
-    z-index: 10;
   }
-  .topbar .spacer { flex: 1; }
-  .topbar .back {
-    width: 44px; height: 44px;
-    border-radius: 12px;
-    display: grid; place-items: center;
-    color: var(--text-secondary);
-    cursor: pointer;
-    touch-action: manipulation;
-    transition: background 150ms ease, transform 100ms ease;
-  }
-  .topbar .back:hover { background: var(--surface-dark); color: var(--text-primary); }
-  .topbar .back:active { transform: scale(.92); }
-  .topbar .title { font-size: 15px; font-weight: 600; color: var(--text-primary); }
-  .topbar .icon-btn {
+  .float-back    { left:  max(10px, env(safe-area-inset-left,  0px)); }
+  .float-account { right: max(10px, env(safe-area-inset-right, 0px)); }
+  .float-back:empty, .float-account:empty { display: none; }
+  .icon-btn {
     width: 44px; height: 44px;
     border-radius: 12px;
     display: grid; place-items: center;
@@ -155,8 +142,8 @@
     position: relative;
     transition: background 150ms ease, transform 100ms ease;
   }
-  .topbar .icon-btn:hover { background: var(--surface-dark); color: var(--text-primary); }
-  .topbar .icon-btn:active { transform: scale(.92); }
+  .icon-btn:hover { background: var(--surface-dark); color: var(--text-primary); }
+  .icon-btn:active { transform: scale(.92); }
   .lang-toggle {
     position: relative;
     display: inline-flex;
@@ -2185,7 +2172,6 @@
   }
 
   /* Display-face family — every heading and brand element uses Gloock. */
-  .topbar .title,
   .greeting .name,
   .month-nav .label,
   .section-header h3,
@@ -2216,8 +2202,7 @@
     font-feature-settings: "tnum" 1;
     letter-spacing: -0.4px;
   }
-  .topbar .icon-btn:hover,
-  .topbar .back:hover,
+  .icon-btn:hover,
   .month-nav .chev:hover { background: oklch(92% 0.02 85); }
   .lang-toggle { background: oklch(93% 0.02 85); border: 1px solid var(--outline-soft); }
   .lang-toggle .slider { background: var(--accent-blue); box-shadow: none; }
@@ -2351,26 +2336,18 @@
     overflow: hidden;
   }
 
-  .version-tag {
-    position: absolute;
-    top: max(6px, env(safe-area-inset-top, 0px));
-    left: max(8px, env(safe-area-inset-left, 0px));
+  /* Hidden in the page chrome — its text is read into the account-menu
+     footer (see renderUserMenu) so the version tag still ships, but
+     doesn't claim screen real estate on every page. */
+  .version-tag { display: none; }
+  .user-menu-version {
+    padding: 6px 12px 4px;
     font-size: 9px;
     font-family: ui-monospace, Menlo, monospace;
     color: var(--text-muted);
-    opacity: 0.45;
     letter-spacing: 0.3px;
-    pointer-events: none;
+    text-align: right;
     user-select: none;
-    z-index: 50;
-  }
-
-  /* On the login screen renderTopbar() leaves the container empty. Collapse
-     it so the login content doesn't look pushed down by a ghost 44px bar. */
-  .topbar:empty {
-    min-height: 0;
-    padding: 0;
-    border-bottom: 0;
   }
 
   /* Bottom bar — home for the tabbar (employees) and pinned-approvals
@@ -2466,7 +2443,10 @@
     flex: 1 1 auto;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 6px 22px 24px 20px;
+    /* 60px top clears the floating back/account buttons (44px + safe-area top
+       inset + breathing room). The horizontal/bottom padding is the page's
+       content gutters. */
+    padding: 60px 22px 24px 20px;
     margin: 0;
     -webkit-overflow-scrolling: touch;
   }
@@ -2502,12 +2482,6 @@
 
   /* Safe-area respect on iOS phones (notch / home indicator) */
   @supports (padding: max(0px)) {
-    .topbar {
-      padding-top: max(14px, env(safe-area-inset-top));
-      padding-left: max(18px, env(safe-area-inset-left));
-      padding-right: max(18px, env(safe-area-inset-right));
-    }
-    .topbar:empty { padding: 0; }
     .scroll {
       padding-left: max(20px, env(safe-area-inset-left));
       padding-right: max(22px, env(safe-area-inset-right));
@@ -2529,8 +2503,7 @@
      hover effects when the device has no hover pointer. :active still fires
      for press feedback. */
   @media (hover: none) {
-    .topbar .back:hover,
-    .topbar .icon-btn:hover,
+    .icon-btn:hover,
     .month-nav .chev:hover {
       background: transparent;
       color: var(--text-secondary);
@@ -2961,7 +2934,8 @@
 
 <div class="app-root">
   <div class="version-tag" id="versionTag"></div>
-  <div class="topbar" id="topbarRoot"></div>
+  <div class="float-back" id="floatBack"></div>
+  <div class="float-account" id="floatAccount"></div>
   <div class="scroll" id="scrollRoot"></div>
   <div id="bottomBarRoot"></div>
   <div id="fabRoot"></div>
@@ -4407,32 +4381,27 @@
   }
 
   // =============================================================
-  // TOPBAR + FAB
+  // FLOATING CHROME (back button + account menu)
   // =============================================================
+  // The old `.topbar` consumed ~50px on every screen even when it carried
+  // nothing but the account icon, and it duplicated content already shown
+  // in the page (admin_employee header). Now both controls float over the
+  // page with safe-area insets; pages add top padding so the first row of
+  // content sits below them.
   function renderTopbar() {
-    const root = document.getElementById("topbarRoot");
-    root.innerHTML = "";
-    if (state.screen === "login") return;
-
-    const hasBack = state.nav.length > 0;
-    if (hasBack) {
-      root.appendChild(el("div", { class:"back", onclick: navBack }, ICON("back")));
-    } else {
-      root.appendChild(el("div", { style:"width:44px" }));
+    const back = document.getElementById("floatBack");
+    const account = document.getElementById("floatAccount");
+    if (state.screen === "login") {
+      back.innerHTML = "";
+      account.innerHTML = "";
+      return;
     }
-
-    // Title in middle of topbar only for drill-in sub-screens. Root tab
-    // screens (home, history) let their own screen content name itself.
-    if (state.screen === "admin_employee") {
-      const emp = userById[state.viewingEmployeeId];
-      root.appendChild(el("div", {class:"title"}, emp?.displayName || ""));
-    } else {
-      root.appendChild(el("div", {class:"title"}, ""));
+    back.innerHTML = "";
+    if (state.nav.length > 0) {
+      back.appendChild(el("div", { class:"icon-btn", onclick: navBack }, ICON("back")));
     }
-
-    root.appendChild(el("div", { class:"spacer" }));
-
-    root.appendChild(renderUserMenu());
+    account.innerHTML = "";
+    account.appendChild(renderUserMenu());
   }
 
   // Account / sign-out dropdown. Replaces what used to be a single-tap
@@ -4489,6 +4458,10 @@
           ICON("logout", 14),
           el("span", {}, tr("logout")),
         ),
+        // Version tag tucked into the menu footer — debug info, doesn't
+        // need its own permanent slot floating over every screen.
+        el("div", {class: "user-menu-version", id: "userMenuVersion"},
+          document.getElementById("versionTag")?.textContent || ""),
       );
       trigger.appendChild(menu);
     }

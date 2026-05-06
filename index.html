@@ -3888,9 +3888,12 @@
 
   function fmt12(hhmm) {
     const [h, m] = hhmm.split(":").map(Number);
-    const ampm = h >= 12 ? "PM" : "AM";
-    const hr = ((h + 11) % 12) + 1;
-    return `${hr}:${String(m).padStart(2,"0")} ${ampm}`;
+    // Build a Date so the formatter can render the AM/PM marker in the
+    // current locale (e.g. "PM" in en-US, "p. m." in es-ES). Forcing
+    // hour12 keeps the format identical between languages — Spanish
+    // would otherwise default to 24-hour and clash with the rest of the UI.
+    const d = new Date(2000, 0, 1, h, m);
+    return d.toLocaleTimeString(locale(), { hour: "numeric", minute: "2-digit", hour12: true });
   }
   // True when the shift wraps past midnight (end-of-day before start-of-day).
   // Both args are "HH:MM"; null/empty inputs return false.
@@ -3930,7 +3933,10 @@
     return node;
   }
   function fmtTimeDate(d) {
-    return d.toLocaleTimeString(locale(), { hour: "numeric", minute: "2-digit" });
+    // Force 12-hour: every other time on the page comes from fmt12() which
+    // always renders "10:00 PM". Without hour12 here, Spanish locale would
+    // give "22:00" and the live clock-in label would clash with the rest.
+    return d.toLocaleTimeString(locale(), { hour: "numeric", minute: "2-digit", hour12: true });
   }
 
   // Render a single time-of-day followed by its tz tag (if any) as a span.
@@ -5314,7 +5320,7 @@
             el("div", {class:"meta"},
               el("span", {class:"who"}, editor ? editor.displayName : tr("admin")),
               when ? el("span", {class:"when"}, when.toLocaleString(locale(), {
-                month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+                month: "short", day: "numeric", hour: "numeric", minute: "2-digit", hour12: true,
               })) : null,
             ),
             e.action === "created" || !e.oldStart || !e.oldEnd

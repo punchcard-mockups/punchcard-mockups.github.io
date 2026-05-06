@@ -57,17 +57,22 @@
     --tf-body: "Vollkorn", Georgia, serif;
     --tf-mono: "Azeret Mono", ui-monospace, monospace;
 
-    /* Type scale — one source of truth. No text below --fs-xs (12px).
+    /* Type scale — one source of truth.
+       Body floor is --fs-xs (13px); caps-style pills/badges may drop to
+       --fs-cap (11px) where uppercase + letter-spacing carry the read.
+       Touch-input minimum stays 16px (iOS no-zoom).
        Android at arm's length, end-of-shift readability is the bar. */
-    --fs-xs:   12px;  /* metadata, captions, pill labels */
-    --fs-sm:   13px;  /* secondary text, hint copy */
-    --fs-base: 14px;  /* default body */
-    --fs-md:   16px;  /* inputs (iOS no-zoom minimum), emphasized body */
-    --fs-lg:   18px;  /* small section titles */
-    --fs-xl:   22px;  /* screen section headers (.section-header h3) */
-    --fs-2xl:  28px;  /* modal titles */
-    --fs-3xl:  34px;  /* greeting display */
-    --fs-display: 52px; /* login brand only */
+    --fs-cap:  11px;  /* uppercase/letterspaced badges & pills only */
+    --fs-xs:   13px;  /* metadata, captions, table-head */
+    --fs-sm:   14px;  /* secondary text, hint copy */
+    --fs-base: 16px;  /* default body */
+    --fs-md:   17px;  /* emphasized body */
+    --fs-lg:   20px;  /* small section titles */
+    --fs-xl:   24px;  /* screen section headers (.section-header h3) */
+    --fs-2xl:  30px;  /* modal titles */
+    --fs-3xl:  36px;  /* greeting display */
+    --fs-stat: 44px;  /* total-hours hero stat */
+    --fs-display: 52px; /* login brand only — sized to fit iPhone SE width */
 
     /* Spacing scale — 4px base. */
     --space-1: 4px;
@@ -171,7 +176,7 @@
   .lang-toggle .opt {
     position: relative;
     z-index: 1;
-    font-size: 11px;
+    font-size: var(--fs-cap);
     font-weight: 700;
     letter-spacing: 0.5px;
     padding: 8px 12px;
@@ -207,14 +212,14 @@
     margin-bottom: 6px;
   }
   .user-menu-greeting {
-    font-size: 11px;
+    font-size: var(--fs-cap);
     color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.6px;
     font-weight: 600;
   }
   .user-menu-name {
-    font-size: 15px;
+    font-size: var(--fs-base);
     font-weight: 700;
     color: var(--text-primary);
     margin-top: 3px;
@@ -222,7 +227,7 @@
   .user-menu-role {
     display: inline-block;
     margin-top: 6px;
-    font-size: 10px;
+    font-size: var(--fs-cap);
     font-weight: 700;
     letter-spacing: 0.5px;
     padding: 2px 8px;
@@ -247,7 +252,7 @@
     padding: 0 12px;
     background: transparent;
     border: 0;
-    font-size: 14px;
+    font-size: var(--fs-base);
     font-weight: 600;
     font-family: inherit;
     text-align: left;
@@ -275,7 +280,7 @@
   }
   /* font-family/weight come from the display-face multi-selector below */
   .greeting .name {
-    font-size: 34px;
+    font-size: var(--fs-3xl);
     line-height: 1.05;
     letter-spacing: -0.5px;
   }
@@ -339,7 +344,7 @@
   }
   .month-nav .chev:hover { background: var(--surface-dark); color: var(--text-primary); }
   .month-nav .chev:active { transform: scale(.92); }
-  .month-nav .label { font-size: 17px; font-weight: 600; }
+  .month-nav .label { font-size: var(--fs-md); font-weight: 600; }
 
   /* Calendar */
   .cal { padding: 4px 2px 0; }
@@ -348,7 +353,7 @@
   }
   .cal .dows span {
     text-align: center;
-    font-size: 12px; font-weight: 700;
+    font-size: var(--fs-xs); font-weight: 700;
     color: var(--text-secondary);
     letter-spacing: 0.6px;
   }
@@ -372,7 +377,7 @@
     gap: 2px;
     transition: background 120ms ease;
   }
-  .cal .inner .num { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+  .cal .inner .num { font-size: var(--fs-base); font-weight: 500; color: var(--text-primary); }
   .cal .cell.empty .num { opacity: 0.3; font-weight: 400; }
   .cal .cell.has-shifts .num { font-weight: 600; }
   .cal .cell.today .inner { background: rgba(59,130,246,.12); }
@@ -380,7 +385,7 @@
   .cal .cell.selected .inner { background: var(--accent-blue); }
   .cal .cell.selected .num { color: #fff; font-weight: 700; }
   .cal .pair {
-    font-size: 9px; font-weight: 700; line-height: 1;
+    font-size: var(--fs-cap); font-weight: 700; line-height: 1;
     display: flex; align-items: center; gap: 3px;
     color: var(--accent-blue-bright);
   }
@@ -423,16 +428,16 @@
     background: rgba(44,62,80,0.6);
   }
   .day-detail .date-label {
-    font-size: 12px; font-weight: 700; letter-spacing: 0.3px; margin-bottom: 8px;
+    font-size: var(--fs-sm); font-weight: 700; letter-spacing: 0.3px; margin-bottom: 8px;
   }
-  .day-detail .no-shifts { font-size: 12px; color: var(--text-muted); }
+  .day-detail .no-shifts { font-size: var(--fs-sm); color: var(--text-muted); }
   .dd-table { display: flex; flex-direction: column; }
   .dd-table .head {
     display: grid;
     grid-template-columns: 1fr auto auto;
     gap: 10px;
     padding: 4px 2px 6px;
-    font-size: 9px;
+    font-size: var(--fs-xs);
     letter-spacing: 0.8px;
     text-transform: uppercase;
     font-weight: 700;
@@ -465,23 +470,23 @@
   }
   .dd-table .trow:last-of-type { border-bottom: 0; }
   .dd-table .nm {
-    font-size: 13px; font-weight: 600;
+    font-size: var(--fs-sm); font-weight: 600;
     display: flex; align-items: center; gap: 8px;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   .dd-table .nm .sw { width: 4px; height: 16px; border-radius: 2px; flex: 0 0 auto; }
   .dd-table .tm {
-    font-size: 12px; color: var(--text-secondary);
+    font-size: var(--fs-sm); color: var(--text-secondary);
     font-variant-numeric: tabular-nums;
   }
   .dd-table .hrs {
-    font-size: 13px; font-weight: 700;
+    font-size: var(--fs-sm); font-weight: 700;
     font-variant-numeric: tabular-nums;
     text-align: right; min-width: 34px;
   }
   .dd-table .cmt {
     grid-column: 1 / -1;
-    font-size: 11px; color: var(--text-secondary);
+    font-size: var(--fs-xs); color: var(--text-secondary);
     font-style: italic; margin-top: 2px; opacity: .8;
   }
 
@@ -496,13 +501,13 @@
   }
   .section-header h3 {
     margin: 0;
-    font-size: 22px;
+    font-size: var(--fs-xl);
     letter-spacing: -0.3px;
   }
   .section-header small {
     font-family: var(--tf-body);
     font-style: italic;
-    font-size: 11px;
+    font-size: var(--fs-xs);
     letter-spacing: 0.2px;
     color: var(--text-secondary);
   }
@@ -523,13 +528,13 @@
     width: 40px; height: 40px;
     border-radius: 50%;
     display: grid; place-items: center;
-    font-weight: 700; font-size: 14px;
+    font-weight: 700; font-size: var(--fs-sm);
   }
   .emp-row .body { flex: 1; }
-  .emp-row .name { font-size: 14px; font-weight: 600; }
-  .emp-row .meta { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+  .emp-row .name { font-size: var(--fs-base); font-weight: 600; }
+  .emp-row .meta { font-size: var(--fs-xs); color: var(--text-secondary); margin-top: 2px; }
   .emp-row .badge {
-    font-size: 9px; font-weight: 700;
+    font-size: var(--fs-cap); font-weight: 700;
     padding: 3px 7px;
     border-radius: 999px;
     background: rgba(245,158,11,.2);
@@ -572,14 +577,14 @@
     gap: 20px;
   }
   .login-wrap .brand {
-    font-size: 28px; font-weight: 800;
+    font-size: var(--fs-2xl); font-weight: 800;
     letter-spacing: -0.6px;
     color: var(--text-primary);
   }
   .login-wrap .brand .accent { color: var(--accent-blue-bright); }
   .login-wrap .tag {
     color: var(--text-secondary);
-    font-size: 13px;
+    font-size: var(--fs-sm);
     margin-top: -10px;
     margin-bottom: 10px;
   }
@@ -594,7 +599,7 @@
     padding: 12px 4px;
     color: var(--text-primary);
     font-family: var(--tf-body);
-    font-size: 16px;
+    font-size: var(--fs-base);
     outline: none;
     transition: border-color 150ms ease;
   }
@@ -606,7 +611,7 @@
     border-radius: 2px;
     padding: 13px;
     font-family: var(--tf-display);
-    font-size: 16px;
+    font-size: var(--fs-base);
     font-weight: 400;
     letter-spacing: 0.5px;
     cursor: pointer;
@@ -616,7 +621,7 @@
   .login-form .go:hover { filter: brightness(1.1); }
   .login-form .go:active { transform: scale(.98); }
   .login-form .err {
-    font-size: 12px;
+    font-size: var(--fs-sm);
     color: var(--accent-red);
     background: oklch(92% 0.05 25);
     border-radius: 2px;
@@ -639,7 +644,7 @@
     background: transparent;
     color: var(--text-primary);
     font-family: var(--tf-body);
-    font-size: 13px;
+    font-size: var(--fs-sm);
     font-weight: 500;
     letter-spacing: 1px;
     text-transform: uppercase;
@@ -676,7 +681,7 @@
     min-height: 80px;
     padding: 18px;
     font-family: var(--tf-display);
-    font-size: 22px;
+    font-size: var(--fs-xl);
     font-weight: 400;
     letter-spacing: 0.3px;
     text-transform: none;
@@ -734,12 +739,12 @@
   .clock-card .label {
     font-family: var(--tf-body);
     font-style: italic;
-    font-size: 11px;
+    font-size: var(--fs-xs);
     letter-spacing: 0.5px;
     color: var(--text-muted);
   }
   .clock-card .time {
-    font-size: 22px;
+    font-size: var(--fs-xl);
     font-weight: 500;
     color: var(--accent-green);
   }
@@ -750,7 +755,7 @@
   .tz-inline {
     display: inline-block;
     font-family: var(--tf-body);
-    font-size: 10px;
+    font-size: var(--fs-cap);
     font-weight: 700;
     letter-spacing: 1.2px;
     margin-left: 5px;
@@ -769,7 +774,7 @@
   .overnight-badge {
     display: inline-block;
     font-family: var(--tf-body);
-    font-size: 10px;
+    font-size: var(--fs-cap);
     font-weight: 700;
     letter-spacing: 0.6px;
     margin-left: 5px;
@@ -785,14 +790,14 @@
   /* Live hours readout under the Add Shift / Edit Shift time inputs. */
   .shift-hours-readout {
     font-family: var(--tf-mono);
-    font-size: 11px;
+    font-size: var(--fs-xs);
     color: var(--text-muted);
     letter-spacing: 0.4px;
     margin: -4px 0 8px;
     min-height: 14px;
   }
   .gps-note {
-    font-size: 10px;
+    font-size: var(--fs-xs);
     color: var(--text-muted);
     letter-spacing: 0.2px;
     margin-top: 2px;
@@ -803,18 +808,18 @@
      SHIFT DETAIL — compact layout
      ========================================================= */
   .sd-name {
-    font-size: 16px;
+    font-size: var(--fs-base);
     font-weight: 600;
     line-height: 1.2;
   }
   .sd-date {
-    font-size: 12px;
+    font-size: var(--fs-sm);
     color: var(--text-secondary);
     margin-top: 2px;
     letter-spacing: 0.1px;
   }
   .sd-total-hrs {
-    font-size: 22px;
+    font-size: var(--fs-xl);
     font-weight: 700;
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.3px;
@@ -837,14 +842,14 @@
   }
   .sd-row:last-child { border-bottom: 0; }
   .sd-label {
-    font-size: 10px;
+    font-size: var(--fs-cap);
     color: var(--text-muted);
     letter-spacing: 1.5px;
     text-transform: uppercase;
     font-weight: 600;
   }
   .sd-value {
-    font-size: 15px;
+    font-size: var(--fs-md);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     color: var(--text-primary);
@@ -855,7 +860,7 @@
     gap: 6px;
   }
   .sd-row .sd-tz {
-    font-size: 10px;
+    font-size: var(--fs-cap);
     font-weight: 700;
     letter-spacing: 0.5px;
     color: var(--text-muted);
@@ -868,7 +873,7 @@
   .sd-tz-note {
     margin-top: 8px;
     padding: 8px 10px;
-    font-size: 11px;
+    font-size: var(--fs-xs);
     color: var(--accent-amber);
     background: rgba(245,158,11,.08);
     border: 1px dashed rgba(245,158,11,.35);
@@ -877,7 +882,7 @@
   }
 
   .sd-section-label {
-    font-size: 10px;
+    font-size: var(--fs-cap);
     color: var(--text-muted);
     letter-spacing: 1.5px;
     text-transform: uppercase;
@@ -890,7 +895,7 @@
     background: var(--surface-card);
     border: 1px solid var(--outline-soft);
     border-radius: 8px;
-    font-size: 13px;
+    font-size: var(--fs-sm);
     color: var(--text-secondary);
     font-style: italic;
     line-height: 1.4;
@@ -906,7 +911,7 @@
     background: var(--surface-card);
     border: 1px solid var(--outline-soft);
     border-radius: 8px;
-    font-size: 13px;
+    font-size: var(--fs-sm);
     color: var(--text-secondary);
     font-style: italic;
     line-height: 1.4;
@@ -930,7 +935,7 @@
     padding: 14px;
     border: 1px dashed var(--outline-soft);
     border-radius: 8px;
-    font-size: 12px;
+    font-size: var(--fs-sm);
     color: var(--text-muted);
     text-align: center;
   }
@@ -942,12 +947,12 @@
     border-radius: 8px;
   }
   .sd-edit-times {
-    font-size: 13px;
+    font-size: var(--fs-sm);
     color: var(--text-primary);
   }
   .sd-edit-comment {
     margin-top: 6px;
-    font-size: 12px;
+    font-size: var(--fs-sm);
     font-style: italic;
     color: var(--text-secondary);
   }
@@ -961,14 +966,14 @@
 
   /* Explicit overrides so Editorial's big serif stat styles
      never leak into the shift-detail compact values. */
-  .sd-name { font-family: var(--tf-display); font-weight: 400; font-size: 17px; letter-spacing: -0.2px; }
-  .sd-date { font-family: var(--tf-body); font-style: italic; font-size: 12px; }
+  .sd-name { font-family: var(--tf-display); font-weight: 400; font-size: var(--fs-md); letter-spacing: -0.2px; }
+  .sd-date { font-family: var(--tf-body); font-style: italic; font-size: var(--fs-sm); }
   .sd-total-hrs { font-family: var(--tf-mono); }
   .sd-value { font-family: var(--tf-mono); }
   .sd-label,
   .sd-section-label {
     font-family: var(--tf-body); font-style: italic; font-weight: 400;
-    letter-spacing: 0.4px; text-transform: none; font-size: 11px;
+    letter-spacing: 0.4px; text-transform: none; font-size: var(--fs-xs);
   }
   .sd-comment { font-family: var(--tf-body); background: transparent; }
   .sd-edit-comment { font-family: var(--tf-body); }
@@ -988,18 +993,18 @@
   .shift-summary .l-label {
     font-family: var(--tf-body);
     font-style: italic;
-    font-size: 11px;
+    font-size: var(--fs-xs);
     letter-spacing: 0.5px;
     color: var(--text-muted);
   }
-  .shift-summary .time { font-size: 22px; font-weight: 700; }
+  .shift-summary .time { font-size: var(--fs-xl); font-weight: 700; }
   .shift-summary .total {
     text-align: center; margin-top: 12px;
     border-top: 1px solid var(--outline-soft);
     padding-top: 14px;
   }
   .shift-summary .total .value {
-    font-size: 40px; font-weight: 800;
+    font-size: var(--fs-stat); font-weight: 800;
     color: var(--accent-green);
     letter-spacing: -1px;
   }
@@ -1007,7 +1012,7 @@
   .shift-summary .total .unit {
     font-family: var(--tf-body);
     font-style: italic;
-    font-size: 14px;
+    font-size: var(--fs-base);
     color: var(--text-secondary);
     margin-left: 6px;
   }
@@ -1019,7 +1024,7 @@
     border-bottom: 1.5px solid var(--outline-soft);
     color: var(--text-primary);
     font-family: var(--tf-body);
-    font-size: 13px;
+    font-size: var(--fs-sm);
     width: 100%;
     resize: none;
     outline: none;
@@ -1042,7 +1047,7 @@
     gap: 6px;
     margin-top: 8px;
     padding: 4px 10px;
-    font-size: 11px;
+    font-size: var(--fs-xs);
     font-weight: 600;
     line-height: 1.3;
     background: rgba(245,158,11,.15);
@@ -1073,7 +1078,7 @@
     color: var(--text-primary);
     padding: 10px 14px;
     border-radius: 12px;
-    font-size: 12px;
+    font-size: var(--fs-sm);
     box-shadow: 0 10px 30px rgba(0,0,0,.4);
     display: flex; gap: 10px; align-items: center;
     animation: toast-in 220ms ease both;
@@ -1084,7 +1089,7 @@
     background: var(--accent-blue);
     color: #fff;
     font-weight: 700;
-    font-size: 10px; letter-spacing: 0.4px; text-transform: uppercase;
+    font-size: var(--fs-cap); letter-spacing: 0.4px; text-transform: uppercase;
     padding: 3px 7px; border-radius: 999px;
   }
   .toast.success .pill { background: var(--accent-green); }
@@ -1226,7 +1231,7 @@
   .pw-reveal .pw-reveal-value {
     flex: 1; min-width: 0;
     font-family: var(--tf-mono, ui-monospace, Menlo, monospace);
-    font-size: 18px;
+    font-size: var(--fs-lg);
     letter-spacing: 0.5px;
     color: var(--text-primary);
     word-break: break-all;
@@ -1240,7 +1245,7 @@
     padding: 6px 10px;
     color: var(--text-primary);
     font-family: inherit;
-    font-size: 13px;
+    font-size: var(--fs-sm);
     cursor: pointer;
     min-height: 32px;
   }
@@ -1332,7 +1337,7 @@
     .modal-card select.tz-select-compact { font-size: 16px; padding: 8px 10px; }
   }
   .modal-card .err {
-    font-size: 12px; color: var(--accent-red-light);
+    font-size: var(--fs-sm); color: var(--accent-red-light);
     background: rgba(239,68,68,.08);
     border-radius: 10px;
     padding: 8px 10px;
@@ -1366,14 +1371,14 @@
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .modal-card .manage-row .sub {
-    font-size: 11px; color: var(--text-muted); margin-top: 2px;
+    font-size: var(--fs-xs); color: var(--text-muted); margin-top: 2px;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .modal-card .manage-row .chev {
     color: var(--text-secondary); flex-shrink: 0;
   }
   .modal-card .manage-section-label {
-    font-size: 11px; font-weight: 700; letter-spacing: 0.4px;
+    font-size: var(--fs-xs); font-weight: 700; letter-spacing: 0.4px;
     text-transform: uppercase; color: var(--text-muted);
     margin: 8px 0 6px;
   }
@@ -1441,10 +1446,10 @@
   .hist-shift-card .date {
     font-family: var(--tf-display);
     font-weight: 400;
-    font-size: 16px;
+    font-size: var(--fs-base);
   }
   .hist-shift-card .hrs {
-    font-size: 16px; font-weight: 700;
+    font-size: var(--fs-base); font-weight: 700;
     font-variant-numeric: tabular-nums;
   }
   .hist-shift-card .hrs.ok { color: var(--accent-green); }
@@ -1469,7 +1474,7 @@
   .hist-shift-card .week-status {
     margin-top: 8px; display: inline-flex;
     font-family: var(--tf-body);
-    font-size: 10px; font-weight: 700; letter-spacing: 1.2px;
+    font-size: var(--fs-cap); font-weight: 700; letter-spacing: 1.2px;
     padding: 3px 8px; border-radius: 999px; text-transform: uppercase;
   }
   .hist-shift-card .week-status.pending { background: rgba(245,158,11,.2); color: var(--accent-amber); }
@@ -1536,7 +1541,7 @@
   }
   .hist-week-head .w-status {
     font-family: var(--tf-body);
-    font-size: 10px;
+    font-size: var(--fs-cap);
     font-weight: 700;
     letter-spacing: 1.2px;
     padding: 3px 8px;
@@ -1688,7 +1693,7 @@
     z-index: 500;
     pointer-events: none;
     display: flex; gap: 10px;
-    font-size: 10px; font-weight: 600;
+    font-size: var(--fs-xs); font-weight: 600;
     background: rgba(13,27,42,.85);
     padding: 4px 8px;
     border-radius: 999px;
@@ -1700,7 +1705,7 @@
     content: var(--mini-map-hint, "Click map to enable scroll zoom");
     position: absolute; inset: 0;
     display: flex; align-items: center; justify-content: center;
-    color: #fff; font-size: 12px; font-weight: 600;
+    color: #fff; font-size: var(--fs-sm); font-weight: 600;
     background: rgba(10, 27, 46, 0);
     pointer-events: none;
     opacity: 0;
@@ -1744,12 +1749,12 @@
   .approvals-banner .body { flex: 1; }
   .approvals-banner .title {
     font-family: var(--tf-display);
-    font-size: 18px;
+    font-size: var(--fs-lg);
     color: var(--accent-amber);
   }
   .approvals-banner .meta {
     font-family: var(--tf-mono);
-    font-size: 11px;
+    font-size: var(--fs-xs);
     color: var(--text-muted);
     margin-top: 1px;
   }
@@ -1789,7 +1794,7 @@
   /* Week-submit / past-weeks buttons use the global .btn.primary system. */
   .week-submit .status-pill {
     font-family: var(--tf-body);
-    font-size: 10px;
+    font-size: var(--fs-cap);
     font-weight: 700;
     letter-spacing: 1.2px;
     text-transform: uppercase;
@@ -1852,15 +1857,15 @@
     display: flex; align-items: center; gap: 12px;
   }
   .past-weeks .prow .left { flex: 1; min-width: 0; }
-  .past-weeks .prow .title { font-size: 12px; font-weight: 600; }
+  .past-weeks .prow .title { font-size: var(--fs-sm); font-weight: 600; }
   .past-weeks .prow .sub {
-    font-size: 10px;
+    font-size: var(--fs-xs);
     color: var(--text-secondary);
     margin-top: 1px;
     font-variant-numeric: tabular-nums;
   }
   .past-weeks .empty {
-    font-size: 11px;
+    font-size: var(--fs-xs);
     color: var(--text-muted);
     text-align: center;
     padding: 10px;
@@ -1877,13 +1882,13 @@
   .approval-row .top {
     display: flex; justify-content: space-between; align-items: center;
   }
-  .approval-row .who { font-size: 13px; font-weight: 700; }
+  .approval-row .who { font-size: var(--fs-sm); font-weight: 700; }
   .approval-row .total {
-    font-size: 14px; font-weight: 700;
+    font-size: var(--fs-base); font-weight: 700;
     color: var(--accent-blue-bright);
     font-variant-numeric: tabular-nums;
   }
-  .approval-row .week { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+  .approval-row .week { font-size: var(--fs-xs); color: var(--text-secondary); margin-top: 2px; }
   .approval-row .actions {
     display: flex; gap: 8px; margin-top: 10px;
   }
@@ -1897,7 +1902,7 @@
     animation: fade-in 180ms ease both;
   }
   .reject-reason-title {
-    font-size: 11px;
+    font-size: var(--fs-xs);
     font-weight: 700;
     color: var(--accent-red-light);
     letter-spacing: 0.3px;
@@ -1907,7 +1912,7 @@
     width: 100%;
     box-sizing: border-box;
     font-family: inherit;
-    font-size: 12px;
+    font-size: var(--fs-sm);
     padding: 8px 10px;
     border-radius: 8px;
     border: 1px solid var(--outline-soft);
@@ -1918,7 +1923,7 @@
   }
   .reject-reason-field:focus { outline: 2px solid var(--accent-red-light); outline-offset: -1px; }
   .reject-reason-err {
-    font-size: 11px;
+    font-size: var(--fs-xs);
     color: var(--accent-red-light);
     margin-top: 4px;
   }
@@ -1932,7 +1937,7 @@
     animation: fade-in 220ms ease both;
   }
   .rejection-notice .label {
-    font-size: 10px;
+    font-size: var(--fs-cap);
     font-weight: 700;
     letter-spacing: 0.5px;
     text-transform: uppercase;
@@ -1940,7 +1945,7 @@
     margin-bottom: 2px;
   }
   .rejection-notice .reason {
-    font-size: 12px;
+    font-size: var(--fs-sm);
     font-style: italic;
     color: var(--text-primary);
     line-height: 1.35;
@@ -1959,7 +1964,7 @@
   }
   .sd-admin-log-entry .meta {
     display: flex; align-items: baseline; justify-content: space-between;
-    font-size: 10px;
+    font-size: var(--fs-cap);
     color: var(--text-muted);
     letter-spacing: 0.3px;
     margin-bottom: 4px;
@@ -1974,7 +1979,7 @@
     letter-spacing: 0.5px;
   }
   .sd-admin-log-entry .diff {
-    font-size: 12px;
+    font-size: var(--fs-sm);
     font-variant-numeric: tabular-nums;
     margin-bottom: 4px;
   }
@@ -1991,7 +1996,7 @@
     color: var(--text-primary);
   }
   .sd-admin-log-entry .reason {
-    font-size: 11px;
+    font-size: var(--fs-xs);
     font-style: italic;
     color: var(--text-secondary);
     line-height: 1.35;
@@ -2005,7 +2010,7 @@
     padding: 0;
     font-style: italic;
     color: var(--text-secondary);
-    font-size: 11px;
+    font-size: var(--fs-xs);
     line-height: 1.35;
     min-height: 0;
   }
@@ -2028,7 +2033,7 @@
     border-radius: 50%;
     background: var(--accent-amber);
     color: #1a1a1a;
-    font-size: 11px;
+    font-size: var(--fs-cap);
     font-weight: 700;
     margin-left: 2px;
     flex: 0 0 auto;
@@ -2106,7 +2111,7 @@
     font-style: italic;
   }
   .breakdown .empty {
-    font-size: 11px;
+    font-size: var(--fs-xs);
     color: var(--text-muted);
     font-style: italic;
     text-align: center;
@@ -2128,7 +2133,7 @@
     border-bottom: 1px solid var(--accent-amber);
     color: var(--accent-amber);
     font-family: var(--tf-body);
-    font-size: 11px;
+    font-size: var(--fs-xs);
     padding: 6px 10px;
     margin-top: 6px;
     font-weight: 600;
@@ -2159,13 +2164,13 @@
   .week-closed-card .title {
     font-family: var(--tf-display);
     font-weight: 400;
-    font-size: 18px;
+    font-size: var(--fs-lg);
     color: var(--text-primary);
     letter-spacing: -0.2px;
   }
   .week-closed-card .meta {
     font-family: var(--tf-body);
-    font-size: 13px;
+    font-size: var(--fs-sm);
     line-height: 1.45;
     color: var(--text-secondary);
     margin-top: 4px;
@@ -2182,11 +2187,11 @@
     font-family: var(--tf-display);
     font-weight: 400;
   }
-  .login-wrap .brand { font-size: 52px; letter-spacing: -1.5px; line-height: .95; }
+  .login-wrap .brand { font-size: var(--fs-display); letter-spacing: -1.5px; line-height: .95; }
   .login-wrap .brand .accent { color: var(--accent-blue); }
   .login-wrap .tag {
     font-family: var(--tf-body); font-style: italic;
-    color: var(--text-secondary); font-size: 14px;
+    color: var(--text-secondary); font-size: var(--fs-sm);
   }
   .cal .inner .num,
   .cal .pair,
@@ -2215,7 +2220,7 @@
     font-style: normal;
     font-weight: 600;
     color: var(--text-muted);
-    font-size: 12px;
+    font-size: var(--fs-xs);
     letter-spacing: 0.8px;
     text-transform: none;
   }
@@ -2231,7 +2236,7 @@
   .cal .cell.selected .pair,
   .cal .cell.selected .pair .mid,
   .cal .cell.selected .pair .emp { color: oklch(96% 0.015 85); }
-  .cal .inner .num { font-family: var(--tf-display); font-weight: 400; font-size: 15px; }
+  .cal .inner .num { font-family: var(--tf-display); font-weight: 400; font-size: var(--fs-base); }
   .cal .pair { color: var(--text-primary); font-weight: 600; }
   .cal .pair .emp { color: var(--text-secondary); }
   .cal .heat-1 .inner { background: oklch(94% 0.02 85); }
@@ -2246,7 +2251,7 @@
   }
   .day-detail .date-label {
     font-family: var(--tf-display); font-weight: 400;
-    font-size: 18px; letter-spacing: -0.2px;
+    font-size: var(--fs-lg); letter-spacing: -0.2px;
     text-transform: none;
     margin-bottom: 10px;
     padding-bottom: 8px;
@@ -2262,10 +2267,10 @@
     border-bottom: 1px solid var(--text-primary);
   }
   .dd-table .trow { border-bottom: 1px dotted var(--outline-soft); }
-  .dd-table .nm { font-family: var(--tf-display); font-weight: 400; font-size: 14px; }
+  .dd-table .nm { font-family: var(--tf-display); font-weight: 400; font-size: var(--fs-sm); }
   /* Emp-row typography — ex-editorial overrides to the base rules above */
-  .emp-row .name { font-family: var(--tf-display); font-weight: 400; font-size: 17px; }
-  .emp-row .meta { font-family: var(--tf-mono); font-size: 11px; color: var(--text-muted); }
+  .emp-row .name { font-family: var(--tf-display); font-weight: 400; font-size: var(--fs-md); }
+  .emp-row .meta { font-family: var(--tf-mono); font-size: var(--fs-xs); color: var(--text-muted); }
   .emp-row .badge {
     background: transparent;
     color: var(--accent-amber);
@@ -2310,7 +2315,7 @@
     font-family: var(--tf-body);
   }
   .approval-row { background: transparent; border: 0; border-bottom: 1px dotted var(--outline-soft); border-radius: 0; padding: 14px 4px; }
-  .approval-row .who { font-family: var(--tf-display); font-weight: 400; font-size: 16px; }
+  .approval-row .who { font-family: var(--tf-display); font-weight: 400; font-size: var(--fs-base); }
   .toast { background: var(--text-primary); color: var(--t-bg); border: 1px solid var(--text-primary); border-radius: 2px; font-family: var(--tf-body); }
   .toast .pill { background: var(--accent-blue); color: var(--t-bg); border-radius: 2px; font-family: var(--tf-body); }
   .toast.success .pill { background: var(--accent-green); color: var(--t-bg); }
@@ -2342,7 +2347,7 @@
   .version-tag { display: none; }
   .user-menu-version {
     padding: 6px 12px 4px;
-    font-size: 9px;
+    font-size: var(--fs-cap);
     font-family: ui-monospace, Menlo, monospace;
     color: var(--text-muted);
     letter-spacing: 0.3px;
@@ -2381,7 +2386,7 @@
   .tabbar .tab:last-child { border-right: 0; }
   .tabbar .tab .tab-label {
     font-family: var(--tf-body);
-    font-size: 11px;
+    font-size: var(--fs-xs);
     font-weight: 500;
     letter-spacing: 1.5px;
     text-transform: uppercase;
@@ -2526,18 +2531,18 @@
   .tabbar .tab { position: relative; }
   .tabbar .tab .tab-badge {
     position: absolute;
-    top: 6px;
-    right: calc(50% - 22px);
-    min-width: 16px;
-    height: 16px;
-    padding: 0 4px;
+    top: 4px;
+    right: calc(50% - 24px);
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
     border-radius: 999px;
     background: var(--accent-amber);
     color: var(--t-bg);
     font-family: var(--tf-body);
-    font-size: 9px;
+    font-size: var(--fs-cap);
     font-weight: 700;
-    line-height: 16px;
+    line-height: 18px;
     text-align: center;
     letter-spacing: 0;
     box-shadow: 0 0 0 2px var(--t-bg);
@@ -2635,7 +2640,7 @@
   }
   .week-card .wc-status {
     font-family: var(--tf-body);
-    font-size: 10px;
+    font-size: var(--fs-cap);
     font-weight: 700;
     letter-spacing: 1.2px;
     padding: 3px 8px;
@@ -2802,12 +2807,12 @@
   .mu-screen .mu-row .mu-name {
     font-family: var(--tf-display);
     font-weight: 400;
-    font-size: 17px;
+    font-size: var(--fs-md);
     line-height: 1.1;
   }
   .mu-screen .mu-row .mu-meta {
     font-family: var(--tf-mono);
-    font-size: 11px;
+    font-size: var(--fs-xs);
     color: var(--text-muted);
     margin-top: 3px;
     letter-spacing: 0.2px;
@@ -2917,7 +2922,7 @@
   }
   .eu-screen .eu-checkbox-help {
     font-family: var(--tf-body);
-    font-size: 12px;
+    font-size: var(--fs-sm);
     color: var(--text-muted);
     margin-top: 2px;
   }
@@ -4945,7 +4950,7 @@
         class: "mu-row",
         onclick: () => navTo("edit_user", { manageTargetId: u.id }),
       },
-        el("div", {class:"av", style:`background:color-mix(in oklab, ${u.color || "var(--text-secondary)"} 22%, transparent); color:${u.color || "var(--text-secondary)"}; width:36px; height:36px; border-radius:50%; display:grid; place-items:center; font-weight:700; font-size:14px; flex:0 0 auto;`},
+        el("div", {class:"av", style:`background:color-mix(in oklab, ${u.color || "var(--text-secondary)"} 22%, transparent); color:${u.color || "var(--text-secondary)"}; width:36px; height:36px; border-radius:50%; display:grid; place-items:center; font-weight:700; font-size:var(--fs-sm); flex:0 0 auto;`},
           u.displayName.charAt(0)),
         el("div", {class:"mu-body"},
           el("div", {class:"mu-name", style:`color:${u.color || "var(--text-primary)"}`},
@@ -5103,15 +5108,15 @@
     // full-width primary CTA: this screen is for review, not action.
     root.appendChild(el("div", {class:"greeting", style:"display:flex; align-items:center; gap:14px;"},
       el("div", {
-        style: `width:56px; height:56px; border-radius:50%; background:color-mix(in oklab, ${e.color} 22%, transparent); color:${e.color}; display:grid; place-items:center; font-size:22px; font-weight:800;`
+        style: `width:56px; height:56px; border-radius:50%; background:color-mix(in oklab, ${e.color} 22%, transparent); color:${e.color}; display:grid; place-items:center; font-size:var(--fs-xl); font-weight:800;`
       }, e.displayName.charAt(0)),
       el("div", {style:"flex:1; min-width:0;"},
-        el("div", {class:"name", style:"font-size:22px;"}, e.displayName),
-        el("div", {class:"hello", style:"font-size:12px;"}, "@" + e.username),
+        el("div", {class:"name", style:"font-size:var(--fs-xl);"}, e.displayName),
+        el("div", {class:"hello", style:"font-size:var(--fs-sm);"}, "@" + e.username),
       ),
       canApprove(state.currentUser) ? el("button", {
         class: "btn primary",
-        style: "padding:10px 14px; font-size:11px; flex:0 0 auto;",
+        style: "padding:10px 14px; font-size:var(--fs-xs); flex:0 0 auto;",
         onclick: () => { state.modal = "addShift"; history.pushState({ modal: true }, ""); render(); },
       }, tr("addShiftAction")) : null,
     ));
@@ -5190,7 +5195,7 @@
       style:"display:flex; align-items:center; gap:12px; padding: 4px 0 2px;"
     },
       isSelfView ? null : el("div", {
-        style:`width:40px;height:40px;border-radius:50%;background:color-mix(in oklab, ${emp.color} 22%, transparent);color:${emp.color};display:grid;place-items:center;font-weight:700;font-size:15px;flex:0 0 auto;`
+        style:`width:40px;height:40px;border-radius:50%;background:color-mix(in oklab, ${emp.color} 22%, transparent);color:${emp.color};display:grid;place-items:center;font-weight:700;font-size:var(--fs-sm);flex:0 0 auto;`
       }, emp.displayName.charAt(0)),
       el("div", {style:"flex:1; min-width:0"},
         isSelfView ? null : el("div", {class:"sd-name", style:`color:${emp.color}`}, emp.displayName),

@@ -4301,9 +4301,13 @@
     // Remove any existing detail slot
     grid.querySelector(".day-detail-slot")?.remove();
 
-    // Insert new detail slot at end of the selected row
+    // Insert new detail slot at end of the selected row.
+    // Calendar runs Mon–Sun, so shift JS's Sun-first getDay() into a
+    // Mon-first offset (getDay()=0 → 6) — matches renderCalendar's math.
+    // Without this, clicking a Sunday computes the wrong row and the
+    // expansion lands two weeks below.
     if (next != null) {
-      const startOffset = new Date(year, month, 1).getDay();
+      const startOffset = (new Date(year, month, 1).getDay() + 6) % 7;
       const row = Math.floor((next - 1 + startOffset) / 7);
       // Last cell in that row — scan from row*7+6 downward until we find one
       let anchor = null;

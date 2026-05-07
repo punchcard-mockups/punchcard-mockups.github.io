@@ -2382,6 +2382,9 @@
     letter-spacing: 0.3px;
     text-align: right;
     user-select: none;
+    /* Hyphens in the date portion are soft break points; without nowrap
+       the browser splits "v.2026-05-06.1948" across two lines. */
+    white-space: nowrap;
   }
 
   /* Bottom bar — home for the tabbar (employees) and pinned-approvals

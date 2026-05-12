@@ -2501,6 +2501,29 @@
   .dd-table .trow,
   .dd-table .nm { min-width: 0; }
   .dd-table .tm { min-width: 0; white-space: nowrap; }
+
+  /* Narrow-viewport day-detail: stack name on top, time + hours below.
+     At phone widths the time column (with tz badge + overnight "+1d") plus
+     the hours column consume the whole row, leaving the 1fr name column to
+     collapse to ~0 under the overflow:hidden + nowrap regime above. Stacking
+     gives the name its own row and removes the redundant header strip. */
+  @media (max-width: 480px) {
+    .dd-table .head { display: none; }
+    .dd-table .trow {
+      grid-template-columns: 1fr auto;
+      grid-template-areas:
+        "name hrs"
+        "time time";
+      align-items: baseline;
+      row-gap: 2px;
+      padding: 8px 2px;
+    }
+    .dd-table .trow .nm  { grid-area: name; }
+    .dd-table .trow .tm  { grid-area: time; }
+    .dd-table .trow .hrs { grid-area: hrs; }
+    .dd-table .cmt { padding-top: 2px; }
+  }
+
   /* Approval row, employee row, etc. all need the safety too */
   .emp-row, .hist-shift-card, .approvals-banner,
   .week-submit, .clock-card, .shift-summary { min-width: 0; }
@@ -3180,7 +3203,9 @@
   // (workers.dev) from the page (github.io), so cross-site SameSite=None
   // cookies get silently dropped by iOS Safari ITP. Session is therefore a
   // bearer token in localStorage, sent in the Authorization header.
-  const API_BASE = "https://app.punchcard-api.workers.dev";
+  const API_BASE = location.hostname === "localhost" || location.hostname === "127.0.0.1"
+    ? ""  // same-origin against tools/dev-server.mjs
+    : "https://app.punchcard-api.workers.dev";
   const TOKEN_KEY = "pc_token";
 
   function getToken() { try { return localStorage.getItem(TOKEN_KEY); } catch { return null; } }

@@ -30,6 +30,16 @@ const db = {
     { id: 5, username: "pedro",     displayName: "Pedro Cuervo",            role: "readonly", color: "var(--emp-5)", passwordSalt: "x", passwordHash: "x" },
   ],
   shifts: [
+    // OPEN shifts — clocked in today, no clock-out yet. end/hours are null,
+    // which is how a clock-in is persisted before the matching clock-out
+    // lands. These drive the "On shift now" live roster on the admin home.
+    { id: 90, empId: 2, date: iso(today), start: "08:53", end: null, hours: null, clockInTz: "America/Lima",     clockOutTz: null, comment: "", adminEdits: [] },
+    { id: 91, empId: 4, date: iso(today), start: "12:15", end: null, hours: null, clockInTz: "America/New_York", clockOutTz: null, comment: "", adminEdits: [] },
+    // EARLY-MORNING clock-ins (before the 3:30am books boundary): actually
+    // clocked in on `date`, but BOOKED to the previous calendar day. These
+    // demonstrate the day-boundary rule on the calendar + week roll-up.
+    { id: 92, empId: 3, date: iso(today),    start: "01:30", end: "09:30", hours: 8.0, clockInTz: "America/New_York", clockOutTz: "America/New_York", comment: "Overnight special — covered the early hours", adminEdits: [] },
+    { id: 93, empId: 2, date: dayInMonth(1), start: "02:45", end: "10:45", hours: 8.0, clockInTz: "America/Lima",     clockOutTz: "America/Lima",     comment: "", adminEdits: [] },
     { id: 1, empId: 2, date: dayInMonth(2), start: "08:53", end: "23:39", hours: 14.8, clockInTz: "America/Lima",     clockOutTz: "America/Lima",     comment: "", adminEdits: [] },
     { id: 2, empId: 3, date: dayInMonth(2), start: "22:00", end: "06:00", hours: 8.0,  clockInTz: "America/New_York", clockOutTz: "America/New_York", comment: "overnight", adminEdits: [] },
     { id: 3, empId: 4, date: dayInMonth(2), start: "09:00", end: "17:00", hours: 8.0,  clockInTz: "America/Lima",     clockOutTz: "America/Lima",     comment: "", adminEdits: [] },
@@ -98,6 +108,53 @@ createServer(async (req, res) => {
       if (!currentUserId) return send(401, { error: "unauthenticated" });
       const u = db.users.find((x) => x.id === currentUserId);
       return send(200, { user: publicUser(u), db: filterDbForUser(u) });
+    }
+    // Clock-in: append a shift (open if `end` omitted). Mirrors the Worker's
+    // POST /shifts so the local headed demo exercises the real clock flow.
+    if (req.method === "POST" && url.pathname === "/shifts") {
+      if (!currentUserId) return send(401, { error: "unauthenticated" });
+      const u = db.users.find((x) => x.id === currentUserId);
+      if (u.role !== "employee") return send(403, { error: "only employees clock in" });
+      let raw = ""; for await (const c of req) raw += c;
+      const b = JSON.parse(raw || "{}");
+      if (!b.date) return send(400, { error: "missing date" });
+      const id = db.shifts.reduce((m, x) => Math.max(m, x.id ?? 0), 0) + 1;
+      const shift = {
+        id, empId: u.id, date: b.date, start: b.start, end: b.end ?? null,
+        hours: typeof b.hours === "number" ? b.hours : null,
+        clockIn: b.clockIn ?? null, clockOut: b.clockOut ?? null,
+        clockInTz: b.clockInTz ?? null, clockOutTz: b.clockOutTz ?? null,
+        comment: b.comment ?? "", adminEdits: [],
+      };
+      db.shifts.push(shift);
+      console.log(`[shifts] ${u.username} ${shift.date} ${shift.start}–${shift.end ?? "open"} (id ${id})`);
+      return send(200, { ok: true, shift });
+    }
+    // Clock-out: close own open shift. Mirrors the Worker's /shifts/clock-out.
+    if (req.method === "POST" && url.pathname === "/shifts/clock-out") {
+      if (!currentUserId) return send(401, { error: "unauthenticated" });
+      const u = db.users.find((x) => x.id === currentUserId);
+      let raw = ""; for await (const c of req) raw += c;
+      const b = JSON.parse(raw || "{}");
+      const idx = db.shifts.findIndex((s) => s.id === b.id);
+      if (idx < 0) return send(404, { error: "shift not found" });
+      const cur = db.shifts[idx];
+      if (cur.empId !== u.id) return send(403, { error: "not your shift" });
+      if (cur.end) return send(409, { error: "shift already closed" });
+      if (!b.end) return send(400, { error: "missing end" });
+      const shift = {
+        ...cur,
+        end: b.end,
+        hours: typeof b.hours === "number" ? b.hours : null,
+        ...(b.clockIn != null ? { clockIn: b.clockIn } : {}),
+        ...(typeof b.clockInTz === "string" ? { clockInTz: b.clockInTz } : {}),
+        ...(b.clockOut != null ? { clockOut: b.clockOut } : {}),
+        ...(typeof b.clockOutTz === "string" ? { clockOutTz: b.clockOutTz } : {}),
+        ...(typeof b.comment === "string" ? { comment: b.comment } : {}),
+      };
+      db.shifts[idx] = shift;
+      console.log(`[clock-out] ${u.username} closed id ${shift.id} → ${shift.end}`);
+      return send(200, { ok: true, shift });
     }
     if (req.method === "GET" && url.pathname === "/health") return send(200, { ok: true });
 

@@ -190,7 +190,17 @@
 
   /* Account dropdown — opened by tapping the sign-out icon. Replaces the old
      one-tap sign-out (which was too easy to mis-tap and wiped the session). */
-  .user-trigger { overflow: visible; }
+  /* Account menu now sits in-flow at the top of the scroll content (right-
+     aligned) so it scrolls away with the page. The trigger is the positioned
+     anchor for its dropdown. */
+  .account-row {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    min-height: 44px;
+    margin-bottom: 2px;
+  }
+  .user-trigger { position: relative; overflow: visible; }
   .user-trigger.open { background: var(--surface-dark); color: var(--text-primary); }
   .user-menu {
     position: absolute;
@@ -1213,6 +1223,15 @@
     from { opacity: 0; transform: translateY(12px) scale(.98); }
     to   { opacity: 1; transform: translateY(0) scale(1); }
   }
+  /* Close = reverse of the entrance. Added as `.closing` on the way out (see
+     renderModal), then the node is removed once the animation ends. */
+  @keyframes modal-out {
+    from { opacity: 1; transform: translateY(0) scale(1); }
+    to   { opacity: 0; transform: translateY(10px) scale(.98); }
+  }
+  @keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
+  .modal-scrim.closing { animation: fade-out 180ms ease forwards; }
+  .modal-scrim.closing .modal-card { animation: modal-out 190ms cubic-bezier(.4,0,1,1) forwards; }
   /* Status pill entrance — applied as a one-shot class (.pop-in) after a
      button→pill swap so the newly-rendered pill scales in from zero. */
   @keyframes pillPop {
@@ -2225,12 +2244,6 @@
     color: var(--accent-green);
     display: flex; align-items: center; gap: 10px;
   }
-  .live-head small {
-    font-family: var(--tf-body);
-    font-style: italic;
-    font-size: var(--fs-xs);
-    color: var(--text-secondary);
-  }
   .live-dot {
     width: 10px; height: 10px; border-radius: 50%;
     background: var(--accent-green); position: relative; flex: 0 0 auto;
@@ -2263,16 +2276,6 @@
     color: var(--accent-green);
     font-variant-numeric: tabular-nums;
     flex: 0 0 auto;
-  }
-  /* Quiet state — nobody on shift. Kept visible (not hidden) so the absence
-     reads as "checked and empty", not "feature missing". */
-  .live-empty {
-    margin-top: 2px;
-    padding: 16px 4px;
-    border-bottom: 1px solid var(--outline-soft);
-    font-family: var(--tf-body); font-style: italic;
-    font-size: var(--fs-sm); color: var(--text-muted);
-    display: flex; align-items: center; gap: 10px;
   }
   /* Green "ON SHIFT" badge on the matching roster row below, so the live
      status is also visible in the full employee list (mirrors the amber
@@ -2591,10 +2594,11 @@
     flex: 1 1 auto;
     overflow-y: auto;
     overflow-x: hidden;
-    /* 60px top clears the floating back/account buttons (44px + safe-area top
-       inset + breathing room). The horizontal/bottom padding is the page's
-       content gutters. */
-    padding: 60px 22px 24px 20px;
+    /* Small top padding: the account menu now rides in-flow at the top of the
+       content (it scrolls away), and the fixed back button (top-left) overlaps
+       the account row's empty left side. The horizontal/bottom padding is the
+       page's content gutters. */
+    padding: 8px 22px 24px 20px;
     margin: 0;
     -webkit-overflow-scrolling: touch;
   }
@@ -2654,6 +2658,7 @@
   /* Safe-area respect on iOS phones (notch / home indicator) */
   @supports (padding: max(0px)) {
     .scroll {
+      padding-top: max(8px, env(safe-area-inset-top));
       padding-left: max(20px, env(safe-area-inset-left));
       padding-right: max(22px, env(safe-area-inset-right));
       padding-bottom: max(24px, env(safe-area-inset-bottom));
@@ -3622,7 +3627,6 @@
       onShiftNow: "On shift now",
       onShiftSince: "Clocked in",
       onShiftBadge: "ON SHIFT",
-      noOneOnShift: "No one is clocked in right now.",
       prevDayTip: (clockDate, clockTime) => `Clocked in ${clockDate} ${clockTime} — booked to the previous day (before 3:30 AM)`,
       prevDayNote: (clockDate, clockTime, bookedDate) => `Clocked in ${clockDate} at ${clockTime}. Counted to ${bookedDate} — clock-ins before 3:30 AM book to the previous day.`,
       thisWeek: "This week",
@@ -3825,7 +3829,6 @@
       onShiftNow: "En turno ahora",
       onShiftSince: "Entró",
       onShiftBadge: "EN TURNO",
-      noOneOnShift: "Nadie ha marcado entrada por ahora.",
       prevDayTip: (clockDate, clockTime) => `Entró ${clockDate} ${clockTime} — contado al día anterior (antes de las 3:30)`,
       prevDayNote: (clockDate, clockTime, bookedDate) => `Entró ${clockDate} a las ${clockTime}. Contado al ${bookedDate} — las entradas antes de las 3:30 se cuentan al día anterior.`,
       thisWeek: "Esta semana",
@@ -4636,8 +4639,10 @@
     if (state.nav.length > 0) {
       back.appendChild(el("div", { class:"icon-btn", onclick: navBack }, ICON("back")));
     }
+    // Account menu is no longer fixed here — it rides at the top of the scroll
+    // content (see render()) so it scrolls away with the page. Keep the slot
+    // empty so `:empty { display:none }` hides the fixed float.
     account.innerHTML = "";
-    account.appendChild(renderUserMenu());
   }
 
   // Account / sign-out dropdown. Replaces what used to be a single-tap
@@ -5205,15 +5210,11 @@
   // they see. Each row taps through to that employee's profile.
   function renderLiveOnShift() {
     const live = onShiftNow();
+    if (!live.length) return null;   // nothing to show when no one is clocked in
     const wrap = el("div", {style:"margin: 0 2px 4px;"});
     wrap.appendChild(el("div", {class:"live-head"},
       el("h3", {}, el("span", {class:"live-dot"}), tr("onShiftNow")),
-      el("small", {}, String(live.length)),
     ));
-    if (!live.length) {
-      wrap.appendChild(el("div", {class:"live-empty"}, ICON("clock", 16), el("span", {}, tr("noOneOnShift"))));
-      return wrap;
-    }
     for (const { emp, shift } of live) {
       const dateHint = new Date(shift.date + "T00:00:00");
       wrap.appendChild(el("div", {
@@ -5235,14 +5236,11 @@
     const u = state.currentUser;
     const root = document.getElementById("scrollRoot");
     root.innerHTML = "";
-    const readonly = isReadonly(u);
 
     root.appendChild(greetingBlock(u, { showRole: true }));
-    if (readonly) {
-      root.appendChild(el("div", {class:"readonly-banner", style:"margin: 0 6px 10px;"}, ICON("eye", 14), el("span", {}, tr("readonlyBanner"))));
-    }
 
-    root.appendChild(renderLiveOnShift());
+    const liveEl = renderLiveOnShift();
+    if (liveEl) root.appendChild(liveEl);
 
     root.appendChild(monthNav());
 
@@ -5267,7 +5265,6 @@
             el("span", {style:`color:${e.color}`}, e.displayName),
             openShiftFor(e.id) ? el("span", {class:"badge live"}, tr("onShiftBadge")) : null,
           ),
-          el("div", {class:"meta"}, "@" + e.username),
         ),
         el("div", {class:"chev"}, ICON("chevRight")),
       ));
@@ -6059,6 +6056,24 @@
     // switching from Manage users → Edit employee, etc — replay the modal's
     // entrance otherwise, which looks like the whole sheet bouncing.
     const isFreshOpen = state.modal !== _lastRenderedModal;
+    // Closing: the modal just went open → null. Play the reverse animation on
+    // the existing sheet, then remove it — instead of clearing instantly.
+    if (!state.modal && _lastRenderedModal && root.firstChild) {
+      _lastRenderedModal = null;
+      const scrim = root.firstChild;
+      if (scrim.classList) {
+        const card = scrim.querySelector(".modal-card");
+        scrim.classList.remove("no-anim");
+        if (card) card.classList.remove("no-anim");
+        scrim.classList.add("closing");
+        const finish = () => { if (!state.modal && root.firstChild === scrim) root.innerHTML = ""; };
+        scrim.addEventListener("animationend", finish, { once: true });
+        setTimeout(finish, 320); // fallback when animationend doesn't fire (reduced motion)
+      } else {
+        root.innerHTML = "";
+      }
+      return;
+    }
     // Preserve modal scroll position across intra-modal re-renders.
     const prevScroll = !isFreshOpen ? (root.querySelector(".modal-card")?.scrollTop ?? 0) : 0;
     _lastRenderedModal = state.modal;
@@ -6580,6 +6595,12 @@
       renderManageUsers();
     } else if (state.screen === "edit_user") {
       renderEditUser();
+    }
+
+    // Account menu rides at the top of the scroll content so it scrolls away
+    // with the page instead of floating fixed in the corner.
+    if (state.screen !== "login") {
+      scroll.insertBefore(el("div", {class:"account-row"}, renderUserMenu()), scroll.firstChild);
     }
 
     renderModal();

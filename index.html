@@ -3128,15 +3128,7 @@
     screen: "login",
     viewingEmployeeId: null,
     nav: [],            // screen history for back button
-    lang: (() => {
-      // Mirror the inline-script logic in <head>: explicit choice wins,
-      // otherwise default to Spanish (the app's primary audience).
-      try {
-        const v = localStorage.getItem("pc_lang");
-        if (v === "en" || v === "es") return v;
-      } catch {}
-      return "es";
-    })(),
+    lang: savedLang(),
     // calendar — default to the viewer's current month; login() and loadDB()
     // re-snap this on every session start so a long-lived tab doesn't drift.
     calYear: new Date().getFullYear(),
@@ -3478,6 +3470,7 @@
     catch (e) { return; /* 401 or network — show login */ }
 
     state.currentUser = me.user;
+    enforceLangForUser(me.user);
     state.screen = isAdminLike(me.user) ? "admin_home" : "employee_home";
     { const now = new Date(); state.calYear = now.getFullYear(); state.calMonth = now.getMonth(); }
     const dbResp = await api.db();
@@ -3971,6 +3964,26 @@
     try { localStorage.setItem("pc_lang", state.lang); } catch {}
     applyLang();
   }
+  // The device's saved language preference, or Spanish (the primary
+  // audience) when nothing is stored. Mirrors the inline-script logic in
+  // <head> and seeds state.lang on boot.
+  function savedLang() {
+    try {
+      const v = localStorage.getItem("pc_lang");
+      if (v === "en" || v === "es") return v;
+    } catch {}
+    return "es";
+  }
+  // Set the session language by role on every login/session-restore.
+  // Employees (floor staff) are locked to Spanish so a mis-tap can't strand
+  // them in a language they can't read; everyone else follows the device's
+  // saved preference. We set state.lang directly instead of setLang() so an
+  // employee session never overwrites the owner/admin pref in localStorage
+  // (these stations are sometimes shared).
+  function enforceLangForUser(u) {
+    state.lang = (u?.role === "employee") ? "es" : savedLang();
+    applyLang();
+  }
   applyLang();
 
   // =============================================================
@@ -4359,6 +4372,7 @@
   });
   function login(u) {
     state.currentUser = u;
+    enforceLangForUser(u);
     state.nav = [];
     state.selectedDay = null;
     { const now = new Date(); state.calYear = now.getFullYear(); state.calMonth = now.getMonth(); }
@@ -4377,6 +4391,10 @@
     api.logout().catch(() => {});
     setToken(null);
     state.currentUser = null;
+    // Drop any employee-forced Spanish back to the device's saved pref so the
+    // login screen (and the next sign-in) reflect this station's preference,
+    // not whoever logged in last.
+    state.lang = savedLang(); applyLang();
     state.screen = "login";
     state.nav = [];
     flushPendingComment();
@@ -4661,10 +4679,12 @@
       onclick: (e) => {
         e.stopPropagation();
         state.userMenuOpen = !state.userMenuOpen;
-        // Just re-render the topbar — a full render() replays the
-        // screen-enter transition on the main content, which reads like a
-        // page flash every time you open the menu.
-        renderTopbar();
+        // Re-render just the account row. The menu now lives in the scroll
+        // content (see render()), not the topbar, so renderTopbar() would
+        // leave the dropdown untouched — the icon looks dead. A full
+        // render() works too (the _lastRenderedScreen gate avoids the
+        // page-flash transition) but needlessly rebuilds the whole screen.
+        renderAccountRow();
       },
     }, ICON("user"));
     if (state.userMenuOpen) {
@@ -4679,7 +4699,10 @@
             ? el("div", {class: "user-menu-role"}, tr(roleKey))
             : null,
         ),
-        el("div", {class: "user-menu-lang"}, langToggle()),
+        // Employees are locked to Spanish (see enforceLangForUser) and don't
+        // get the toggle — a mis-tap can't strand floor staff in a language
+        // they can't read. Owner/admin/readonly keep it.
+        isEmployee(u) ? null : el("div", {class: "user-menu-lang"}, langToggle()),
         u?.role === "owner"
           ? el("button", {
               class: "user-menu-add",
@@ -4707,6 +4730,20 @@
       trigger.appendChild(menu);
     }
     return trigger;
+  }
+
+  // Rebuild only the account row (trigger + dropdown) in place. Used when the
+  // menu opens/closes so we don't re-run a full render() of the whole screen.
+  // The row is inserted into the scroll content by render(); here we swap it
+  // for a fresh copy reflecting the new state.userMenuOpen.
+  function renderAccountRow() {
+    if (state.screen === "login") return;
+    const scroll = document.getElementById("scrollRoot");
+    if (!scroll) return;
+    const fresh = el("div", {class:"account-row"}, renderUserMenu());
+    const existing = scroll.querySelector(".account-row");
+    if (existing) existing.replaceWith(fresh);
+    else scroll.insertBefore(fresh, scroll.firstChild);
   }
 
   function renderFab() {
@@ -6612,7 +6649,7 @@
   document.addEventListener("click", () => {
     if (state.userMenuOpen) {
       state.userMenuOpen = false;
-      renderTopbar();
+      renderAccountRow();
     }
   });
 

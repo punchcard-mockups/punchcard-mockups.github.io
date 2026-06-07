@@ -1741,6 +1741,12 @@
     overflow: hidden;
     margin-top: 10px;
     background: #0a1b2e;
+    /* Contain Leaflet's stacking. Leaflet's control corners carry
+       z-index:1000 and its panes up to 700; without a stacking context here
+       those escape .mini-map and paint OVER the account dropdown (z-index 60)
+       wherever they overlap — most visibly on iOS Safari, where the menu
+       opened "behind" the map. isolate confines all of it to this box. */
+    isolation: isolate;
   }
   .mini-map .tiles {
     position: absolute;

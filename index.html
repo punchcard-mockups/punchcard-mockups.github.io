@@ -541,7 +541,9 @@
     display: grid; place-items: center;
     font-weight: 700; font-size: var(--fs-sm);
   }
-  .emp-row .body { flex: 1; }
+  .emp-row .body { flex: 1; min-width: 0; }
+  .emp-row .status { margin-top: 4px; }
+  .emp-row .status .badge { display: inline-block; margin-left: 0; }
   .emp-row .name { font-size: var(--fs-base); font-weight: 600; }
   .emp-row .meta { font-size: var(--fs-xs); color: var(--text-secondary); margin-top: 2px; }
   .emp-row .badge {
@@ -5318,8 +5320,10 @@
         el("div", {class:"body"},
           el("div", {class:"name"},
             el("span", {style:`color:${e.color}`}, e.displayName),
-            openShiftFor(e.id) ? el("span", {class:"badge live"}, tr("onShiftBadge")) : null,
           ),
+          // On its own line under the name: inline, it got cut off beside
+          // long names at phone width.
+          openShiftFor(e.id) ? el("div", {class:"status"}, el("span", {class:"badge live"}, tr("onShiftBadge"))) : null,
         ),
         el("div", {class:"chev"}, ICON("chevRight")),
       ));

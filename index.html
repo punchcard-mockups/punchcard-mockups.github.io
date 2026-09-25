@@ -201,6 +201,27 @@
     margin-bottom: 2px;
   }
   .user-trigger { position: relative; overflow: visible; }
+  .bell-btn { color: var(--accent-red); }
+  .bell-count {
+    position: absolute; top: 4px; right: 2px;
+    min-width: 18px; height: 18px; padding: 0 5px;
+    border-radius: 999px;
+    background: var(--accent-red); color: #fff;
+    font-size: 11px; font-weight: 700; line-height: 18px; text-align: center;
+  }
+  .short-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 4px;
+    border-top: 1px solid var(--outline-soft);
+    cursor: pointer;
+  }
+  .short-row:active { background: var(--surface-card-hi); }
+  .short-row .body { flex: 1; min-width: 0; }
+  .short-row .name { font-weight: 600; }
+  .short-row .when { font-size: var(--fs-sm); color: var(--text-secondary); margin-top: 2px; }
+  .short-row .note { font-size: var(--fs-sm); font-style: italic; color: var(--text-muted); margin-top: 2px; overflow-wrap: anywhere; }
+  .short-row .hrs { font-weight: 700; color: var(--accent-red); font-variant-numeric: tabular-nums; }
+  .short-row .chev { color: var(--text-secondary); }
   .user-trigger.open { background: var(--surface-dark); color: var(--text-primary); }
   .user-menu {
     position: absolute;
@@ -718,8 +739,7 @@
 
   .btn.full { width: 100%; }
 
-  /* In horizontal action clusters (approvals row, shift-detail), buttons share space equally */
-  .approval-row .actions > .btn,
+  /* In horizontal action clusters (shift-detail), buttons share space equally */
   .sd-action-row > .btn { flex: 1; min-width: 0; }
 
   .clock-card {
@@ -1029,7 +1049,6 @@
   .sd-comment { font-family: var(--tf-body); background: transparent; }
   .sd-edit-comment { font-family: var(--tf-body); }
 
-
   .shift-summary {
     background: transparent;
     border-top: 1.5px solid var(--text-primary);
@@ -1225,11 +1244,7 @@
     60%  { opacity: 1; transform: scale(1.12); }
     100% { opacity: 1; transform: scale(1); }
   }
-  .status-pill.pop-in,
-  .w-status.pop-in {
-    animation: pillPop 360ms cubic-bezier(.22, 1, .36, 1);
-    transform-origin: center;
-  }
+  
   .modal-card h3 {
     margin: 0 0 4px;
     /* Reserve the top-right 44px hit zone for .modal-close. Without this,
@@ -1553,14 +1568,6 @@
     font-weight: 400;
     color: var(--text-muted);
   }
-  .hist-shift-card .week-status {
-    margin-top: 8px; display: inline-flex;
-    font-family: var(--tf-body);
-    font-size: var(--fs-cap); font-weight: 700; letter-spacing: 1.2px;
-    padding: 3px 8px; border-radius: 999px; text-transform: uppercase;
-  }
-  .hist-shift-card .week-status.pending { background: rgba(245,158,11,.2); color: var(--accent-amber); }
-  .hist-shift-card .week-status.approved { background: rgba(16,185,129,.2); color: var(--accent-green-light); }
 
   /* History grouping */
   .hist-month-head {
@@ -1588,118 +1595,7 @@
     color: var(--text-muted);
     font-variant-numeric: tabular-nums;
   }
-  /* Each week is a substantial card (Manage-Users pattern): rounded,
-     surface-dark background, fat padding. The whole header row is the
-     tap target; expanded shifts render INSIDE the card so the week
-     reads as a single visual unit. Status comes from the .w-status pill. */
-  .week-group {
-    margin-top: 12px;
-    padding: 14px 16px;
-    border-radius: 12px;
-    background: var(--surface-dark);
-  }
-  .hist-week-head {
-    display: flex; align-items: center; justify-content: space-between;
-    gap: 10px;
-  }
-  .hist-week-head .w-title {
-    font-family: var(--tf-display);
-    font-weight: 400;
-    font-size: var(--fs-xl);
-    letter-spacing: -0.4px;
-    line-height: 1.1;
-    color: var(--text-primary);
-    font-variant-numeric: tabular-nums;
-  }
-  .hist-week-head .w-right {
-    display: flex; align-items: center; gap: 10px;
-  }
-  .hist-week-head .w-hrs {
-    font-family: var(--tf-mono);
-    font-size: var(--fs-base);
-    font-weight: 700;
-    color: var(--text-primary);
-    font-variant-numeric: tabular-nums;
-  }
-  .hist-week-head .w-status {
-    font-family: var(--tf-body);
-    font-size: var(--fs-cap);
-    font-weight: 700;
-    letter-spacing: 1.2px;
-    padding: 3px 8px;
-    border-radius: 999px;
-    text-transform: uppercase;
-  }
-  .hist-week-head .w-status.pending  { background: rgba(245,158,11,.2); color: var(--accent-amber); }
-  .hist-week-head .w-status.approved { background: rgba(16,185,129,.2); color: var(--accent-green-light); }
-  .hist-week-head .w-status.rejected { background: rgba(239,68,68,.2); color: var(--accent-red-light, #fca5a5); }
-  /* Admin-only: approved pill doubles as a dropdown trigger. Menu
-     anchors relative to the pill. Click is not allowed to bubble to the
-     row expand/collapse (handled in JS via stopPropagation). */
-  .hist-week-head .w-status.has-menu {
-    position: relative;
-    cursor: pointer;
-    touch-action: manipulation;
-  }
-  .hist-week-head .w-status.has-menu::after {
-    content: "▾";
-    margin-left: 4px;
-    opacity: .7;
-  }
-  .hist-week-head .w-status.has-menu.open::after { transform: rotate(180deg); }
-  .w-status-menu {
-    position: absolute;
-    top: calc(100% + 6px);
-    right: 0;
-    min-width: 140px;
-    background: var(--surface-card);
-    border: 1px solid var(--outline-soft);
-    border-radius: 2px;
-    padding: 6px;
-    box-shadow: 0 8px 24px rgba(0,0,0,.15), 0 2px 6px rgba(0,0,0,.08);
-    z-index: 40;
-    text-align: left;
-    cursor: default;
-    animation: fade-up 140ms ease both;
-  }
-  .w-status-menu-item {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 100%;
-    min-height: 36px;
-    padding: 0 12px;
-    background: transparent;
-    border: 0;
-    font-family: var(--tf-body);
-    font-size: var(--fs-sm);
-    font-weight: 500;
-    text-align: left;
-    color: var(--text-primary);
-    border-radius: 2px;
-    cursor: pointer;
-    touch-action: manipulation;
-    transition: background 120ms ease;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-  .w-status-menu-item:active { background: var(--surface-dark); }
-  @media (hover: hover) {
-    .w-status-menu-item:hover { background: var(--surface-dark); }
-  }
-  .w-status-menu-item.confirm {
-    background: var(--accent-red);
-    color: var(--t-bg);
-  }
-  .w-status-menu-item.confirm:active { background: var(--accent-red); }
-  @media (hover: hover) {
-    .w-status-menu-item.confirm:hover { background: var(--accent-red); }
-  }
-  /* Shifts nested inside a "week roll-up" card (history `.week-group`,
-     home `.week-submit`, and `.past-weeks .prow`) all share the same
-     compact treatment: dashed separator above the first, dotted between,
-     date demoted from a Gloock headline to a body-font data row. The
-     marker class `.week-rollup` is added to every container that wants
-     this so we don't have to chain three selectors here. */
+
   /* Inside an expanded week (on History or the admin employee profile),
      shift cards keep the same tappable card treatment as on Home. They
      stack with a small gap between each so the week reads as a grouped
@@ -1813,100 +1709,9 @@
   .mini-map .legend .in::before { background: var(--accent-green); }
   .mini-map .legend .out::before { background: var(--accent-red); }
 
-  /* Weekly approvals banner */
-  .approvals-banner {
-    background: transparent;
-    border-top: 1.5px solid var(--accent-amber);
-    border-bottom: 1px solid var(--accent-amber);
-    padding: 14px 4px;
-    margin-top: 12px;
-    display: flex; align-items: center; gap: 10px;
-    cursor: pointer;
-    transition: background 150ms ease;
-  }
-  .approvals-banner:hover { background: rgba(245,158,11,.08); }
-  .approvals-banner .icon {
-    width: 36px; height: 36px;
-    border-radius: 2px;
-    background: var(--accent-amber);
-    color: var(--t-bg);
-    display: grid; place-items: center;
-    flex: 0 0 auto;
-  }
-  .approvals-banner .icon svg { width: 20px; height: 20px; }
-  .approvals-banner .body { flex: 1; }
-  .approvals-banner .title {
-    font-family: var(--tf-display);
-    font-size: var(--fs-lg);
-    color: var(--accent-amber);
-  }
-  .approvals-banner .meta {
-    font-family: var(--tf-mono);
-    font-size: var(--fs-xs);
-    color: var(--text-muted);
-    margin-top: 1px;
-  }
-
-  /* Week submission card */
-  .week-submit {
-    background: transparent;
-    border-top: 1.5px solid var(--text-primary);
-    border-bottom: 1px solid var(--outline-soft);
-    padding: 14px 4px;
-    margin-top: 12px;
-    display: flex; flex-direction: column; gap: 10px;
-  }
-  .week-submit .head {
-    display: flex; align-items: center; gap: 12px;
-  }
-  .week-submit .left { flex: 1; min-width: 0; }
-  /* Week date-range reads as a lede: Gloock display, sized up enough to
-     anchor the card without an "ESTA SEMANA / THIS WEEK" prefix. Matches
-     .hist-week-head .w-title treatment so the role stays consistent across
-     home and history. */
-  .week-submit .title {
-    font-family: var(--tf-display);
-    font-weight: 400;
-    font-size: var(--fs-lg);
-    letter-spacing: -0.3px;
-    line-height: 1.15;
-  }
-  .week-submit .sub {
-    font-family: var(--tf-mono);
-    font-size: var(--fs-xs);
-    font-weight: 500;
-    color: var(--text-muted);
-    font-variant-numeric: tabular-nums;
-    margin-top: 4px;
-  }
-  /* Week-submit / past-weeks buttons use the global .btn.primary system. */
-  .week-submit .status-pill {
-    font-family: var(--tf-body);
-    font-size: var(--fs-cap);
-    font-weight: 700;
-    letter-spacing: 1.2px;
-    text-transform: uppercase;
-    padding: 4px 10px;
-    border-radius: 999px;
-  }
-  .week-submit .status-pill.pending { background: rgba(245,158,11,.2); color: var(--accent-amber); }
-  .week-submit .status-pill.approved { background: rgba(16,185,129,.2); color: var(--accent-green-light); }
-  .week-submit .attest {
-    font-family: var(--tf-body);
-    font-style: italic;
-    font-size: var(--fs-xs);
-    color: var(--text-muted);
-    margin-top: 6px;
-    line-height: 1.4;
-  }
-  .signoff-label--urgent { color: var(--accent-amber) !important; }
   /* Urgent past-weeks card: full amber border + tinted background. The previous
      treatment used a thick left-stripe (`border-left-width: 3px`) which is
      BAN 1 in `.impeccable.md` — never use a side stripe as an accent indicator. */
-  .past-weeks--urgent {
-    border: 1px solid rgba(245,158,11,.5);
-    background: color-mix(in oklab, var(--accent-amber) 5%, var(--surface-card));
-  }
 
   .signoff-label {
     font-family: var(--tf-body);
@@ -1959,86 +1764,6 @@
     padding: 10px;
     font-style: italic;
   }
-
-  /* Approval row (in modal) */
-  .approval-row {
-    background: var(--surface-dark);
-    border-radius: 12px;
-    padding: 12px 14px;
-    margin-bottom: 8px;
-  }
-  .approval-row .top {
-    display: flex; justify-content: space-between; align-items: center;
-  }
-  .approval-row .who { font-size: var(--fs-sm); font-weight: 700; }
-  .approval-row .total {
-    font-size: var(--fs-base); font-weight: 700;
-    color: var(--accent-blue-bright);
-    font-variant-numeric: tabular-nums;
-  }
-  .approval-row .week { font-size: var(--fs-xs); color: var(--text-secondary); margin-top: 2px; }
-  .approval-row .actions {
-    display: flex; gap: 8px; margin-top: 10px;
-  }
-  /* Approval row action buttons use the global .btn system (.primary / .danger / .danger-confirm). */
-
-  /* Inline "why are you rejecting" form that swaps in for the actions row */
-  .reject-form {
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px dashed var(--outline-soft);
-    animation: fade-in 180ms ease both;
-  }
-  .reject-reason-title {
-    font-size: var(--fs-xs);
-    font-weight: 700;
-    color: var(--accent-red-light);
-    letter-spacing: 0.3px;
-    margin-bottom: 6px;
-  }
-  .reject-reason-field {
-    width: 100%;
-    box-sizing: border-box;
-    font-family: inherit;
-    font-size: var(--fs-base);
-    padding: 8px 10px;
-    border-radius: 8px;
-    border: 1px solid var(--outline-soft);
-    background: var(--surface-dark);
-    color: var(--text-primary);
-    resize: vertical;
-    min-height: 64px;
-  }
-  .reject-reason-field:focus { outline: 2px solid var(--accent-red-light); outline-offset: -1px; }
-  .reject-reason-err {
-    font-size: var(--fs-xs);
-    color: var(--accent-red-light);
-    margin-top: 4px;
-  }
-  /* Rejection notice shown to the employee (on weekSignoffCard + past-week row)
-     with the admin's reason for rejecting. */
-  .rejection-notice {
-    background: rgba(239,68,68,.08);
-    border: 1px dashed rgba(239,68,68,.35);
-    border-radius: 10px;
-    padding: 8px 12px;
-    animation: fade-in 220ms ease both;
-  }
-  .rejection-notice .label {
-    font-size: var(--fs-cap);
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    color: var(--accent-red-light, #fca5a5);
-    margin-bottom: 2px;
-  }
-  .rejection-notice .reason {
-    font-size: var(--fs-base);
-    font-style: italic;
-    color: var(--text-primary);
-    line-height: 1.45;
-  }
-  /* Rejected past-week rows — status already visible via rejectionNotice banner. */
 
   /* Admin edit audit log on the shift detail screen */
   .sd-admin-log {
@@ -2126,22 +1851,7 @@
     margin-left: 2px;
     flex: 0 0 auto;
   }
-  /* edited shifts are signaled by the ✎ edit-badge, no stripe */
-  .approval-row .top.expandable,
-  .hist-week-head.expandable {
-    cursor: pointer;
-    user-select: none;
-    transition: background 120ms ease;
-  }
-  .approval-row .top.expandable {
-    margin: -12px -14px 0;
-    padding: 12px 14px;
-    border-radius: 12px 12px 0 0;
-  }
-  .approval-row .top.expandable:hover { background: rgba(255,255,255,.04); }
-  /* The week card itself provides padding; the header just stretches
-     across it and lifts the cursor to hint tappability. */
-  .approval-row .total { display: flex; align-items: center; gap: 8px; }
+
   /* Row-expand chevron: right-pointing when collapsed, rotates to down when
      open. The previous treatment used a downward arrow that read like a
      dropdown trigger. */
@@ -2152,67 +1862,6 @@
     line-height: 1;
   }
   .chevron.up { transform: rotate(90deg); }
-
-  /* Shared shift breakdown list */
-  .breakdown {
-    display: flex; flex-direction: column; gap: 8px;
-  }
-  .breakdown .drow {
-    display: grid;
-    grid-template-columns: 84px 1fr auto;
-    column-gap: 12px;
-    row-gap: 4px;
-    align-items: baseline;
-    padding: 10px 4px;
-    font-size: var(--fs-sm);
-    border-bottom: 1px dotted var(--outline-soft);
-  }
-  .breakdown .drow:last-child { border-bottom: 0; }
-  .breakdown .drow.tappable {
-    cursor: pointer;
-    touch-action: manipulation;
-    transition: background 120ms ease;
-  }
-  .breakdown .drow.tappable:hover { background: var(--surface-card-hi); }
-  .breakdown .drow.tappable:active { filter: brightness(.96); }
-  .breakdown .drow .d {
-    color: var(--text-secondary);
-    font-variant-numeric: tabular-nums;
-    font-weight: 600;
-  }
-  .breakdown .drow .t {
-    color: var(--text-primary);
-    font-variant-numeric: tabular-nums;
-  }
-  .breakdown .drow .h {
-    color: var(--accent-blue-bright);
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    text-align: right;
-  }
-  .breakdown .drow .h.ok { color: var(--accent-green); }
-  .breakdown .drow .h.warn { color: var(--accent-red); }
-  .breakdown .drow .c {
-    grid-column: 2 / -1;
-    font-size: var(--fs-xs);
-    color: var(--text-muted);
-    font-style: italic;
-  }
-  .breakdown .empty {
-    font-size: var(--fs-xs);
-    color: var(--text-muted);
-    font-style: italic;
-    text-align: center;
-    padding: 4px 0;
-  }
-  /* When breakdown appears inside another card, add a divider on top.
-     Only the admin approvals modal still uses `.breakdown` — home and
-     past-weeks render `renderShiftCard()` instead via `.week-rollup`. */
-  .approval-row .breakdown {
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px dashed var(--outline-soft);
-  }
 
   /* Read-only badge */
   .readonly-banner {
@@ -2288,48 +1937,12 @@
     color: var(--accent-green);
   }
 
-  /* Replaces the clock-in hero when the current week has already been
-     approved by an admin — prevents silently adding new shifts to a
-     closed week. Employee must wait for the next week or ask for reopen. */
-  .week-closed-card {
-    display: flex; gap: 14px; align-items: flex-start;
-    padding: 16px 18px;
-    background: transparent;
-    border-top: 1.5px solid var(--text-primary);
-    border-bottom: 1px solid var(--outline-soft);
-  }
-  .week-closed-card .icon {
-    flex: 0 0 auto;
-    width: 36px; height: 36px;
-    display: grid; place-items: center;
-    border: 1px solid var(--text-primary);
-    color: var(--text-primary);
-    border-radius: 2px;
-  }
-  .week-closed-card .body { flex: 1; min-width: 0; }
-  .week-closed-card .title {
-    font-family: var(--tf-display);
-    font-weight: 400;
-    font-size: var(--fs-lg);
-    color: var(--text-primary);
-    letter-spacing: -0.2px;
-  }
-  .week-closed-card .meta {
-    font-family: var(--tf-body);
-    font-size: var(--fs-sm);
-    line-height: 1.45;
-    color: var(--text-secondary);
-    margin-top: 4px;
-  }
-
   /* Display-face family — every heading and brand element uses Gloock. */
   .greeting .name,
   .month-nav .label,
   .section-header h3,
   .modal-card h3,
-  .login-wrap .brand,
-  .approvals-banner .title,
-  .week-submit .title {
+  .login-wrap .brand {
     font-family: var(--tf-display);
     font-weight: 400;
   }
@@ -2346,9 +1959,7 @@
   .clock-card .time,
   .shift-summary .time,
   .shift-summary .total .value,
-  .hist-shift-card .hrs,
-  .approval-row .total,
-  .week-submit .sub {
+  .hist-shift-card .hrs {
     font-family: var(--tf-mono);
     font-feature-settings: "tnum" 1;
     letter-spacing: -0.4px;
@@ -2427,20 +2038,6 @@
   }
   /* Buttons live in the global .btn system — see top of stylesheet. */
 
-  /* Status pills in week-submit: outlined, no fill, editorial letter-spacing */
-  .week-submit .status-pill {
-    background: transparent;
-    border: 1px solid currentColor;
-    border-radius: 2px;
-    letter-spacing: 1.2px;
-    font-family: var(--tf-body);
-  }
-  .week-submit .status-pill.pending { color: var(--accent-amber); }
-  .week-submit .status-pill.approved { color: var(--accent-green); }
-  /* History shift comment + week-status typography */
-  .hist-shift-card .week-status { background: transparent; border: 1px solid currentColor; border-radius: 2px; letter-spacing: 1.2px; font-family: var(--tf-body); }
-  .hist-shift-card .week-status.pending { color: var(--accent-amber); }
-  .hist-shift-card .week-status.approved { color: var(--accent-green); }
   /* Map */
   .mini-map { border-radius: 2px; border: 1px solid var(--outline-soft); background: oklch(90% 0.018 85); }
   .mini-map .tiles img,
@@ -2460,14 +2057,12 @@
     background: transparent; border: 0; border-bottom: 1.5px solid var(--outline-soft); border-radius: 0; padding: 10px 4px;
     font-family: var(--tf-body);
   }
-  .approval-row { background: transparent; border: 0; border-bottom: 1px dotted var(--outline-soft); border-radius: 0; padding: 14px 4px; }
-  .approval-row .who { font-family: var(--tf-display); font-weight: 400; font-size: var(--fs-base); }
+
   .toast { background: var(--text-primary); color: var(--t-bg); border: 1px solid var(--text-primary); border-radius: 2px; font-family: var(--tf-body); }
   .toast .pill { background: var(--accent-blue); color: var(--t-bg); border-radius: 2px; font-family: var(--tf-body); }
   .toast.success .pill { background: var(--accent-green); color: var(--t-bg); }
   .toast.warn .pill { background: var(--accent-amber); color: var(--t-bg); }
   .toast.error .pill { background: var(--accent-red); color: var(--t-bg); }
-
 
   /* =========================================================
      APP SHELL — fixed to viewport edges so it can never overflow.
@@ -2504,8 +2099,8 @@
     white-space: nowrap;
   }
 
-  /* Bottom bar — home for the tabbar (employees) and pinned-approvals
-     (admin). Either content may render into it; the empty state collapses. */
+  /* Bottom bar: home for the employee tabbar. Collapses when empty (other
+     roles). */
   #bottomBarRoot {
     flex: 0 0 auto;
     position: relative;
@@ -2554,44 +2149,6 @@
     background: var(--accent-blue);
   }
   .tabbar .tab:active { background: var(--surface-dark); }
-
-  .pinned-approvals {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 14px 18px;
-    padding-bottom: max(14px, calc(env(safe-area-inset-bottom, 0) + 14px));
-    background: rgba(245,158,11,.14);
-    border-top: 1px solid rgba(245,158,11,.35);
-    color: var(--text-primary);
-    cursor: pointer;
-    touch-action: manipulation;
-  }
-  .pinned-approvals:active { filter: brightness(.95); }
-  .pinned-approvals .icon {
-    width: 36px; height: 36px;
-    border-radius: 2px;
-    display: grid; place-items: center;
-    background: rgba(245,158,11,.28);
-    color: var(--accent-amber);
-    flex: 0 0 auto;
-  }
-  .pinned-approvals .body { flex: 1; min-width: 0; }
-  .pinned-approvals .title {
-    font-family: var(--tf-body);
-    font-size: var(--fs-base);
-    font-weight: 700;
-  }
-  .pinned-approvals .meta {
-    font-family: var(--tf-body);
-    font-size: var(--fs-xs);
-    color: var(--text-secondary);
-    margin-top: 2px;
-  }
-  .pinned-approvals .chev {
-    color: var(--text-secondary);
-    flex: 0 0 auto;
-  }
 
   .scroll {
     flex: 1 1 auto;
@@ -2642,9 +2199,11 @@
     .dd-table .cmt { padding-top: 2px; }
   }
 
-  /* Approval row, employee row, etc. all need the safety too */
-  .emp-row, .hist-shift-card, .approvals-banner,
-  .week-submit, .clock-card, .shift-summary { min-width: 0; }
+  /* Rows and cards need the same shrink safety */
+  .emp-row,
+  .hist-shift-card,
+  .clock-card,
+  .shift-summary { min-width: 0; }
 
   /* Toast / FAB / Modal stay anchored to the shell */
   .toast-wrap {
@@ -2693,9 +2252,7 @@
       border-color: var(--outline-soft);
     }
     .demo-chip:hover { background: var(--surface-card); }
-    .approval-row .top.expandable:hover { background: transparent; }
-    .hist-week-head.expandable:hover { background: transparent; }
-    .breakdown .drow.tappable:hover { background: transparent; }
+
   }
 
   /* =========================================================
@@ -2761,14 +2318,7 @@
     box-sizing: border-box;
     transition: background 150ms ease;
   }
-  .week-card.urgent {
-    border: 1.5px solid var(--accent-amber);
-    background: color-mix(in oklab, var(--accent-amber) 9%, var(--surface-dark));
-  }
-  .week-card.rejected {
-    border: 1.5px solid var(--accent-red);
-    background: color-mix(in oklab, var(--accent-red) 8%, var(--surface-dark));
-  }
+  
   .week-card .wc-head {
     display: flex; align-items: center; justify-content: space-between;
     gap: 10px;
@@ -2812,105 +2362,12 @@
     color: var(--text-primary);
     font-variant-numeric: tabular-nums;
   }
-  .week-card .wc-status {
-    font-family: var(--tf-body);
-    font-size: var(--fs-cap);
-    font-weight: 700;
-    letter-spacing: 1.2px;
-    padding: 3px 8px;
-    border-radius: 2px;
-    text-transform: uppercase;
-    background: transparent;
-    border: 1px solid currentColor;
-  }
-  .week-card .wc-status.pending     { color: var(--accent-amber); }
-  .week-card .wc-status.approved    { color: var(--accent-green); }
-  .week-card .wc-status.rejected    { color: var(--accent-red-light, #fca5a5); }
-  /* Pseudo-status for past unsubmitted weeks. Same outlined treatment as the
-     other status pills — color comes from the base .wc-status rule, this
-     just picks the hue. */
-  .week-card .wc-status.unsubmitted { color: var(--accent-amber); }
-  /* Reused from .hist-week-head for Reopen menu — same affordance pattern. */
-  .week-card .wc-status.has-menu {
-    position: relative;
-    cursor: pointer;
-    touch-action: manipulation;
-  }
-  .week-card .wc-status.has-menu::after {
-    content: "▾"; margin-left: 4px; opacity: .7;
-  }
-  .week-card .wc-status.has-menu.open::after { transform: rotate(180deg); }
-  .week-card .wc-attest {
-    font-family: var(--tf-body);
-    font-style: italic;
-    font-size: var(--fs-xs);
-    color: var(--text-muted);
-    margin-top: 8px;
-    line-height: 1.4;
-  }
-  .week-card .wc-warn {
-    font-family: var(--tf-body);
-    font-style: italic;
-    font-size: var(--fs-xs);
-    color: var(--accent-amber);
-    margin-top: 8px;
-    line-height: 1.4;
-  }
-  .week-card .wc-footer {
-    margin-top: 12px;
-    padding-top: 10px;
-    border-top: 1px dashed var(--outline-soft);
-  }
-  .week-card .wc-footer-actions {
-    display: flex; gap: 8px;
-  }
-  .week-card .wc-footer-actions > .btn { flex: 1; min-width: 0; }
-  /* Lock notice replaces the old week-closed-card banner. Lives inside the
-     week card itself — the week IS the locked thing. */
-  .week-card .wc-lock {
-    display: flex; align-items: center; gap: 10px;
-    margin-top: 10px;
-    padding: 10px 12px;
-    border-radius: 10px;
-    background: color-mix(in oklab, var(--accent-amber) 8%, transparent);
-    border: 1px dashed color-mix(in oklab, var(--accent-amber) 40%, transparent);
-    color: var(--text-secondary);
-    font-family: var(--tf-body);
-    font-size: var(--fs-sm);
-    line-height: 1.4;
-  }
-  .week-card .wc-lock.approved {
-    background: color-mix(in oklab, var(--accent-green) 6%, transparent);
-    border-color: color-mix(in oklab, var(--accent-green) 35%, transparent);
-  }
-  .week-card .wc-lock svg { width: 16px; height: 16px; flex: 0 0 auto; color: var(--accent-amber); }
-  .week-card .wc-lock.approved svg { color: var(--accent-green); }
 
   /* The shift cards inside a week-card share the .week-rollup compact treatment
      (already defined for .week-rollup .hist-shift-card up above). */
 
   /* Inbox screen — section headers between week-cards and edit-requests. */
-  .inbox-empty {
-    margin: 40px 4px;
-    padding: 24px 16px;
-    text-align: center;
-    font-family: var(--tf-body);
-    font-style: italic;
-    font-size: var(--fs-base);
-    color: var(--text-muted);
-    background: var(--surface-card);
-    border: 1px dashed var(--outline-soft);
-    border-radius: 14px;
-  }
-  .inbox-section-label {
-    font-family: var(--tf-body);
-    font-size: var(--fs-xs);
-    font-weight: 500;
-    letter-spacing: 1.2px;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    margin: 18px 4px 6px;
-  }
+
   .edit-req-card {
     margin-top: 8px;
     padding: 14px 16px;
@@ -3307,11 +2764,6 @@
     return { msg: tr(reasonKey), kind: "warn", pill: "⚠" };
   }
 
-  // Hydrated from db.json by loadDB(). Weekly Mon–Sun approvals keyed by
-  // (empId, weekStart). Statuses: pending | approved | rejected. Rejected
-  // entries may carry a rejectionComment.
-  const weekApprovals = [];
-
   // =============================================================
   // API CLIENT — talks to the Cloudflare Worker
   // =============================================================
@@ -3417,8 +2869,6 @@
     createShift:       (body)          => apiCall("POST", "/shifts",        body),
     clockOut:          (body)          => apiCall("POST", "/shifts/clock-out", body),
     updateShiftComment: (shiftId, comment) => apiCall("POST", "/shifts/comment", { shiftId, comment }),
-    setApproval:       (empId, ws, status, reason) =>
-                                          apiCall("POST", "/approvals",     { empId, weekStart: ws, status, rejectionComment: reason }),
     createEditRequest: (body)          => apiCall("POST", "/edit-requests", body),
     decideEditRequest: (id, status)    => apiCall("POST", "/edit-requests", { action: "decide", id, status }),
     adminEdit:         (body)          => apiCall("POST", "/admin-edits",   body),
@@ -3456,9 +2906,6 @@
     shifts.length = 0;
     shifts.push(...resp.db.shifts);
     nextShiftId = resp.db.shifts.reduce((m, s) => Math.max(m, s.id), 99) + 1;
-
-    weekApprovals.length = 0;
-    weekApprovals.push(...resp.db.weekApprovals);
 
     editRequests.length = 0;
     editRequests.push(...resp.db.editRequests);
@@ -3510,7 +2957,7 @@
   const isAdmin      = (u) => u?.role === "admin";
   const isReadonly   = (u) => u?.role === "readonly";
   const isEmployee   = (u) => u?.role === "employee";
-  const canApprove   = (u) => isOwner(u) || isAdmin(u);          // approvals, edit approvals
+  const canApprove   = (u) => isOwner(u) || isAdmin(u);          // edit requests, direct shift edits
   const canManage    = (u) => isOwner(u) || isAdmin(u);           // add employees, manage
   const isAdminLike  = (u) => isOwner(u) || isAdmin(u) || isReadonly(u); // sees admin home
   const roleLabel    = (u) => {
@@ -3573,6 +3020,9 @@
       cancel: "Cancel", add: "Add", save: "Save", close: "Close",
       viewEmployee: "Viewing",
       shiftLogged: "Shift logged",
+      shortShiftsTitle: "Shifts to review",
+      shortShiftsBody: "Shifts under 1 hour. Tap one to fix or delete it.",
+      shortShiftsNone: "Nothing to review.",
       hoursShort: "h",
       comments: "Add a note…",
       noteSheetTitle: "Add a note to clock out",
@@ -3581,31 +3031,6 @@
       commentLabel: "Comment",
       mapLegendIn: "Clock-in",
       mapLegendOut: "Clock-out",
-      submitWeek: "Submit",
-      weekSubmitted: "Week submitted",
-      weekPending: "Pending review",
-      weekApproved: "Approved",
-      weekRejected: "Rejected",
-      weeklySignoff: "Current week",
-      signoffAttest: "By submitting you confirm these hours are accurate.",
-      pastWeeksSignoffTitle: "Past weeks to submit",
-      noPastWeeks: "All past weeks submitted.",
-      rejectReasonTitle: "Why are you rejecting this week?",
-      rejectReasonPlaceholder: "Explain what needs to change…",
-      rejectReasonRequired: "A reason is required — the employee will see this.",
-      confirmReject: "Reject with reason",
-      rejectedByAdmin: "Rejected by admin",
-      resubmit: "Resubmit",
-      weekClosedTitle: "This week is approved",
-      weekClosedBody: "Your admin has already approved this week's timesheet. New shifts can't be added until next week. If something needs to change, ask your admin to reopen the week.",
-      weekPendingTitle: "Week submitted",
-      weekPendingBody: "You've submitted this week for review. Clock-in is paused until your admin approves it. If you need to add a shift, pull the week back first.",
-      pullBack: "Pull back",
-      weekPulledBack: "Week pulled back",
-      reopenWeek: "Reopen",
-      reopenWeekConfirm: "Tap again to confirm",
-      weekReopened: "Week reopened",
-      submitBlockedOpenShift: "Clock out before submitting the week.",
       adminEditTitle: "Edit shift",
       adminEditReason: "Why are you editing this shift?",
       adminEditReasonRequired: "A reason is required — this edit will be logged.",
@@ -3617,11 +3042,7 @@
       shiftDeleted: "Shift deleted",
       editedByAdmin: "Edited by admin",
       editedNTimes: (n) => n === 1 ? "1 admin edit" : `${n} admin edits`,
-      pendingApprovals: "Pending approvals",
-      nPending: (n) => `${n} ${n===1?"week":"weeks"} awaiting your review`,
       approve: "Approve", reject: "Reject",
-      approvalsTitle: "Weekly approvals",
-      noPending: "Nothing pending — all caught up.",
       readonlyBanner: "Read-only — changes are disabled",
       onShiftNow: "On shift now",
       onShiftSince: "Clocked in",
@@ -3632,8 +3053,6 @@
       weekRange: (from, to) => `${from} – ${to}`,
       loggedHours: "Logged this week",
       shiftSaved: "Shift saved",
-      weekApprovedToast: "Week approved",
-      weekRejectedToast: "Week sent back for edits",
       viewHistory: "View history",
       totalHrs: "Total hours",
       requestEdit: "Request edit",
@@ -3688,7 +3107,7 @@
       deactivateConfirmBody: (name) => `${name} will no longer be able to sign in. Past shifts and history stay in place. You can reactivate them later.`,
       deleteUser: "Delete permanently",
       deleteUserConfirmTitle: "Delete this user permanently?",
-      deleteUserConfirmBody: (name) => `${name}'s account, all of their shifts, week approvals, and edit requests will be erased. This cannot be undone — deactivate instead if you might want them back.`,
+      deleteUserConfirmBody: (name) => `${name}'s account, all of their shifts and edit requests will be erased. This cannot be undone — deactivate instead if you might want them back.`,
       deleteUserConfirmType: (username) => `Type ${username} to confirm`,
       delete: "Delete",
       userDeleted: "User deleted",
@@ -3699,15 +3118,10 @@
       userReactivated: "User reactivated",
       role: "Role",
       employee: "Employee",
-      needsAttention: "Previous weeks",
-      unsubmittedBanner: (n) => `${n} unsubmitted week${n > 1 ? "s" : ""} — tap to view`,
       inbox: "Inbox",
       roster: "Roster",
-      inboxPendingWeeks: "Weeks awaiting approval",
-      inboxNothing: "Nothing pending — all caught up.",
       manageUsersTitle: "Manage users",
       backToManage: "All users",
-      weekUnsubmitted: "Unsubmitted",
       tableTime: "Time",
       dowAbbr: ["M","T","W","T","F","S","S"],
       shiftNotFound: "Shift not found",
@@ -3724,9 +3138,6 @@
       clockOutLocCaptured: "Clock-out location captured",
       tzCrossNote: (a, b) => `Clocked in ${a}, clocked out ${b}`,
       errCouldntSignIn: "Couldn't sign in — check your connection",
-      errCouldntReopen: "Couldn't reopen",
-      errCouldntPullBack: "Couldn't pull back",
-      errCouldntSubmitWeek: "Couldn't submit week",
       errCouldntReject: "Couldn't reject",
       errCouldntApprove: "Couldn't approve",
       errCouldntSaveShift: "Couldn't save the shift",
@@ -3777,6 +3188,9 @@
       cancel: "Cancelar", add: "Agregar", save: "Guardar", close: "Cerrar",
       viewEmployee: "Viendo a",
       shiftLogged: "Turno registrado",
+      shortShiftsTitle: "Turnos por revisar",
+      shortShiftsBody: "Turnos de menos de 1 hora. Toca uno para corregirlo o borrarlo.",
+      shortShiftsNone: "Nada por revisar.",
       hoursShort: "h",
       comments: "Añadir una nota…",
       noteSheetTitle: "Escribe una nota para salir",
@@ -3785,31 +3199,6 @@
       commentLabel: "Comentario",
       mapLegendIn: "Entrada",
       mapLegendOut: "Salida",
-      submitWeek: "Validar",
-      weekSubmitted: "Semana validada",
-      weekPending: "Pendiente de revisión",
-      weekApproved: "Aprobado",
-      weekRejected: "Rechazada",
-      weeklySignoff: "Esta semana",
-      signoffAttest: "Al validar confirmas que estas horas son correctas.",
-      pastWeeksSignoffTitle: "Semanas anteriores sin validar",
-      noPastWeeks: "Todas las semanas anteriores están validadas.",
-      rejectReasonTitle: "¿Por qué rechazas esta semana?",
-      rejectReasonPlaceholder: "Explica qué debe cambiar…",
-      rejectReasonRequired: "Se requiere una explicación — el empleado la verá.",
-      confirmReject: "Rechazar con motivo",
-      rejectedByAdmin: "Rechazada por el admin",
-      resubmit: "Enviar de nuevo",
-      weekClosedTitle: "Esta semana está aprobada",
-      weekClosedBody: "Tu admin ya aprobó la planilla de esta semana. No se pueden añadir turnos hasta la próxima semana. Si algo debe cambiar, pide a tu admin que reabra la semana.",
-      weekPendingTitle: "Semana enviada",
-      weekPendingBody: "Has enviado esta semana para revisión. No puedes fichar hasta que tu admin la apruebe. Si necesitas añadir un turno, retira la semana primero.",
-      pullBack: "Retirar",
-      weekPulledBack: "Semana retirada",
-      reopenWeek: "Reabrir",
-      reopenWeekConfirm: "Toca de nuevo para confirmar",
-      weekReopened: "Semana reabierta",
-      submitBlockedOpenShift: "Termina tu turno antes de enviar la semana.",
       adminEditTitle: "Editar turno",
       adminEditReason: "¿Por qué editas este turno?",
       adminEditReasonRequired: "Se requiere una explicación — este cambio quedará registrado.",
@@ -3821,11 +3210,7 @@
       shiftDeleted: "Turno borrado",
       editedByAdmin: "Editado por admin",
       editedNTimes: (n) => n === 1 ? "1 edición del admin" : `${n} ediciones del admin`,
-      pendingApprovals: "Aprobaciones pendientes",
-      nPending: (n) => `${n} ${n===1?"semana":"semanas"} esperando tu revisión`,
       approve: "Aprobar", reject: "Rechazar",
-      approvalsTitle: "Aprobaciones semanales",
-      noPending: "Nada pendiente — todo al día.",
       readonlyBanner: "Solo lectura — cambios deshabilitados",
       onShiftNow: "En turno ahora",
       onShiftSince: "Entró",
@@ -3836,8 +3221,6 @@
       weekRange: (from, to) => `${from} – ${to}`,
       loggedHours: "Horas registradas esta semana",
       shiftSaved: "Turno guardado",
-      weekApprovedToast: "Semana aprobada",
-      weekRejectedToast: "Semana devuelta para corregir",
       viewHistory: "Ver historial",
       totalHrs: "Horas totales",
       requestEdit: "Solicitar cambio",
@@ -3892,7 +3275,7 @@
       deactivateConfirmBody: (name) => `${name} ya no podrá iniciar sesión. Los turnos y el historial se conservan. Puedes reactivarle después.`,
       deleteUser: "Borrar permanentemente",
       deleteUserConfirmTitle: "¿Borrar este usuario para siempre?",
-      deleteUserConfirmBody: (name) => `La cuenta de ${name}, todos sus turnos, aprobaciones de semana y solicitudes de cambio se eliminarán. Esta acción no se puede deshacer — desactiva en lugar de borrar si quieres recuperarle después.`,
+      deleteUserConfirmBody: (name) => `La cuenta de ${name}, todos sus turnos y solicitudes de cambio se eliminarán. Esta acción no se puede deshacer — desactiva en lugar de borrar si quieres recuperarle después.`,
       deleteUserConfirmType: (username) => `Escribe ${username} para confirmar`,
       delete: "Borrar",
       userDeleted: "Usuario borrado",
@@ -3903,15 +3286,10 @@
       userReactivated: "Usuario reactivado",
       role: "Rol",
       employee: "Empleado",
-      needsAttention: "Semanas anteriores",
-      unsubmittedBanner: (n) => `${n} semana${n > 1 ? "s" : ""} sin enviar — toca para ver`,
       inbox: "Bandeja",
       roster: "Equipo",
-      inboxPendingWeeks: "Semanas por aprobar",
-      inboxNothing: "Nada pendiente — todo al día.",
       manageUsersTitle: "Administrar usuarios",
       backToManage: "Todos los usuarios",
-      weekUnsubmitted: "Sin enviar",
       tableTime: "Horario",
       dowAbbr: ["L","M","M","J","V","S","D"],
       shiftNotFound: "Turno no encontrado",
@@ -3928,9 +3306,6 @@
       clockOutLocCaptured: "Ubicación de salida registrada",
       tzCrossNote: (a, b) => `Entrada en ${a}, salida en ${b}`,
       errCouldntSignIn: "No se pudo iniciar sesión — revisa tu conexión",
-      errCouldntReopen: "No se pudo reabrir",
-      errCouldntPullBack: "No se pudo retirar",
-      errCouldntSubmitWeek: "No se pudo enviar la semana",
       errCouldntReject: "No se pudo rechazar",
       errCouldntApprove: "No se pudo aprobar",
       errCouldntSaveShift: "No se pudo guardar el turno",
@@ -4062,6 +3437,7 @@
       history: "M3 3v5h5|M3.05 13a9 9 0 1 0 .5-5|M12 7v5l3 3",
       logout: "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4|M16 17l5-5-5-5|M21 12H9",
       user: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2|M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8",
+      bell: "M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9|M13.73 21a2 2 0 0 1-3.46 0",
       back: "M19 12H5|M12 19l-7-7 7-7",
       plus: "M12 5v14|M5 12h14",
       addUser: "M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2|M8.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8|M20 8v6|M23 11h-6",
@@ -4252,38 +3628,6 @@
       node.classList.add("leave");
       node.addEventListener("animationend", () => node.remove(), { once: true });
     }, 2400);
-  }
-
-  // Collapse + fade a node out (height + opacity + sideways nudge), then call
-  // `next`. Used for rows that disappear from a list — approvals, past-weeks —
-  // so the user sees the thing they acted on leave, instead of the whole
-  // surface blinking via the global re-render.
-  function animateOutAndThen(node, next, opts) {
-    const ms = (opts && opts.ms) || 280;
-    if (!node || typeof node.getBoundingClientRect !== "function") {
-      next();
-      return;
-    }
-    const h = node.getBoundingClientRect().height;
-    node.style.maxHeight = h + "px";
-    node.style.overflow = "hidden";
-    node.style.pointerEvents = "none";
-    void node.offsetHeight; // force reflow so initial max-height applies
-    node.style.transition =
-      `opacity ${ms}ms ease, ` +
-      `transform ${ms}ms cubic-bezier(.4,0,.2,1), ` +
-      `max-height ${ms}ms cubic-bezier(.4,0,.2,1), ` +
-      `margin ${ms}ms ease, padding ${ms}ms ease`;
-    requestAnimationFrame(() => {
-      node.style.opacity = "0";
-      node.style.transform = "translateX(14px)";
-      node.style.maxHeight = "0";
-      node.style.marginTop = "0";
-      node.style.marginBottom = "0";
-      node.style.paddingTop = "0";
-      node.style.paddingBottom = "0";
-    });
-    setTimeout(next, ms);
   }
 
   // Shrink+fade a button in place, then call `next`. After next() runs render(),
@@ -4745,11 +4089,39 @@
   // menu opens/closes so we don't re-run a full render() of the whole screen.
   // The row is inserted into the scroll content by render(); here we swap it
   // for a fresh copy reflecting the new state.userMenuOpen.
+  function accountRow() {
+    return el("div", {class:"account-row"}, renderShortShiftBell(), renderUserMenu());
+  }
+
+  // Closed shifts under 1 hour: mis-taps and clock-outs hit by accident.
+  // They're nearly always wrong, so the owner/admin gets a bell for them.
+  function shortShifts() {
+    return shifts
+      .filter(s => s.end && s.hours != null && s.hours < 1 && userById[s.empId])
+      .sort((a, b) => (b.date + b.start).localeCompare(a.date + a.start));
+  }
+  // Bell with the count, left of the account button. Absent when the count
+  // is zero, so it only shows up when something needs fixing.
+  function renderShortShiftBell() {
+    if (!canApprove(state.currentUser)) return null;
+    const n = shortShifts().length;
+    if (!n) return null;
+    return el("div", {
+      class: "icon-btn bell-btn",
+      title: tr("shortShiftsTitle"),
+      onclick: (e) => {
+        e.stopPropagation();
+        state.userMenuOpen = false;
+        openModal("shortShifts");
+      },
+    }, ICON("bell"), el("span", {class:"bell-count"}, n > 99 ? "99+" : String(n)));
+  }
+
   function renderAccountRow() {
     if (state.screen === "login") return;
     const scroll = document.getElementById("scrollRoot");
     if (!scroll) return;
-    const fresh = el("div", {class:"account-row"}, renderUserMenu());
+    const fresh = accountRow();
     const existing = scroll.querySelector(".account-row");
     if (existing) existing.replaceWith(fresh);
     else scroll.insertBefore(fresh, scroll.firstChild);
@@ -4893,9 +4265,7 @@
   // ============================================================
   // WEEK CARD — collapsible week roll-up showing range + hours,
   // expanding to a list of shift cards. Used on the History tab and
-  // on per-employee admin views. (Weekly submission/approval flow
-  // was removed: shifts now just stack up with no status pill, no
-  // submit button, and no admin inbox.)
+  // on per-employee admin views.
   // ============================================================
   function renderWeekRow(opts) {
     const {
@@ -4955,39 +4325,6 @@
     }
 
     return card;
-  }
-
-  // Shared compact shift list used by admin approvals drill-in,
-  // employee sign-off card, past-weeks rows, and history week expansion.
-  function weekShiftBreakdown(wkShifts) {
-    const details = el("div", {class:"breakdown"});
-    if (!wkShifts.length) {
-      details.appendChild(el("div", {class:"empty"}, tr("noShifts")));
-      return details;
-    }
-    const sorted = [...wkShifts].sort((a,b) =>
-      a.date.localeCompare(b.date) || a.start.localeCompare(b.start));
-    for (const sh of sorted) {
-      const shDate = new Date(sh.date + "T00:00:00");
-      // noteOptional users normally work short shifts — don't flag them as a
-      // problem.
-      const hrsCls = (sh.hours < 9 && !userById[sh.empId]?.noteOptional) ? "h warn" : "h ok";
-      const drow = el("div", {
-        class: "drow tappable",
-        onclick: () => openModal("shiftDetail", { viewingShiftId: sh.id }),
-      },
-        el("div", {class:"d"}, fmtDateWD(bizDate(sh)), prevDayBadge(sh)),
-        el("div", {class:"t"},
-          timeRangeWithTz(sh.start, sh.end, sh.clockInTz, sh.clockOutTz, shDate),
-        ),
-        el("div", {class: hrsCls}, `${sh.hours.toFixed(1)}${tr("hoursShort")}`),
-      );
-      if (sh.comment) {
-        drow.appendChild(el("div", {class:"c"}, `"${sh.comment}"`));
-      }
-      details.appendChild(drow);
-    }
-    return details;
   }
 
   // Persist the clock-in as an OPEN shift (no end yet) so admins see the
@@ -5236,10 +4573,8 @@
     }
   }
 
-  // Admin "Home" tab — greeting, month calendar, then the Employees roster.
-  // Pending approvals live on the Inbox tab. The roster used to be its own
-  // tab but Today + Roster on their own each felt thin; reuniting them
-  // gives this screen a real reason to exist (operational glance + drill-in).
+  // Admin "Home" tab: greeting, month calendar, then the Employees roster
+  // (operational glance + drill-in).
   // An "open shift" = clocked in, no clock-out yet (end is null/empty). This is
   // the row a clock-in writes before the matching clock-out lands, so its mere
   // presence means the employee is on shift right now.
@@ -5817,7 +5152,7 @@
         }, tr("rejectEdit")),
       ));
     }
-    // Admin/owner direct edit button — always available (even after approval)
+    // Admin/owner direct edit button, always available
     if (canApprove(u)) {
       root.appendChild(el("button", {
         class:"btn primary full",
@@ -6573,6 +5908,30 @@
         el("button", {class:"btn", onclick: close}, tr("cancel")),
         delBtn,
       ));
+    } else if (state.modal === "shortShifts") {
+      // From the bell. Each row opens the shift sheet on top of this one (edit
+      // or delete there); closing that sheet comes back to this list.
+      const list = shortShifts();
+      card.appendChild(el("h3", {}, tr("shortShiftsTitle")));
+      card.appendChild(el("p", {}, list.length ? tr("shortShiftsBody") : tr("shortShiftsNone")));
+      for (const sh of list) {
+        const emp = userById[sh.empId];
+        card.appendChild(el("div", {
+          class: "short-row",
+          onclick: () => openModal("shiftDetail", { viewingShiftId: sh.id }),
+        },
+          el("div", {class:"body"},
+            el("div", {class:"name", style:`color:${emp.color}`}, emp.displayName),
+            el("div", {class:"when"},
+              fmtDateLong(bizDate(sh)), " · ",
+              timeRangeWithTz(sh.start, sh.end, sh.clockInTz, sh.clockOutTz, new Date(sh.date + "T00:00:00")),
+            ),
+            sh.comment ? el("div", {class:"note"}, `“${sh.comment}”`) : null,
+          ),
+          el("div", {class:"hrs"}, `${sh.hours.toFixed(1)}${tr("hoursShort")}`),
+          el("div", {class:"chev"}, ICON("chevRight")),
+        ));
+      }
     } else if (state.modal === "noteRequired") {
       // Clock Out on a short shift with no note. A sheet, not an inline hint:
       // on a phone it can't be missed, and the note and the clock-out both
@@ -6630,6 +5989,7 @@
             hydrateFromDb(await api.db());
             toast(tr("shiftDeleted"), {kind:"success", pill:"✓"});
             state.modal = null;
+            state.modalStack = [];
             navBack();
           } catch (e) {
             ev.currentTarget.disabled = false;
@@ -6696,7 +6056,7 @@
     // Account menu rides at the top of the scroll content so it scrolls away
     // with the page instead of floating fixed in the corner.
     if (state.screen !== "login") {
-      scroll.insertBefore(el("div", {class:"account-row"}, renderUserMenu()), scroll.firstChild);
+      scroll.insertBefore(accountRow(), scroll.firstChild);
     }
 
     renderModal();

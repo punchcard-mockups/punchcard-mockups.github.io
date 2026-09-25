@@ -46,7 +46,6 @@ const db = {
     { id: 4, empId: 2, date: dayInMonth(5), start: "08:00", end: "16:30", hours: 8.5,  clockInTz: "America/Lima",     clockOutTz: "America/Lima",     comment: "", adminEdits: [] },
     { id: 5, empId: 3, date: dayInMonth(7), start: "07:45", end: "15:55", hours: 8.2,  clockInTz: "America/New_York", clockOutTz: "America/New_York", comment: "", adminEdits: [] },
   ],
-  weekApprovals: [],
   editRequests: [],
 };
 
@@ -63,11 +62,10 @@ const filterDbForUser = (user) => {
     return {
       users,
       shifts: db.shifts.filter((s) => s.empId === user.id),
-      weekApprovals: db.weekApprovals.filter((w) => w.empId === user.id),
       editRequests: db.editRequests.filter((r) => r.empId === user.id),
     };
   }
-  return { users, shifts: db.shifts, weekApprovals: db.weekApprovals, editRequests: db.editRequests };
+  return { users, shifts: db.shifts, editRequests: db.editRequests };
 };
 
 const mime = { ".html": "text/html", ".js": "application/javascript", ".css": "text/css", ".json": "application/json", ".png": "image/png", ".svg": "image/svg+xml" };
@@ -169,6 +167,19 @@ createServer(async (req, res) => {
       db.shifts[idx] = shift;
       console.log(`[clock-out] ${u.username} closed id ${shift.id} → ${shift.end}`);
       return send(200, { ok: true, shift });
+    }
+    // Owner-only hard delete. Mirrors the Worker's POST /shifts/delete.
+    if (req.method === "POST" && url.pathname === "/shifts/delete") {
+      if (!uid) return send(401, { error: "unauthenticated" });
+      const u = db.users.find((x) => x.id === uid);
+      if (u.role !== "owner") return send(403, { error: "forbidden" });
+      let raw = ""; for await (const c of req) raw += c;
+      const b = JSON.parse(raw || "{}");
+      if (!db.shifts.some((s) => s.id === b.id)) return send(404, { error: "shift not found" });
+      db.shifts = db.shifts.filter((s) => s.id !== b.id);
+      db.editRequests = db.editRequests.filter((r) => r.shiftId !== b.id);
+      console.log(`[delete] shift ${b.id}`);
+      return send(200, { ok: true, id: b.id });
     }
     if (req.method === "GET" && url.pathname === "/health") return send(200, { ok: true });
 

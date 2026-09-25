@@ -2,7 +2,7 @@
 // ran in-browser. Run with: node tools/build-db.mjs
 //
 // Output shape:
-//   { users, shifts, weekApprovals, editRequests }
+//   { users, shifts, editRequests }
 //
 // The seed is deterministic (LCG), so regenerating produces byte-identical
 // output unless the logic here changes.
@@ -115,15 +115,6 @@ for (const [day, emp, start, end, comment] of aprilPattern) {
   });
 }
 
-// ---- week approvals -------------------------------------------------------
-
-const weekApprovals = [
-  { empId: 6, weekStart: "2026-04-06", status: "pending" },
-  { empId: 7, weekStart: "2026-04-06", status: "pending" },
-  { empId: 8, weekStart: "2026-04-06", status: "rejected",
-    rejectionComment: "Thursday's hours look off — 9:00 AM start but the GPS was still at home. Please double-check and resubmit." },
-];
-
 // ---- seed admin edit on Apr-1 shift --------------------------------------
 
 {
@@ -192,7 +183,6 @@ const weekApprovals = [
         });
         historicalShiftIds.push(idBefore);
       }
-      weekApprovals.push({ empId, weekStart, status: "approved" });
     }
     week.setDate(week.getDate() + 7);
   }
@@ -251,10 +241,9 @@ let nextEditReqId = 1;
 
 // ---- emit -----------------------------------------------------------------
 
-const db = { users, shifts, weekApprovals, editRequests };
+const db = { users, shifts, editRequests };
 writeFileSync(OUT, JSON.stringify(db, null, 2) + "\n");
 console.log(`Wrote ${OUT}`);
 console.log(`  users:         ${users.length}`);
 console.log(`  shifts:        ${shifts.length}`);
-console.log(`  weekApprovals: ${weekApprovals.length}`);
 console.log(`  editRequests:  ${editRequests.length}`);

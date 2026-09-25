@@ -1081,38 +1081,22 @@
     transition: border-color 150ms ease;
   }
   .comment-field:focus { border-color: var(--accent-blue); }
-  /* Only applied after a failed submit attempt — calm by default. Uses
+  /* Only applied after a tap on the note sheet's Clock Out with no note. Uses
      !important to override per-theme border/background treatments. */
   .comment-field.required {
     border: 1px solid rgba(239,68,68,.55) !important;
     border-radius: 10px !important;
     background: rgba(239,68,68,.06) !important;
   }
-  /* Hint (amber pill) shown whenever a shift is under 9 hours. Informative,
-     not alarming — only promotes to red once the user submits without one. */
-  .comment-required-note {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    margin-top: 8px;
-    padding: 4px 10px;
-    font-size: var(--fs-xs);
-    font-weight: 600;
-    line-height: 1.3;
-    background: rgba(245,158,11,.15);
-    border: 1px solid rgba(245,158,11,.35);
-    color: var(--accent-amber);
-    border-radius: 999px;
+  .comment-field.shake { animation: note-shake 320ms ease; }
+  @keyframes note-shake {
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
   }
-  .comment-required-note::before {
-    content: "ⓘ";
-    font-weight: 700;
-  }
-  .comment-field.required + .comment-required-note {
-    background: rgba(239,68,68,.14);
-    border-color: rgba(239,68,68,.4);
-    color: var(--accent-red-light);
-  }
+  @media (prefers-reduced-motion: reduce) { .comment-field.shake { animation: none; } }
+  .modal-card h3.note-sheet-title { color: var(--accent-red); }
 
   /* Toast */
   .toast-wrap {
@@ -1377,6 +1361,17 @@
     @keyframes sheet-in {
       from { transform: translateY(100%); }
       to   { transform: translateY(0); }
+    }
+    /* The clock-out note pop-up stays mid-screen as a dialog rather than a
+       bottom sheet, so it reads as a stop. It still lifts above the keyboard. */
+    .modal-scrim.centered {
+      place-items: center stretch;
+      padding: 0 16px var(--kb-inset, 0px);
+    }
+    .modal-scrim.centered .modal-card {
+      border-radius: 18px;
+      padding-bottom: 22px;
+      animation: modal-in 220ms cubic-bezier(.2,.8,.2,1) both;
     }
   }
   .modal-card .actions {
@@ -3156,6 +3151,7 @@
     clockInTz: null,
     clockOutTz: null,
     comment: "",
+    clockSaving: false,  // clock-out save in flight (not persisted)
     // modals
     modal: null,        // "addEmployee" | "shiftDetail" | etc.
     // Cleartext password to reveal back to the owner after a successful
@@ -3559,7 +3555,7 @@
       hours: "Hours", days: "Days", shifts: "Shifts", staff: "Staff", avgDay: "Avg/day",
       thisMonth: "this month",
       clockIn: "Clock In", clockOut: "Clock Out",
-      submit: "Submit shift",
+      saving: "Saving…", retrySave: "Try again",
       clockedInAt: "Clocked in at",
       start: "Start", end: "End",
       today: "Today",
@@ -3577,7 +3573,9 @@
       shiftLogged: "Shift logged",
       hoursShort: "h",
       comments: "Add a note…",
-      commentRequired: "A note is required for shifts under 9 hours",
+      noteSheetTitle: "Add a note to clock out",
+      noteSheetBody: "Your shift is under 9 hours. Write why you're leaving early.",
+      noteFirst: "Write a note first.",
       commentLabel: "Comment",
       mapLegendIn: "Clock-in",
       mapLegendOut: "Clock-out",
@@ -3761,7 +3759,7 @@
       hours: "Horas", days: "Días", shifts: "Turnos", staff: "Equipo", avgDay: "Prom/día",
       thisMonth: "este mes",
       clockIn: "Entrada", clockOut: "Salida",
-      submit: "Confirmar turno",
+      saving: "Guardando…", retrySave: "Reintentar",
       clockedInAt: "Entrada a las",
       start: "Entrada", end: "Salida",
       today: "Hoy",
@@ -3779,7 +3777,9 @@
       shiftLogged: "Turno registrado",
       hoursShort: "h",
       comments: "Añadir una nota…",
-      commentRequired: "Se requiere una nota para turnos menos de 9 horas",
+      noteSheetTitle: "Escribe una nota para salir",
+      noteSheetBody: "Tu turno es de menos de 9 horas. Escribe por qué sales temprano.",
+      noteFirst: "Primero escribe una nota.",
       commentLabel: "Comentario",
       mapLegendIn: "Entrada",
       mapLegendOut: "Salida",
@@ -4388,6 +4388,7 @@
     restoreClockState();
     history.replaceState({ depth: 0 }, "");
     render();
+    if (state.clock === "out") submitClockOut();
   }
   function logout() {
     // Fire-and-forget the Worker /logout — clearing local state + the stored
@@ -5059,37 +5060,33 @@
       if (state.clockInCoord) {
         wrap.appendChild(miniMapThumb([{...state.clockInCoord, in: true}]));
       }
+      // The note rides along with the Clock Out tap, so clocking out is one
+      // step. Under 9 hours a note is required: with none typed, Clock Out
+      // opens the note sheet instead (unless the owner set noteOptional).
+      const noteField = el("textarea", {
+        class: "comment-field",
+        placeholder: tr("comments"),
+        oninput: (e) => { state.comment = e.target.value; saveClockState(); },
+      });
+      noteField.value = state.comment;
+      wrap.appendChild(noteField);
       wrap.appendChild(el("div", {style:"height:14px"}));
       wrap.appendChild(el("button", {
         class:"btn hero clock-out",
-        onclick: async () => {
-          state.clock = "out";
-          state.clockOut = new Date();
-          state.clockOutCoord = null;
-          state.clockOutTz = currentTimezone();
-          saveClockState();
-          render();
-          const c = await getCurrentCoord();
-          state.clockOutCoord = c.real ? { lat: c.lat, lng: c.lng } : null;
-          saveClockState();
-          const t = gpsToast(c, "out");
-          toast(t.msg, { kind: t.kind, pill: t.pill });
-          render();
+        onclick: () => {
+          const underNine = (Date.now() - state.clockIn) / 3600000 < 9;
+          if (underNine && !state.currentUser?.noteOptional && !state.comment.trim()) {
+            openModal("noteRequired");
+            return;
+          }
+          startClockOut();
         }
       }, ICON("stop", 32), el("div", {}, tr("clockOut"))));
       return wrap;
     }
-    // state.clock === "out": summary + comment + submit
-    const diffMin = (state.clockOut - state.clockIn) / 60000;
-    const hrs = diffMin / 60;
-
-    const commentField = el("textarea", {
-      class: "comment-field",
-      placeholder: tr("comments"),
-      oninput: (e) => { state.comment = e.target.value; saveClockState(); updateSubmitState(); },
-    });
-    commentField.value = state.comment;
-
+    // state.clock === "out": the tap is recorded and saving. This card only
+    // lingers if the save couldn't reach the server, and then offers a retry.
+    const hrs = (state.clockOut - state.clockIn) / 3600000;
     const wrap = el("div", {});
     const inTzShort  = tzShort(state.clockInTz,  state.clockIn);
     const outTzShort = tzShort(state.clockOutTz, state.clockOut);
@@ -5097,7 +5094,7 @@
     if (state.clockInCoord)  summaryPins.push({...state.clockInCoord,  in: true });
     if (state.clockOutCoord) summaryPins.push({...state.clockOutCoord, in: false });
 
-    const summaryEl = el("div", {class:"shift-summary"},
+    wrap.appendChild(el("div", {class:"shift-summary"},
       el("div", {class:"row"},
         el("div", {class:"col"},
           el("div", {class:"l-label"}, tr("start")),
@@ -5119,107 +5116,122 @@
         el("span", {class:`value ${hrs < 9 ? "warn":""}`}, hrs.toFixed(1)),
         el("span", {class:"unit"}, tr("hours").toLowerCase()),
       ),
-      commentField,
-    );
-
-    // Per-user opt-out (e.g. a part-time hire whose normal day is < 9hrs):
-    // owner sets noteOptional on the user, and the under-9hr comment rule
-    // stops applying to them everywhere.
-    const noteRequired = hrs < 9 && !state.currentUser?.noteOptional;
-    if (noteRequired) {
-      summaryEl.appendChild(el("div", {class:"comment-required-note"}, tr("commentRequired")));
-    }
-    wrap.appendChild(summaryEl);
+    ));
     wrap.appendChild(el("div", {style:"height:14px"}));
-    const submitBtn = el("button", {
+    wrap.appendChild(el("button", {
       class: "btn primary full",
-      onclick: async (ev) => {
-        if (noteRequired && !state.comment.trim()) {
-          commentField.focus();
-          commentField.classList.add("required");
-          return;
-        }
-        if (ev.currentTarget.disabled) return;
-        ev.currentTarget.disabled = true;
-        const d = state.clockIn;
-        const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-        const pad = n => String(n).padStart(2,"0");
-        const start = `${pad(state.clockIn.getHours())}:${pad(state.clockIn.getMinutes())}`;
-        const end   = `${pad(state.clockOut.getHours())}:${pad(state.clockOut.getMinutes())}`;
-        // Use the actual Date diff so overnight shifts (end-time-of-day before
-        // start-time-of-day) compute correctly — the HH:MM strings drop the
-        // date and would otherwise yield a negative span.
-        const computedHours = Math.round(((state.clockOut - state.clockIn) / 3600000) * 10) / 10;
-        // Wait for the background clock-in commit (if still in flight) so we
-        // know whether there's an open shift to close vs. a fresh one to create.
-        if (state.openShiftPending) { try { await state.openShiftPending; } catch {} }
-        const shiftBody = {
-          date: dateStr,
-          start, end,
-          hours: computedHours,
-          comment: state.comment.trim(),
-          clockIn:  state.clockInCoord,
-          clockOut: state.clockOutCoord,
-          clockInTz:  state.clockInTz,
-          clockOutTz: state.clockOutTz,
-        };
-        const finish = (shift) => {
-          // The completed shift replaces the open row if we had one.
-          const i = shifts.findIndex(s => s.id === shift.id);
-          if (i >= 0) shifts[i] = shift; else shifts.push(shift);
-          nextShiftId = Math.max(nextShiftId, shift.id + 1);
-          state.clock = "idle";
-          state.clockIn = state.clockOut = null;
-          state.clockInCoord = state.clockOutCoord = null;
-          state.clockInTz = state.clockOutTz = null;
-          state.comment = "";
-          state.openShiftId = null;
-          state.openShiftPending = null;
-          saveClockState(); // clears the per-user localStorage key
-          toast(tr("shiftLogged"), {kind:"success", pill:"✓"});
-          render();
-        };
-        try {
-          if (state.openShiftId != null) {
-            // Close the open shift created at clock-in.
-            const { shift } = await api.clockOut({ id: state.openShiftId, ...shiftBody });
-            finish(shift);
-          } else {
-            // No open shift (old client, or the clock-in commit never landed) —
-            // create the complete shift, exactly as the app did before.
-            const { shift } = await api.createShift(shiftBody);
-            finish(shift);
-          }
-        } catch (e) {
-          // Closing a now-missing/already-closed open shift must never lose the
-          // shift — fall back to creating a complete one.
-          if (state.openShiftId != null && (e.status === 404 || e.status === 409)) {
-            try {
-              state.openShiftId = null;
-              const { shift } = await api.createShift(shiftBody);
-              finish(shift);
-              return;
-            } catch (e2) {
-              ev.currentTarget.disabled = false;
-              toastApiError(e2, tr("errCouldntSaveShift"));
-              return;
-            }
-          }
-          ev.currentTarget.disabled = false;
-          toastApiError(e, tr("errCouldntSaveShift"));
-        }
-      }
-    }, el("span", {}, tr("submit")));
-    wrap.appendChild(submitBtn);
-
-    function updateSubmitState() {
-      // Only clear a prior "required" state once the user has typed. We don't
-      // pre-warn them with red — the comment-required-note pill does that
-      // calmly in amber. The red state only appears if they try to submit
-      // without a comment.
-      if (state.comment.trim()) commentField.classList.remove("required");
-    }
+      disabled: state.clockSaving ? "" : null,
+      onclick: () => submitClockOut(),
+    }, el("span", {}, tr(state.clockSaving ? "saving" : "retrySave"))));
     return wrap;
+  }
+
+  // Save a clock-out to the server: close the open shift written at clock-in,
+  // or create the complete shift if that commit never landed. Runs from the
+  // Clock Out tap, and again at startup when a saved clock-out never reached
+  // the server (app closed mid-save, no signal). The recorded end time is
+  // the tap, however late the save lands.
+  // Record the tap, then GPS, then save. The end time is the tap itself.
+  async function startClockOut() {
+    state.clock = "out";
+    state.clockOut = new Date();
+    state.clockOutCoord = null;
+    state.clockOutTz = currentTimezone();
+    state.clockSaving = true;
+    saveClockState();
+    render();
+    const c = await getCurrentCoord();
+    state.clockOutCoord = c.real ? { lat: c.lat, lng: c.lng } : null;
+    saveClockState();
+    if (!c.real) {
+      const t = gpsToast(c, "out");
+      toast(t.msg, { kind: t.kind, pill: t.pill });
+    }
+    submitClockOut();
+  }
+
+  let clockOutBusy = false;
+  async function submitClockOut() {
+    if (state.clock !== "out" || clockOutBusy) return;
+    clockOutBusy = true;
+    state.clockSaving = true;
+    render();
+    const d = state.clockIn;
+    const pad = n => String(n).padStart(2,"0");
+    const dateStr = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    const start = `${pad(state.clockIn.getHours())}:${pad(state.clockIn.getMinutes())}`;
+    const end   = `${pad(state.clockOut.getHours())}:${pad(state.clockOut.getMinutes())}`;
+    // Use the actual Date diff so overnight shifts (end-time-of-day before
+    // start-time-of-day) compute correctly — the HH:MM strings drop the
+    // date and would otherwise yield a negative span.
+    const computedHours = Math.round(((state.clockOut - state.clockIn) / 3600000) * 10) / 10;
+    // Wait for the background clock-in commit (if still in flight) so we
+    // know whether there's an open shift to close vs. a fresh one to create.
+    if (state.openShiftPending) { try { await state.openShiftPending; } catch {} }
+    const shiftBody = {
+      date: dateStr,
+      start, end,
+      hours: computedHours,
+      comment: state.comment.trim(),
+      clockIn:  state.clockInCoord,
+      clockOut: state.clockOutCoord,
+      clockInTz:  state.clockInTz,
+      clockOutTz: state.clockOutTz,
+    };
+    const finish = (shift) => {
+      // The completed shift replaces the open row if we had one.
+      if (shift) {
+        const i = shifts.findIndex(s => s.id === shift.id);
+        if (i >= 0) shifts[i] = shift; else shifts.push(shift);
+        nextShiftId = Math.max(nextShiftId, shift.id + 1);
+      }
+      state.clock = "idle";
+      state.clockIn = state.clockOut = null;
+      state.clockInCoord = state.clockOutCoord = null;
+      state.clockInTz = state.clockOutTz = null;
+      state.comment = "";
+      state.openShiftId = null;
+      state.openShiftPending = null;
+      state.clockSaving = false;
+      saveClockState(); // clears the per-user localStorage key
+      toast(tr("shiftLogged"), {kind:"success", pill:"✓"});
+      render();
+    };
+    const fail = (e) => {
+      state.clockSaving = false;
+      toastApiError(e, tr("errCouldntSaveShift"));
+      render();
+    };
+    try {
+      if (state.openShiftId != null) {
+        // Close the open shift created at clock-in.
+        const { shift } = await api.clockOut({ id: state.openShiftId, ...shiftBody });
+        finish(shift);
+      } else {
+        // No open shift (old client, or the clock-in commit never landed) —
+        // create the complete shift.
+        const { shift } = await api.createShift(shiftBody);
+        finish(shift);
+      }
+    } catch (e) {
+      if (state.openShiftId != null && e.status === 409) {
+        // Already closed: an earlier save landed but its response was lost.
+        // Creating a new shift here would duplicate it, so re-read instead.
+        try { hydrateFromDb(await api.db()); } catch {}
+        finish(null);
+      } else if (state.openShiftId != null && e.status === 404) {
+        // The open shift is gone. Never lose the shift: create it whole.
+        try {
+          state.openShiftId = null;
+          const { shift } = await api.createShift(shiftBody);
+          finish(shift);
+        } catch (e2) { fail(e2); }
+      } else {
+        fail(e);
+      }
+    } finally {
+      clockOutBusy = false;
+    }
   }
 
   // Admin "Home" tab — greeting, month calendar, then the Employees roster.
@@ -6557,6 +6569,43 @@
         el("button", {class:"btn", onclick: close}, tr("cancel")),
         delBtn,
       ));
+    } else if (state.modal === "noteRequired") {
+      // Clock Out on a short shift with no note. A sheet, not an inline hint:
+      // on a phone it can't be missed, and the note and the clock-out both
+      // happen right here.
+      const err = el("div", {class:"err", style:"display:none"}, tr("noteFirst"));
+      const ta = el("textarea", {
+        class: "comment-field",
+        placeholder: tr("comments"),
+        oninput: (e) => {
+          state.comment = e.target.value;
+          saveClockState();
+          if (state.comment.trim()) { ta.classList.remove("required"); err.style.display = "none"; }
+        },
+      });
+      ta.value = state.comment;
+      scrim.classList.add("centered");
+      card.appendChild(el("h3", {class:"note-sheet-title"}, tr("noteSheetTitle")));
+      card.appendChild(el("p", {}, tr("noteSheetBody")));
+      card.appendChild(ta);
+      card.appendChild(err);
+      card.appendChild(el("div", {class:"actions"},
+        el("button", {class:"btn", onclick: close}, tr("cancel")),
+        el("button", {class:"btn primary", onclick: () => {
+          if (!state.comment.trim()) {
+            ta.classList.add("required");
+            err.style.display = "block";
+            ta.classList.remove("shake");
+            void ta.offsetWidth;   // restart the shake on repeat taps
+            ta.classList.add("shake");
+            return;
+          }
+          // The back-navigation closes the sheet; clock out once it has.
+          window.addEventListener("popstate", () => startClockOut(), { once: true });
+          close();
+        }}, tr("clockOut")),
+      ));
+      if (isFreshOpen) requestAnimationFrame(() => ta.focus());
     } else if (state.modal === "confirmDeleteShift") {
       // Owner-only hard-delete of a shift. After delete, navBack() exits
       // the now-empty shift detail sheet.
@@ -6677,7 +6726,10 @@
     update();
   })();
 
-  loadDB().then(render).catch((err) => {
+  loadDB().then(() => {
+    render();
+    if (state.clock === "out") submitClockOut();
+  }).catch((err) => {
     console.error("Failed to load from the PunchCard API", err);
     const root = document.getElementById("scrollRoot");
     if (root) root.textContent = tr("apiUnreachable");

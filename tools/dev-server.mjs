@@ -51,7 +51,6 @@ const db = {
 };
 
 const TOKEN = "dev-token";
-let currentUserId = null;
 
 const publicUser = (u) => ({
   id: u.id, username: u.username, displayName: u.displayName, role: u.role, color: u.color,
@@ -74,6 +73,10 @@ const filterDbForUser = (user) => {
 const mime = { ".html": "text/html", ".js": "application/javascript", ".css": "text/css", ".json": "application/json", ".png": "image/png", ".svg": "image/svg+xml" };
 
 createServer(async (req, res) => {
+  // Per-user bearer tokens, so two windows can stay signed in as different
+  // users at once (an employee phone beside the owner's screen).
+  const tok = /^Bearer dev-token-(\d+)$/.exec(req.headers.authorization || "");
+  const uid = tok ? Number(tok[1]) : null;
   const send = (status, body, type = "application/json") => {
     res.writeHead(status, {
       "Content-Type": type,
@@ -92,33 +95,44 @@ createServer(async (req, res) => {
       const { username } = JSON.parse(body || "{}");
       const user = db.users.find((u) => u.username.toLowerCase() === (username || "").trim().toLowerCase());
       if (!user) return send(401, { error: "invalid credentials" });
-      currentUserId = user.id;
-      return send(200, { user: publicUser(user), token: TOKEN });
+      return send(200, { user: publicUser(user), token: `${TOKEN}-${user.id}` });
     }
     if (req.method === "POST" && url.pathname === "/logout") {
-      currentUserId = null;
       return send(200, { ok: true });
     }
     if (req.method === "GET" && url.pathname === "/me") {
-      if (!currentUserId) return send(401, { error: "unauthenticated" });
-      const u = db.users.find((x) => x.id === currentUserId);
+      if (!uid) return send(401, { error: "unauthenticated" });
+      const u = db.users.find((x) => x.id === uid);
       return send(200, { user: publicUser(u) });
     }
     if (req.method === "GET" && url.pathname === "/db") {
-      if (!currentUserId) return send(401, { error: "unauthenticated" });
-      const u = db.users.find((x) => x.id === currentUserId);
+      if (!uid) return send(401, { error: "unauthenticated" });
+      const u = db.users.find((x) => x.id === uid);
       return send(200, { user: publicUser(u), db: filterDbForUser(u) });
     }
     // Clock-in: append a shift (open if `end` omitted). Mirrors the Worker's
     // POST /shifts so the local headed demo exercises the real clock flow.
     if (req.method === "POST" && url.pathname === "/shifts") {
-      if (!currentUserId) return send(401, { error: "unauthenticated" });
-      const u = db.users.find((x) => x.id === currentUserId);
+      if (!uid) return send(401, { error: "unauthenticated" });
+      const u = db.users.find((x) => x.id === uid);
       if (u.role !== "employee") return send(403, { error: "only employees clock in" });
       let raw = ""; for await (const c of req) raw += c;
       const b = JSON.parse(raw || "{}");
       if (!b.date) return send(400, { error: "missing date" });
-      const id = db.shifts.reduce((m, x) => Math.max(m, x.id ?? 0), 0) + 1;
+      // Mirrors the Worker: a complete shift closes a matching open row.
+      const open = b.end && db.shifts.find((s) => s.empId === u.id && !s.end && s.date === b.date && s.start === b.start);
+      if (open) {
+        Object.assign(open, {
+          end: b.end, hours: typeof b.hours === "number" ? b.hours : null, comment: b.comment ?? "",
+          ...(b.clockIn != null ? { clockIn: b.clockIn } : {}),
+          ...(typeof b.clockInTz === "string" ? { clockInTz: b.clockInTz } : {}),
+          ...(b.clockOut != null ? { clockOut: b.clockOut } : {}),
+          ...(typeof b.clockOutTz === "string" ? { clockOutTz: b.clockOutTz } : {}),
+        });
+        console.log(`[shifts] ${u.username} closed open id ${open.id} → ${open.end}`);
+        return send(200, { ok: true, shift: open });
+      }
+      const id =db.shifts.reduce((m, x) => Math.max(m, x.id ?? 0), 0) + 1;
       const shift = {
         id, empId: u.id, date: b.date, start: b.start, end: b.end ?? null,
         hours: typeof b.hours === "number" ? b.hours : null,
@@ -132,8 +146,8 @@ createServer(async (req, res) => {
     }
     // Clock-out: close own open shift. Mirrors the Worker's /shifts/clock-out.
     if (req.method === "POST" && url.pathname === "/shifts/clock-out") {
-      if (!currentUserId) return send(401, { error: "unauthenticated" });
-      const u = db.users.find((x) => x.id === currentUserId);
+      if (!uid) return send(401, { error: "unauthenticated" });
+      const u = db.users.find((x) => x.id === uid);
       let raw = ""; for await (const c of req) raw += c;
       const b = JSON.parse(raw || "{}");
       const idx = db.shifts.findIndex((s) => s.id === b.id);

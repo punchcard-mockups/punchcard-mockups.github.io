@@ -188,11 +188,10 @@
   }
   .lang-toggle .opt.active { color: #fff; }
 
-  /* Account dropdown — opened by tapping the sign-out icon. Replaces the old
-     one-tap sign-out (which was too easy to mis-tap and wiped the session). */
-  /* Account menu now sits in-flow at the top of the scroll content (right-
-     aligned) so it scrolls away with the page. The trigger is the positioned
-     anchor for its dropdown. */
+  /* Account dropdown, opened by the account button. Sign-out lives inside it
+     so a stray tap can't end the session. The menu sits in-flow at the top of
+     the scroll content (right-aligned) and scrolls away with the page; the
+     trigger is the positioned anchor for its dropdown. */
   .account-row {
     display: flex;
     justify-content: flex-end;
@@ -1440,11 +1439,9 @@
     padding: 8px 10px;
     margin-bottom: 10px;
   }
-  /* Manage employees — stacked so names and role sub-text always get the
-     full row width, and action buttons live on their own row below. With
-     the old horizontal layout, narrow viewports squeezed the left column
-     hard enough to wrap "Alejandra A." and "READ-ONLY" onto two lines
-     despite plenty of empty vertical space on each card. */
+  /* Manage employees: stacked so names and role sub-text always get the
+     full row width, with action buttons on their own row below. A side-by-
+     side layout wraps names like "Alejandra A." at narrow widths. */
   .modal-card .manage-list {
     display: flex; flex-direction: column; gap: 8px;
     margin-bottom: 12px;
@@ -2366,8 +2363,6 @@
   /* The shift cards inside a week-card share the .week-rollup compact treatment
      (already defined for .week-rollup .hist-shift-card up above). */
 
-  /* Inbox screen — section headers between week-cards and edit-requests. */
-
   .edit-req-card {
     margin-top: 8px;
     padding: 14px 16px;
@@ -2782,10 +2777,9 @@
   function setToken(t) { try { t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY); } catch {} }
 
   // Mid-shift clock state ("in" or "out", with start time, coords, tz, and
-  // comment-in-progress) must survive a reload — closing the tab in the
-  // middle of a shift used to lose everything because state.clock and
-  // friends are in-memory only. Persist per-user so signing in as a
-  // different user doesn't inherit the previous user's open shift.
+  // the note in progress) must survive a reload, since state.clock and
+  // friends live in memory. Persisted per user so signing in as someone
+  // else doesn't inherit the previous user's open shift.
   const CLOCK_KEY = (uid) => `pc_clock_${uid}`;
   function saveClockState() {
     const u = state.currentUser;
@@ -3993,11 +3987,9 @@
   // =============================================================
   // FLOATING CHROME (back button + account menu)
   // =============================================================
-  // The old `.topbar` consumed ~50px on every screen even when it carried
-  // nothing but the account icon, and it duplicated content already shown
-  // in the page (admin_employee header). Now both controls float over the
-  // page with safe-area insets; pages add top padding so the first row of
-  // content sits below them.
+  // No top bar: the back button floats over the page with safe-area insets,
+  // and pages add top padding so their first row sits below it. The account
+  // menu rides in the scroll content instead (see render()).
   function renderTopbar() {
     const back = document.getElementById("floatBack");
     const account = document.getElementById("floatAccount");
@@ -4010,15 +4002,13 @@
     if (state.nav.length > 0) {
       back.appendChild(el("div", { class:"icon-btn", onclick: navBack }, ICON("back")));
     }
-    // Account menu is no longer fixed here — it rides at the top of the scroll
-    // content (see render()) so it scrolls away with the page. Keep the slot
-    // empty so `:empty { display:none }` hides the fixed float.
+    // The account menu rides at the top of the scroll content (see render()),
+    // so this fixed slot stays empty and `:empty { display:none }` hides it.
     account.innerHTML = "";
   }
 
-  // Account / sign-out dropdown. Replaces what used to be a single-tap
-  // sign-out icon — a mis-tap on that wiped the session. Now tapping
-  // opens a menu, and the user has to hit "Sign out" deliberately.
+  // Account dropdown. Sign-out is an item inside it, so ending the session
+  // takes a deliberate second tap.
   function renderUserMenu() {
     const u = state.currentUser;
     const roleKey =
@@ -4130,8 +4120,7 @@
   function renderFab() {
     const root = document.getElementById("fabRoot");
     root.innerHTML = "";
-    // The add-employee FAB moved into the account dropdown (see renderUserMenu).
-    // This slot is kept around for future per-screen primary actions.
+    // Empty slot for a per-screen primary action; none uses it today.
   }
 
   // Bottom bar: tab bar for the role's root screens.
@@ -5137,8 +5126,8 @@
     //   - owner/admin: can approve/reject a stale pending employee edit
     //     request that's still in the data, and can directly edit the shift
     //     (requires a reason, logged).
-    //   - employees no longer have any action surface here — they'll text
-    //     the owner if a shift needs fixing.
+    //   - employees get no actions here; they text the owner if a shift
+    //     needs fixing.
 
     if (editReq && canApprove(u)) {
       root.appendChild(el("div", {class:"sd-action-row"},
@@ -5555,11 +5544,9 @@
         }}, tr("add")),
       ));
     } else if (state.modal === "shiftDetail") {
-      // A bottom-sheet variant of the old full-screen shift detail. The
-      // internal layout (header with avatar + hours, time rows, map, audit
-      // log, action buttons) is identical — we just render it into the
-      // modal card instead of scrollRoot. `renderShiftDetail` itself closes
-      // the sheet if the target shift has vanished.
+      // Shift detail as a sheet: header with avatar + hours, time rows, map,
+      // audit log, action buttons. `renderShiftDetail` closes the sheet itself
+      // if the target shift has vanished.
       renderShiftDetail(card);
     } else if (state.modal === "addShift") {
       const emp = userById[state.viewingEmployeeId];
